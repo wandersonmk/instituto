@@ -146,42 +146,72 @@
     </div>
 
     <!-- Modal de confirmação de exclusão -->
-    <div 
-      v-if="alunoParaExcluir"
-      class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+    <Transition
+      enter-active-class="transition-all duration-200 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition-all duration-150 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
     >
-      <div class="bg-card rounded-lg shadow-xl max-w-md w-full p-6 border border-border">
-        <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 dark:bg-red-900/20 rounded-full">
-          <Icon icon="exclamation-triangle" class-name="w-6 h-6 text-red-600" fallback="" />
-        </div>
-        
-        <h3 class="text-lg font-semibold text-foreground text-center mb-2">
-          Confirmar exclusão
-        </h3>
-        
-        <p class="text-muted-foreground text-center mb-6">
-          Tem certeza que deseja excluir o aluno 
-          <strong class="text-foreground">{{ alunoParaExcluir.nome }}</strong>?
-          <br>
-          Esta ação não pode ser desfeita.
-        </p>
-        
-        <div class="flex space-x-3">
-          <button
-            @click="cancelarExclusao"
-            class="flex-1 px-4 py-2 border border-border rounded-lg text-foreground hover:bg-muted transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            @click="excluirAluno"
-            class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-          >
-            Excluir
-          </button>
-        </div>
+      <div 
+        v-if="alunoParaExcluir"
+        class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+        @click.self="cancelarExclusao"
+      >
+        <Transition
+          enter-active-class="transition-all duration-200 ease-out"
+          enter-from-class="opacity-0 scale-95 translate-y-4"
+          enter-to-class="opacity-100 scale-100 translate-y-0"
+          leave-active-class="transition-all duration-150 ease-in"
+          leave-from-class="opacity-100 scale-100 translate-y-0"
+          leave-to-class="opacity-0 scale-95 translate-y-4"
+        >
+          <div class="bg-card rounded-xl shadow-2xl max-w-md w-full border border-border overflow-hidden">
+            <!-- Header com gradiente -->
+            <div class="bg-gradient-to-br from-red-500 to-red-600 p-6 text-center relative">
+              <div class="flex items-center justify-center w-16 h-16 mx-auto mb-3 bg-white/20 backdrop-blur-sm rounded-full border-2 border-white/30">
+                <Icon icon="exclamation-triangle" class-name="w-8 h-8 text-white" fallback="" />
+              </div>
+              <h3 class="text-xl font-bold text-white">
+                Confirmar Exclusão
+              </h3>
+            </div>
+
+            <!-- Conteúdo -->
+            <div class="p-6">
+              <p class="text-muted-foreground text-center mb-2">
+                Tem certeza que deseja excluir o aluno
+              </p>
+              <p class="text-center mb-4">
+                <strong class="text-foreground text-lg">{{ alunoParaExcluir.nome }}</strong>?
+              </p>
+              <div class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/30 rounded-lg p-3 mb-6">
+                <p class="text-red-800 dark:text-red-200 text-sm text-center">
+                  ⚠️ Esta ação não pode ser desfeita
+                </p>
+              </div>
+              
+              <!-- Botões -->
+              <div class="flex space-x-3">
+                <button
+                  @click="cancelarExclusao"
+                  class="flex-1 px-4 py-2.5 border-2 border-border rounded-lg text-foreground font-medium hover:bg-muted transition-all duration-200 hover:scale-105"
+                >
+                  Cancelar
+                </button>
+                <button
+                  @click="excluirAluno"
+                  class="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-red-500/50"
+                >
+                  Excluir
+                </button>
+              </div>
+            </div>
+          </div>
+        </Transition>
       </div>
-    </div>
+    </Transition>
   </div>
 </template>
 

@@ -253,9 +253,9 @@ async function createLineChart() {
       plugins: {
         legend: {
           labels: {
-            color: isDark ? '#FFFFFF' : '#1F2937',
+            color: isDark ? '#E5E7EB' : '#1F2937',
             font: {
-              size: 12,
+              size: 13,
               weight: 'bold'
             }
           }
@@ -264,7 +264,7 @@ async function createLineChart() {
           backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
           titleColor: isDark ? '#F3F4F6' : '#1F2937',
           bodyColor: isDark ? '#F3F4F6' : '#1F2937',
-          borderColor: isDark ? '#374151' : '#E5E7EB',
+          borderColor: isDark ? '#4B5563' : '#E5E7EB',
           borderWidth: 1,
           callbacks: {
             label: function(context) {
@@ -276,27 +276,37 @@ async function createLineChart() {
       scales: {
         x: {
           ticks: {
-            color: isDark ? '#9CA3AF' : '#4B5563',
+            color: isDark ? '#D1D5DB' : '#4B5563',
             font: {
-              size: 11
+              size: 12,
+              weight: '500'
             }
           },
           grid: {
-            color: isDark ? '#374151' : '#E5E7EB'
+            color: isDark ? '#374151' : '#E5E7EB',
+            lineWidth: 1
+          },
+          border: {
+            color: isDark ? '#4B5563' : '#D1D5DB'
           }
         },
         y: {
           ticks: {
-            color: isDark ? '#9CA3AF' : '#4B5563',
+            color: isDark ? '#D1D5DB' : '#4B5563',
             font: {
-              size: 11
+              size: 12,
+              weight: '500'
             },
             callback: function(value) {
               return value + ' alunos'
             }
           },
           grid: {
-            color: isDark ? '#374151' : '#E5E7EB'
+            color: isDark ? '#374151' : '#E5E7EB',
+            lineWidth: 1
+          },
+          border: {
+            color: isDark ? '#4B5563' : '#D1D5DB'
           }
         }
       }

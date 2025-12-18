@@ -48,6 +48,18 @@
             </NuxtLink>
           </li>
 
+          <!-- Cursos -->
+          <li>
+            <NuxtLink 
+              to="/cursos"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted group relative"
+              :class="$route.path === '/cursos' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
+            >
+              <Icon icon="book-open" class-name="w-5 h-5 mr-3" fallback="📚" />
+              <span>Cursos</span>
+            </NuxtLink>
+          </li>
+
           <!-- Indicações Recebidas -->
           <li>
             <NuxtLink 
@@ -186,6 +198,19 @@
             >
               <Icon icon="user-graduate" class-name="w-5 h-5 mr-3" fallback="🎓" />
               <span>Alunos</span>
+            </NuxtLink>
+          </li>
+
+          <!-- Cursos -->
+          <li>
+            <NuxtLink 
+              to="/cursos"
+              @click="$emit('close-mobile')"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted group relative"
+              :class="$route.path === '/cursos' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
+            >
+              <Icon icon="book-open" class-name="w-5 h-5 mr-3" fallback="📚" />
+              <span>Cursos</span>
             </NuxtLink>
           </li>
 

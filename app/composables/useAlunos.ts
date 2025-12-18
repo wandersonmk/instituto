@@ -1,4 +1,5 @@
 import type { PostgrestResponse } from '@supabase/supabase-js'
+import { useToastSafe } from './useToastSafe'
 
 // Interface para tipagem do aluno
 export interface Aluno {
@@ -70,10 +71,14 @@ export const useAlunos = () => {
       if (insertError) {
         console.error('❌ Erro ao adicionar aluno:', insertError)
         error.value = `Erro ao adicionar aluno: ${insertError.message}`
+        const toast = await useToastSafe()
+        toast?.error('Erro ao cadastrar aluno')
         return false
       }
 
       console.log('✅ Aluno adicionado com sucesso:', data)
+      const toast = await useToastSafe()
+      toast?.success('Aluno cadastrado com sucesso!')
       // Recarregar lista de alunos
       await fetchAlunos()
       return true
@@ -102,10 +107,14 @@ export const useAlunos = () => {
       if (deleteError) {
         console.error('❌ Erro ao deletar aluno:', deleteError)
         error.value = `Erro ao deletar aluno: ${deleteError.message}`
+        const toast = await useToastSafe()
+        toast?.error('Erro ao excluir aluno')
         return false
       }
 
       console.log('✅ Aluno deletado com sucesso')
+      const toast = await useToastSafe()
+      toast?.success('Aluno excluído com sucesso!')
       
       // Recarregar lista de alunos
       await fetchAlunos()

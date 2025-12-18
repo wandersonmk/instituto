@@ -41,7 +41,12 @@ import {
   faChevronDown,
   faChevronUp,
   faChevronLeft,
-  faChevronRight
+  faChevronRight,
+  faBookOpen,
+  faGraduationCap,
+  faClock,
+  faDollarSign,
+  faSearch
 } from '@fortawesome/free-solid-svg-icons'
 
 // This is important, we are going to let Nuxt worry about the CSS
@@ -90,7 +95,12 @@ library.add(
   faChevronDown,
   faChevronUp,
   faChevronLeft,
-  faChevronRight
+  faChevronRight,
+  faBookOpen,
+  faGraduationCap,
+  faClock,
+  faDollarSign,
+  faSearch
 )
 
 export default defineNuxtPlugin({

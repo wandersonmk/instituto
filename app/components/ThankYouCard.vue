@@ -19,7 +19,7 @@
       </h2>
 
       <!-- Mensagem de agradecimento -->
-      <p class="text-base text-gray-300 mb-8 leading-relaxed">
+      <p class="text-base text-muted-foreground mb-8 leading-relaxed">
         Agradecemos por se cadastrar no <strong class="text-primary font-semibold">Instituto Fios de Ouro</strong>!
         <br><br>
         Sua conta foi criada com sucesso. Verifique seu email para confirmar 
@@ -29,7 +29,7 @@
       <!-- Informações adicionais -->
       <div class="bg-muted rounded-lg p-4 mb-8 border border-border">
         <h3 class="font-bold text-foreground mb-2 text-base">Próximos passos:</h3>
-        <ul class="text-sm text-gray-300 space-y-1">
+        <ul class="text-sm text-muted-foreground space-y-1">
           <li>✉️ Verifique sua caixa de entrada</li>
           <li>🔗 Clique no link de confirmação</li>
           <li>🚀 Comece a usar o sistema</li>
@@ -42,7 +42,7 @@
         <p class="text-sm font-semibold text-foreground">
           Instituto Fios de Ouro Gestão de Relatórios
         </p>
-        <p class="text-xs text-gray-400 mt-1">
+        <p class="text-xs text-muted-foreground mt-1">
           © 2025 Instituto Fios de Ouro - Todos os direitos reservados
         </p>
       </div>

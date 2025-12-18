@@ -45,12 +45,10 @@ export const useCursos = () => {
     error.value = null
     
     try {
-      const { user } = useAuth()
-      
+      // RLS já filtra por empresa automaticamente
       const { data, error: cursosError }: PostgrestResponse<Curso> = await supabase
         .from('cursos')
         .select('*')
-        .eq('user_id', user.value?.id)
         .order('nome', { ascending: true })
 
       console.log('📊 Resultado da busca:', { data, error: cursosError })
@@ -78,14 +76,13 @@ export const useCursos = () => {
     error.value = null
     
     try {
-      const { user } = useAuth()
       const toast = await useToastSafe()
       
+      // empresa_id é preenchido automaticamente pelo trigger
       const { data, error: insertError } = await supabase
         .from('cursos')
         .insert([{
           ...cursoData,
-          user_id: user.value?.id,
           ativo: cursoData.ativo ?? true
         }])
         .select()

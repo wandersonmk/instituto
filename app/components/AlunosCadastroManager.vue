@@ -28,6 +28,7 @@ const erroCEP = ref('')
 
 // Dados do formulário - Página 1 (Dados Pessoais)
 const nomeCompleto = ref('')
+const email = ref('')
 const telefone = ref('')
 const endereco = ref('')
 const numero = ref('')
@@ -71,13 +72,12 @@ async function buscarAlunos() {
   
   carregandoAlunos.value = true
   const supabase = useSupabaseClient()
-  const { user } = useAuth()
   
   try {
+    // RLS já filtra por empresa automaticamente
     const { data, error } = await supabase
       .from('alunos')
       .select('*')
-      .eq('user_id', user.value?.id)
       .order('created_at', { ascending: false })
     
     if (error) {
@@ -89,6 +89,7 @@ async function buscarAlunos() {
     alunos.value = (data || []).map((aluno: any) => ({
       id: aluno.id,
       nome: aluno.nome_completo,
+      email: aluno.email || '',
       telefone: aluno.telefone || '',
       endereco: aluno.endereco && aluno.numero ? `${aluno.endereco}, ${aluno.numero}` : aluno.endereco || '',
       numero: aluno.numero || '',
@@ -98,6 +99,7 @@ async function buscarAlunos() {
       estado: aluno.estado || '',
       pais: aluno.pais || 'Brasil',
       ativo: aluno.ativo,
+      curso_id: aluno.curso_id || '',
       cursoContratado: aluno.curso_contratado || '',
       quantidadeHoras: aluno.quantidade_horas?.toString() || '',
       quantidadeAulas: aluno.quantidade_aulas?.toString() || '',
@@ -318,6 +320,7 @@ function handleTelefoneInput(event: Event) {
 function limparFormulario() {
   // Página 1 - Dados Pessoais
   nomeCompleto.value = ''
+  email.value = ''
   telefone.value = ''
   endereco.value = ''
   numero.value = ''
@@ -359,6 +362,7 @@ function editarAluno(aluno: any, event?: Event) {
   
   // Página 1 - Dados Pessoais
   nomeCompleto.value = aluno.nome
+  email.value = aluno.email || ''
   telefone.value = aluno.telefone || ''
   
   // Extrair endereco e numero se estiver concatenado
@@ -409,6 +413,7 @@ async function salvarAluno() {
   
   const alunoData = {
     nome_completo: nomeCompleto.value,
+    email: email.value,
     telefone: telefone.value,
     endereco: endereco.value,
     numero: numero.value,
@@ -447,17 +452,47 @@ async function salvarAluno() {
       toast?.success('Aluno atualizado com sucesso!')
     } else {
       // Inserir novo aluno
-      const { error } = await supabase
+      const { data: alunoInserido, error: erroAluno } = await supabase
         .from('alunos')
         .insert([alunoData])
+        .select()
+        .single()
       
-      if (error) {
-        console.error('Erro ao criar aluno:', error)
+      if (erroAluno) {
+        console.error('Erro ao criar aluno:', erroAluno)
         toast?.error('Erro ao criar aluno')
         return
       }
       
-      toast?.success('Aluno cadastrado com sucesso!')
+      // Criar conta de autenticação para o aluno via API do servidor
+      try {
+        const response = await $fetch('/api/auth/create-user', {
+          method: 'POST',
+          body: {
+            email: email.value,
+            nome: nomeCompleto.value,
+            aluno_id: alunoInserido.id,
+            telefone: telefone.value // Envia telefone para usar como senha padrão
+          }
+        })
+        
+        if (response.success && response.user_id) {
+          // Atualizar o user_id do aluno com o ID do usuário Auth criado
+          await supabase
+            .from('alunos')
+            .update({ user_id: response.user_id })
+            .eq('id', alunoInserido.id)
+          
+          // Senha padrão = telefone sem formatação
+          const senhaGerada = telefone.value?.replace(/\D/g, '') || 'Aluno2024'
+          toast?.success(`Aluno cadastrado! Login: ${email.value} | Senha: ${senhaGerada}`, { duration: 10000 })
+        } else {
+          toast?.warning('Aluno cadastrado, mas houve erro ao criar conta de acesso.')
+        }
+      } catch (authError: any) {
+        console.error('Erro ao criar autenticação:', authError)
+        toast?.warning('Aluno cadastrado, mas houve erro ao criar conta de acesso: ' + authError.message)
+      }
     }
     
     // Recarregar lista de alunos
@@ -479,12 +514,26 @@ function fecharModal() {
 function proximaPaginaModal() {
   if (paginaAtualModal.value < 2) {
     paginaAtualModal.value++
+    // Scroll para o topo do modal
+    nextTick(() => {
+      const modalContent = document.getElementById('modal-aluno-content')
+      if (modalContent) {
+        modalContent.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    })
   }
 }
 
 function paginaAnteriorModal() {
   if (paginaAtualModal.value > 1) {
     paginaAtualModal.value--
+    // Scroll para o topo do modal
+    nextTick(() => {
+      const modalContent = document.getElementById('modal-aluno-content')
+      if (modalContent) {
+        modalContent.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    })
   }
 }
 
@@ -492,12 +541,26 @@ function paginaAnteriorModal() {
 function proximaPaginaVisualizacao() {
   if (paginaAtualVisualizacao.value < 2) {
     paginaAtualVisualizacao.value++
+    // Scroll para o topo do modal
+    nextTick(() => {
+      const modalContent = document.getElementById('modal-visualizacao-content')
+      if (modalContent) {
+        modalContent.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    })
   }
 }
 
 function paginaAnteriorVisualizacao() {
   if (paginaAtualVisualizacao.value > 1) {
     paginaAtualVisualizacao.value--
+    // Scroll para o topo do modal
+    nextTick(() => {
+      const modalContent = document.getElementById('modal-visualizacao-content')
+      if (modalContent) {
+        modalContent.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    })
   }
 }
 
@@ -867,7 +930,7 @@ function fecharModalVisualizacao() {
     v-if="mostrarModal"
     class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
   >
-    <div class="bg-card border border-border rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" @click.stop>
+    <div id="modal-aluno-content" class="bg-card border border-border rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" @click.stop>
       <!-- Header do Modal -->
       <div class="flex items-center justify-between p-6 border-b border-border sticky top-0 bg-card z-10">
         <div class="flex items-center space-x-3">
@@ -903,19 +966,36 @@ function fecharModalVisualizacao() {
             <h4 class="text-base font-semibold text-foreground">Dados Pessoais</h4>
           </div>
 
-          <!-- Nome e Telefone -->
+          <!-- Nome Completo -->
+          <div>
+            <label for="nomeCompleto" class="block text-sm font-medium text-foreground mb-2">
+              Nome Completo <span class="text-red-500">*</span>
+            </label>
+            <AppInput
+              id="nomeCompleto"
+              v-model="nomeCompleto"
+              type="text"
+              placeholder="Digite o nome completo"
+              required
+            />
+          </div>
+
+          <!-- Email e Telefone -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label for="nomeCompleto" class="block text-sm font-medium text-foreground mb-2">
-                Nome Completo <span class="text-red-500">*</span>
+              <label for="email" class="block text-sm font-medium text-foreground mb-2">
+                Email <span class="text-red-500">*</span>
               </label>
               <AppInput
-                id="nomeCompleto"
-                v-model="nomeCompleto"
-                type="text"
-                placeholder="Digite o nome completo"
+                id="email"
+                v-model="email"
+                type="email"
+                placeholder="email@exemplo.com"
                 required
               />
+              <p class="text-xs text-muted-foreground mt-1">
+                🔑 Conta criada automaticamente. Senha padrão = telefone do aluno (só números)
+              </p>
             </div>
 
             <div>
@@ -1274,7 +1354,7 @@ function fecharModalVisualizacao() {
     v-if="mostrarModalVisualizacao && alunoVisualizacao"
     class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
   >
-    <div class="bg-card border border-border rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" @click.stop>
+    <div id="modal-visualizacao-content" class="bg-card border border-border rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" @click.stop>
       <!-- Header do Modal -->
       <div class="flex items-center justify-between p-6 border-b border-border sticky top-0 bg-card z-10">
         <div class="flex items-center space-x-3">

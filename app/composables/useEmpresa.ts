@@ -1,53 +1,65 @@
 export function useEmpresa() {
-  // Estado global para o nome da empresa
-  const nomeEmpresa = useState<string | null>('empresa_nome', () => null)
+  const supabase = useSupabaseClient()
+  const { user } = useAuth()
+  
+  // Estados globais
+  const empresa = useState<any>('empresa_data', () => null)
+  const usuario = useState<any>('usuario_data', () => null)
   const isLoadingEmpresa = useState<boolean>('empresa_loading', () => false)
 
-  // Busca SIMPLES e DIRETA do nome da empresa
+  // Buscar dados completos da empresa e usuário
   async function buscarNomeEmpresa() {
-    if (!process.client) return
+    if (!process.client || !user.value) {
+      empresa.value = null
+      usuario.value = null
+      return
+    }
 
     try {
       isLoadingEmpresa.value = true
-      const supabase = useSupabaseClient()
       
-      // Pega o usuário atual da sessão do Supabase diretamente
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user?.id) {
-        console.log('Usuário não está logado')
-        nomeEmpresa.value = null
-        return
-      }
-
-      console.log('Buscando empresa para usuário:', user.id)
-      
-      // Busca a empresa no banco
-      const { data, error } = await supabase
-        .from('empresas')
-        .select('nome')
-        .eq('usuario_id', user.id)
+      // Buscar usuário e empresa
+      const { data: userData, error: userError } = await supabase
+        .from('usuarios')
+        .select(`
+          *,
+          empresa:empresas(*)
+        `)
+        .eq('user_id', user.value.id)
         .single()
 
-      if (error) {
-        console.error('Erro ao buscar empresa:', error)
-        nomeEmpresa.value = null
+      if (userError) {
+        console.error('Erro ao buscar dados do usuário:', userError)
+        usuario.value = null
+        empresa.value = null
         return
       }
 
-      console.log('Nome da empresa encontrado:', data?.nome)
-      nomeEmpresa.value = data?.nome || null
+      usuario.value = userData
+      empresa.value = userData?.empresa || null
       
     } catch (err) {
       console.error('Erro:', err)
-      nomeEmpresa.value = null
+      usuario.value = null
+      empresa.value = null
     } finally {
       isLoadingEmpresa.value = false
     }
   }
 
+  // Computed properties
+  const nomeEmpresa = computed(() => empresa.value?.nome || null)
+  const empresaId = computed(() => empresa.value?.id || null)
+  const isAdmin = computed(() => usuario.value?.perfil === 'admin')
+  const isColaborador = computed(() => usuario.value?.perfil === 'colaborador')
+
   return {
     nomeEmpresa: readonly(nomeEmpresa),
+    empresa: readonly(empresa),
+    usuario: readonly(usuario),
+    empresaId: readonly(empresaId),
+    isAdmin: readonly(isAdmin),
+    isColaborador: readonly(isColaborador),
     isLoadingEmpresa: readonly(isLoadingEmpresa),
     buscarNomeEmpresa
   }

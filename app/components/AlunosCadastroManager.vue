@@ -53,72 +53,64 @@ const diasDisponiveis = [
   { value: 'domingo', label: 'Domingo' }
 ]
 
-// Lista de alunos (mockado)
-const alunos = ref([
-  {
-    id: 1,
-    nome: 'João Silva Santos',
-    telefone: '(11) 98765-4321',
-    endereco: 'Rua das Flores, 123',
-    bairro: 'Centro',
-    cidade: 'São Paulo',
-    estado: 'SP',
-    cep: '01234-567',
-    ativo: true,
-    // Dados do curso
-    cursoContratado: 'Formação Completa em Fios de Ouro',
-    quantidadeHoras: '40',
-    quantidadeAulas: '10',
-    aulasConcluidas: '3',
-    diasSemana: ['segunda', 'quarta'],
-    localAulas: 'Presencial - Sede Centro',
-    horaEntrada: '14:00',
-    horaSaida: '18:00',
-    multaFalta: 'R$ 50,00'
-  },
-  {
-    id: 2,
-    nome: 'Maria Oliveira Costa',
-    telefone: '(11) 91234-5678',
-    endereco: 'Av. Paulista, 456',
-    bairro: 'Bela Vista',
-    cidade: 'São Paulo',
-    estado: 'SP',
-    cep: '01310-100',
-    ativo: true,
-    // Dados do curso
-    cursoContratado: 'Curso Básico de Estética',
-    quantidadeHoras: '20',
-    quantidadeAulas: '5',
-    aulasConcluidas: '5',
-    diasSemana: ['terca', 'quinta'],
-    localAulas: 'Online',
-    horaEntrada: '19:00',
-    horaSaida: '21:00',
-    multaFalta: 'R$ 30,00'
-  },
-  {
-    id: 3,
-    nome: 'Pedro Henrique Alves',
-    telefone: '(11) 99999-8888',
-    endereco: 'Rua Augusta, 789',
-    bairro: 'Consolação',
-    cidade: 'São Paulo',
-    estado: 'SP',
-    cep: '01305-000',
-    ativo: false,
-    // Dados do curso
-    cursoContratado: 'Aperfeiçoamento Avançado',
-    quantidadeHoras: '60',
-    quantidadeAulas: '15',
-    aulasConcluidas: '7',
-    diasSemana: ['segunda', 'quarta', 'sexta'],
-    localAulas: 'Presencial - Sede Paulista',
-    horaEntrada: '09:00',
-    horaSaida: '13:00',
-    multaFalta: 'R$ 80,00'
+// Lista de alunos (do banco de dados)
+const alunos = ref<any[]>([])
+const carregandoAlunos = ref(false)
+
+// Função para buscar alunos do banco
+async function buscarAlunos() {
+  if (!process.client) return
+  
+  carregandoAlunos.value = true
+  const supabase = useSupabaseClient()
+  const { user } = useAuth()
+  
+  try {
+    const { data, error } = await supabase
+      .from('alunos')
+      .select('*')
+      .eq('user_id', user.value?.id)
+      .order('created_at', { ascending: false })
+    
+    if (error) {
+      console.error('Erro ao buscar alunos:', error)
+      return
+    }
+    
+    // Mapear os dados do banco para o formato do componente
+    alunos.value = (data || []).map((aluno: any) => ({
+      id: aluno.id,
+      nome: aluno.nome_completo,
+      telefone: aluno.telefone || '',
+      endereco: aluno.endereco && aluno.numero ? `${aluno.endereco}, ${aluno.numero}` : aluno.endereco || '',
+      numero: aluno.numero || '',
+      complemento: aluno.complemento || '',
+      bairro: aluno.bairro || '',
+      cep: aluno.cep || '',
+      estado: aluno.estado || '',
+      pais: aluno.pais || 'Brasil',
+      ativo: aluno.ativo,
+      cursoContratado: aluno.curso_contratado || '',
+      quantidadeHoras: aluno.quantidade_horas?.toString() || '',
+      quantidadeAulas: aluno.quantidade_aulas?.toString() || '',
+      aulasConcluidas: aluno.aulas_concluidas?.toString() || '0',
+      diasSemana: aluno.dias_semana || [],
+      localAulas: aluno.local_aulas || '',
+      horaEntrada: aluno.hora_entrada || '',
+      horaSaida: aluno.hora_saida || '',
+      multaFalta: aluno.multa_falta || ''
+    }))
+  } catch (error) {
+    console.error('Erro inesperado ao buscar alunos:', error)
+  } finally {
+    carregandoAlunos.value = false
   }
-])
+}
+
+// Buscar alunos ao montar o componente
+onMounted(() => {
+  buscarAlunos()
+})
 
 // Computed para filtrar alunos
 const alunosFiltrados = computed(() => {
@@ -288,10 +280,22 @@ function editarAluno(aluno: any, event?: Event) {
   // Página 1 - Dados Pessoais
   nomeCompleto.value = aluno.nome
   telefone.value = aluno.telefone || ''
-  endereco.value = aluno.endereco
-  bairro.value = aluno.bairro
-  cep.value = aluno.cep
-  estado.value = aluno.estado
+  
+  // Extrair endereco e numero se estiver concatenado
+  if (aluno.endereco && aluno.endereco.includes(',')) {
+    const partes = aluno.endereco.split(',')
+    endereco.value = partes[0].trim()
+    numero.value = partes[1]?.trim() || aluno.numero || ''
+  } else {
+    endereco.value = aluno.endereco || ''
+    numero.value = aluno.numero || ''
+  }
+  
+  complemento.value = aluno.complemento || ''
+  bairro.value = aluno.bairro || ''
+  cep.value = aluno.cep || ''
+  estado.value = aluno.estado || ''
+  pais.value = aluno.pais || 'Brasil'
   
   // Página 2 - Dados do Curso
   cursoContratado.value = aluno.cursoContratado || ''
@@ -310,9 +314,14 @@ function editarAluno(aluno: any, event?: Event) {
 }
 
 // Salvar aluno
-function salvarAluno() {
-  console.log('Salvando aluno:', {
-    nome: nomeCompleto.value,
+async function salvarAluno() {
+  if (!process.client) return
+  
+  const supabase = useSupabaseClient()
+  const { user } = useAuth()
+  
+  const alunoData = {
+    nome_completo: nomeCompleto.value,
     telefone: telefone.value,
     endereco: endereco.value,
     numero: numero.value,
@@ -321,63 +330,51 @@ function salvarAluno() {
     cep: cep.value,
     estado: estado.value,
     pais: pais.value,
-    cursoContratado: cursoContratado.value,
-    quantidadeHoras: quantidadeHoras.value,
-    quantidadeAulas: quantidadeAulas.value,
-    aulasConcluidas: aulasConcluidas.value,
-    diasSemana: diasSemana.value,
-    localAulas: localAulas.value,
-    horaEntrada: horaEntrada.value,
-    horaSaida: horaSaida.value,
-    multaFalta: multaFalta.value
-  })
-  
-  // Simula salvamento
-  if (modoEdicao.value && alunoEditando.value) {
-    // Atualizar aluno existente
-    const index = alunos.value.findIndex(a => a.id === alunoEditando.value.id)
-    if (index !== -1) {
-      alunos.value[index].nome = nomeCompleto.value
-      alunos.value[index].telefone = telefone.value
-      alunos.value[index].endereco = `${endereco.value}, ${numero.value}`
-      alunos.value[index].bairro = bairro.value
-      alunos.value[index].cep = cep.value
-      alunos.value[index].estado = estado.value
-      alunos.value[index].cursoContratado = cursoContratado.value
-      alunos.value[index].quantidadeHoras = quantidadeHoras.value
-      alunos.value[index].quantidadeAulas = quantidadeAulas.value
-      alunos.value[index].aulasConcluidas = aulasConcluidas.value
-      alunos.value[index].diasSemana = diasSemana.value
-      alunos.value[index].localAulas = localAulas.value
-      alunos.value[index].horaEntrada = horaEntrada.value
-      alunos.value[index].horaSaida = horaSaida.value
-      alunos.value[index].multaFalta = multaFalta.value
-    }
-  } else {
-    // Adicionar novo aluno
-    alunos.value.push({
-      id: alunos.value.length + 1,
-      nome: nomeCompleto.value,
-      telefone: telefone.value,
-      endereco: `${endereco.value}, ${numero.value}`,
-      bairro: bairro.value,
-      cidade: 'São Paulo',
-      estado: estado.value,
-      cursoContratado: cursoContratado.value,
-      quantidadeHoras: quantidadeHoras.value,
-      quantidadeAulas: quantidadeAulas.value,
-      aulasConcluidas: aulasConcluidas.value,
-      diasSemana: diasSemana.value,
-      localAulas: localAulas.value,
-      horaEntrada: horaEntrada.value,
-      horaSaida: horaSaida.value,
-      multaFalta: multaFalta.value,
-      cep: cep.value,
-      ativo: true
-    })
+    curso_contratado: cursoContratado.value,
+    quantidade_horas: quantidadeHoras.value ? parseInt(quantidadeHoras.value) : null,
+    quantidade_aulas: quantidadeAulas.value ? parseInt(quantidadeAulas.value) : null,
+    aulas_concluidas: aulasConcluidas.value ? parseInt(aulasConcluidas.value) : 0,
+    dias_semana: diasSemana.value,
+    local_aulas: localAulas.value,
+    hora_entrada: horaEntrada.value || null,
+    hora_saida: horaSaida.value || null,
+    multa_falta: multaFalta.value,
+    user_id: user.value?.id
   }
   
-  fecharModal()
+  try {
+    if (modoEdicao.value && alunoEditando.value) {
+      // Atualizar aluno existente
+      const { error } = await supabase
+        .from('alunos')
+        .update(alunoData)
+        .eq('id', alunoEditando.value.id)
+      
+      if (error) {
+        console.error('Erro ao atualizar aluno:', error)
+        alert('Erro ao atualizar aluno')
+        return
+      }
+    } else {
+      // Inserir novo aluno
+      const { error } = await supabase
+        .from('alunos')
+        .insert([alunoData])
+      
+      if (error) {
+        console.error('Erro ao criar aluno:', error)
+        alert('Erro ao criar aluno')
+        return
+      }
+    }
+    
+    // Recarregar lista de alunos
+    await buscarAlunos()
+    fecharModal()
+  } catch (error) {
+    console.error('Erro inesperado ao salvar aluno:', error)
+    alert('Erro inesperado ao salvar aluno')
+  }
 }
 
 // Fechar modal
@@ -413,21 +410,65 @@ function paginaAnteriorVisualizacao() {
 }
 
 // Excluir aluno
-function excluirAluno(id: number, event?: Event) {
+async function excluirAluno(id: string, event?: Event) {
   if (event) event.stopPropagation()
-  const index = alunos.value.findIndex(a => a.id === id)
-  if (index !== -1) {
-    alunos.value.splice(index, 1)
+  
+  if (!confirm('Tem certeza que deseja excluir este aluno?')) {
+    return
   }
-  console.log('Aluno excluído:', id)
-  fecharModalVisualizacao()
+  
+  if (!process.client) return
+  
+  const supabase = useSupabaseClient()
+  
+  try {
+    const { error } = await supabase
+      .from('alunos')
+      .delete()
+      .eq('id', id)
+    
+    if (error) {
+      console.error('Erro ao excluir aluno:', error)
+      alert('Erro ao excluir aluno')
+      return
+    }
+    
+    // Recarregar lista de alunos
+    await buscarAlunos()
+    fecharModalVisualizacao()
+  } catch (error) {
+    console.error('Erro inesperado ao excluir aluno:', error)
+    alert('Erro inesperado ao excluir aluno')
+  }
 }
 
 // Bloquear/Desbloquear aluno
-function toggleBloqueio(aluno: any, event?: Event) {
+async function toggleBloqueio(aluno: any, event?: Event) {
   if (event) event.stopPropagation()
-  aluno.ativo = !aluno.ativo
-  console.log('Status alterado:', aluno)
+  
+  if (!process.client) return
+  
+  const supabase = useSupabaseClient()
+  const novoStatus = !aluno.ativo
+  
+  try {
+    const { error } = await supabase
+      .from('alunos')
+      .update({ ativo: novoStatus })
+      .eq('id', aluno.id)
+    
+    if (error) {
+      console.error('Erro ao alterar status do aluno:', error)
+      alert('Erro ao alterar status do aluno')
+      return
+    }
+    
+    // Atualizar localmente
+    aluno.ativo = novoStatus
+  } catch (error) {
+    console.error('Erro inesperado ao alterar status:', error)
+    alert('Erro inesperado ao alterar status')
+  }
 }
 
 // Abrir modal de visualização
@@ -512,7 +553,14 @@ function fecharModalVisualizacao() {
 
     <!-- Lista de Alunos -->
     <div class="p-6">
-      <div v-if="alunos.length === 0" class="text-center py-12">
+      <!-- Loading -->
+      <div v-if="carregandoAlunos" class="text-center py-12">
+        <div class="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p class="text-muted-foreground">Carregando alunos...</p>
+      </div>
+
+      <!-- Lista vazia -->
+      <div v-else-if="alunos.length === 0" class="text-center py-12">
         <Icon icon="user-graduate" class-name="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" fallback="" />
         <h3 class="text-lg font-medium text-foreground mb-2">Nenhum aluno cadastrado</h3>
         <p class="text-muted-foreground mb-4">Comece adicionando seu primeiro aluno</p>

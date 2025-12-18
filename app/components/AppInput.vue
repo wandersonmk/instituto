@@ -154,50 +154,72 @@ html.light input:-webkit-autofill:active {
 }
 
 /* Estilos para modo escuro */
-:global(html.dark) input,
-:global(html:not(.light)) input,
-:global(.dark) input,
-:global(:root:not(.light)) input {
+html.dark input,
+html.dark input[type="text"],
+html.dark input[type="email"],
+html.dark input[type="password"],
+html.dark input[type="tel"],
+:root:not(.light) input,
+:root:not(.light) input[type="text"],
+:root:not(.light) input[type="email"],
+:root:not(.light) input[type="password"],
+:root:not(.light) input[type="tel"] {
   background-color: rgb(38 39 43) !important;
   border-color: rgb(63 63 70) !important;
   color: rgb(255 255 255) !important;
 }
 
-:global(html.dark) input:hover,
-:global(html:not(.light)) input:hover,
-:global(.dark) input:hover,
-:global(:root:not(.light)) input:hover {
-  background-color: rgb(38 39 43) !important;
+html.dark input:hover,
+html.dark input[type="text"]:hover,
+html.dark input[type="email"]:hover,
+html.dark input[type="password"]:hover,
+html.dark input[type="tel"]:hover,
+:root:not(.light) input:hover,
+:root:not(.light) input[type="text"]:hover,
+:root:not(.light) input[type="email"]:hover,
+:root:not(.light) input[type="password"]:hover,
+:root:not(.light) input[type="tel"]:hover {
+  background-color: rgb(45 46 50) !important;
+  border-color: rgb(75 75 82) !important;
 }
 
-:global(html.dark) input:focus,
-:global(html:not(.light)) input:focus,
-:global(.dark) input:focus,
-:global(:root:not(.light)) input:focus {
+html.dark input:focus,
+html.dark input[type="text"]:focus,
+html.dark input[type="email"]:focus,
+html.dark input[type="password"]:focus,
+html.dark input[type="tel"]:focus,
+:root:not(.light) input:focus,
+:root:not(.light) input[type="text"]:focus,
+:root:not(.light) input[type="email"]:focus,
+:root:not(.light) input[type="password"]:focus,
+:root:not(.light) input[type="tel"]:focus {
   background-color: rgb(38 39 43) !important;
+  border-color: rgb(253 215 61) !important;
+  box-shadow: 0 0 0 3px rgba(253, 215, 61, 0.1) !important;
 }
 
-:global(html.dark) input:-webkit-autofill,
-:global(html.dark) input:-webkit-autofill:hover,
-:global(html.dark) input:-webkit-autofill:focus,
-:global(html.dark) input:-webkit-autofill:active,
-:global(html:not(.light)) input:-webkit-autofill,
-:global(html:not(.light)) input:-webkit-autofill:hover,
-:global(html:not(.light)) input:-webkit-autofill:focus,
-:global(html:not(.light)) input:-webkit-autofill:active,
-:global(.dark) input:-webkit-autofill,
-:global(.dark) input:-webkit-autofill:hover,
-:global(.dark) input:-webkit-autofill:focus,
-:global(.dark) input:-webkit-autofill:active,
-:global(:root:not(.light)) input:-webkit-autofill,
-:global(:root:not(.light)) input:-webkit-autofill:hover,
-:global(:root:not(.light)) input:-webkit-autofill:focus,
-:global(:root:not(.light)) input:-webkit-autofill:active {
+html.dark input:-webkit-autofill,
+html.dark input[type="text"]:-webkit-autofill,
+html.dark input[type="email"]:-webkit-autofill,
+html.dark input[type="password"]:-webkit-autofill,
+html.dark input[type="tel"]:-webkit-autofill,
+html.dark input:-webkit-autofill:hover,
+html.dark input:-webkit-autofill:focus,
+html.dark input:-webkit-autofill:active,
+:root:not(.light) input:-webkit-autofill,
+:root:not(.light) input[type="text"]:-webkit-autofill,
+:root:not(.light) input[type="email"]:-webkit-autofill,
+:root:not(.light) input[type="password"]:-webkit-autofill,
+:root:not(.light) input[type="tel"]:-webkit-autofill,
+:root:not(.light) input:-webkit-autofill:hover,
+:root:not(.light) input:-webkit-autofill:focus,
+:root:not(.light) input:-webkit-autofill:active {
   -webkit-box-shadow: 0 0 0 1000px rgb(38 39 43) inset !important;
   box-shadow: 0 0 0 1000px rgb(38 39 43) inset !important;
   -webkit-text-fill-color: rgb(255 255 255) !important;
   background-color: rgb(38 39 43) !important;
   background-image: none !important;
+  border-color: rgb(63 63 70) !important;
 }
 </style>
 

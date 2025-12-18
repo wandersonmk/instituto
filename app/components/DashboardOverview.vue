@@ -2,14 +2,14 @@
   <div class="max-w-7xl mx-auto">
     <!-- Cards de métricas -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <!-- Card Tickets Hoje -->
+        <!-- Card Alunos Hoje -->
         <div class="relative bg-gradient-to-br from-card via-blue-950/10 to-card text-card-foreground rounded-lg border border-blue-800/20 shadow-sm hover:shadow-md hover:shadow-blue-500/10 transition-all duration-300 p-6 group overflow-hidden">
           <!-- Efeito de brilho sutil -->
           <div class="absolute inset-0 bg-gradient-to-r from-transparent via-blue-500/8 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
           <div class="relative z-10 flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-400 mb-1">Tickets Hoje</p>
-              <p class="text-2xl font-bold text-foreground">{{ metrics.clientesHoje }}</p>
+              <p class="text-sm text-gray-400 mb-1">Alunos Hoje</p>
+              <p class="text-2xl font-bold text-foreground">{{ metrics.alunosHoje }}</p>
               <p class="text-xs text-blue-600 mt-1">até agora</p>
             </div>
             <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
@@ -18,14 +18,14 @@
           </div>
         </div>
 
-        <!-- Card Tickets na Semana -->
+        <!-- Card Alunos na Semana -->
         <div class="relative bg-gradient-to-br from-card via-emerald-950/10 to-card text-card-foreground rounded-lg border border-emerald-800/20 shadow-sm hover:shadow-md hover:shadow-emerald-500/10 transition-all duration-300 p-6 group overflow-hidden">
           <!-- Efeito de brilho sutil -->
           <div class="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-500/8 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
           <div class="relative z-10 flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-400 mb-1">Tickets na Semana</p>
-              <p class="text-2xl font-bold text-foreground">{{ metrics.clientesNovos }}</p>
+              <p class="text-sm text-gray-400 mb-1">Alunos na Semana</p>
+              <p class="text-2xl font-bold text-foreground">{{ metrics.alunosNovos }}</p>
               <p class="text-xs text-emerald-600 mt-1">nos últimos 7 dias</p>
             </div>
             <div class="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-lg">
@@ -36,31 +36,31 @@
           </div>
         </div>
 
-        <!-- Card Tickets esse mês -->
+        <!-- Card Alunos esse mês -->
         <div class="relative bg-gradient-to-br from-card via-amber-950/10 to-card text-card-foreground rounded-lg border border-amber-800/20 shadow-sm hover:shadow-md hover:shadow-amber-500/10 transition-all duration-300 p-6 group overflow-hidden">
           <!-- Efeito de brilho sutil -->
           <div class="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500/8 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
           <div class="relative z-10 flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-400 mb-1">Tickets esse mês</p>
-              <p class="text-2xl font-bold text-foreground">{{ metrics.clientesVencendo }}</p>
+              <p class="text-sm text-gray-400 mb-1">Alunos esse mês</p>
+              <p class="text-2xl font-bold text-foreground">{{ metrics.alunosVencendo }}</p>
               <p class="text-xs text-green-600 mt-1">este mês</p>
             </div>
             <div class="w-12 h-12 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center shadow-lg">
-              <Icon :icon="['fas', 'ticket']" class-name="text-white text-2xl" fallback="" />
+              <Icon :icon="['fas', 'user-graduate']" class-name="text-white text-2xl" fallback="" />
             </div>
           </div>
         </div>
 
-        <!-- Card Tickets Totais -->
+        <!-- Card Total de Alunos -->
         <div class="relative bg-gradient-to-br from-card via-indigo-950/10 to-card text-card-foreground rounded-lg border border-indigo-800/20 shadow-sm hover:shadow-md hover:shadow-indigo-500/10 transition-all duration-300 p-6 group overflow-hidden">
           <!-- Efeito de brilho sutil -->
           <div class="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-500/8 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
           <div class="relative z-10 flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-400 mb-1">Total de Clientes</p>
-              <p class="text-2xl font-bold text-foreground">{{ metrics.ticketsTotais.toLocaleString('pt-BR') }}</p>
-              <p class="text-xs text-indigo-600 mt-1">total de clientes</p>
+              <p class="text-sm text-gray-400 mb-1">Total de Alunos</p>
+              <p class="text-2xl font-bold text-foreground">{{ metrics.alunosTotais.toLocaleString('pt-BR') }}</p>
+              <p class="text-xs text-indigo-600 mt-1">total de alunos</p>
             </div>
             <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg">
               <Icon :icon="['fas', 'users']" class-name="text-white text-2xl" fallback="" />
@@ -72,11 +72,11 @@
     <!-- Gráficos -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
   <!-- Gráfico de Performance Circular -->
-  <CircularProgress :total="metrics.ticketsTotais" />
+  <CircularProgress :total="metrics.alunosTotais" />
 
       <!-- Gráfico de Vendas Mensais -->
       <div class="bg-card text-card-foreground rounded-lg border border-border shadow-sm p-6">
-  <h3 class="text-lg font-semibold text-foreground mb-4">Tickets dos Últimos Meses</h3>
+  <h3 class="text-lg font-semibold text-foreground mb-4">Alunos dos Últimos Meses</h3>
         <div class="relative h-64">
           <canvas ref="lineChartRef"></canvas>
         </div>
@@ -92,29 +92,29 @@ Chart.register(...registerables)
 const lineChartRef = ref<HTMLCanvasElement | null>(null)
 
 const metrics = ref({
-  clientesHoje: 0,
-  clientesNovos: 0,
-  clientesVencendo: 0,
+  alunosHoje: 0,
+  alunosNovos: 0,
+  alunosVencendo: 0,
   faturamento: 0,
-  ticketsTotais: 0
+  alunosTotais: 0
 })
-// Buscar total de clientes na tabela clientes
-async function fetchTicketsTotais() {
+// Buscar total de alunos na tabela alunos
+async function fetchAlunosTotais() {
   if (!process.client) return
   const supabase = useSupabaseClient()
   const { count, error } = await supabase
-    .from('clientes')
+    .from('alunos')
     .select('id', { count: 'exact', head: true })
   if (!error && typeof count === 'number') {
-    metrics.value.ticketsTotais = count
+    metrics.value.alunosTotais = count
   }
 }
-// Buscar total de clientes na tabela clientes
-async function fetchTotalClientes() {
+// Buscar total de alunos na tabela alunos
+async function fetchTotalAlunos() {
   if (!process.client) return
   const supabase = useSupabaseClient()
   const { count, error } = await supabase
-    .from('clientes')
+    .from('alunos')
     .select('id', { count: 'exact', head: true })
   if (!error && typeof count === 'number') {
     metrics.value.faturamento = count
@@ -123,7 +123,7 @@ async function fetchTotalClientes() {
 
 
 // Buscar quantidade de tickets de hoje na tabela relatorios
-async function fetchTicketsHoje() {
+async function fetchAlunosHoje() {
   if (!process.client) return
   const supabase = useSupabaseClient()
   // Data de hoje no formato DD/MM/YYYY
@@ -137,30 +137,30 @@ async function fetchTicketsHoje() {
     .select('id', { count: 'exact', head: true })
     .eq('data_abertura_chamado', dataHoje)
   if (!error && typeof count === 'number') {
-    metrics.value.clientesHoje = count
+    metrics.value.alunosHoje = count
   }
 }
 
 // Buscar quantidade de tickets da semana na tabela relatorios
-async function fetchTicketsSemana() {
+async function fetchAlunosSemana() {
   if (!process.client) return
   const supabase = useSupabaseClient()
-  // Tickets na semana (últimos 7 dias, incluindo hoje) usando created_at
+  // Alunos na Semana (últimos 7 dias, incluindo hoje) usando created_at
   const startDate = new Date();
   startDate.setHours(0, 0, 0, 0);
   startDate.setDate(startDate.getDate() - 6); // 6 dias atrás + hoje = 7 dias
   const endDate = new Date();
   endDate.setHours(23, 59, 59, 999);
-  const { data: ticketsSemana, error: errorSemana } = await supabase
+  const { data: alunosSemana, error: errorSemana } = await supabase
     .from('relatorios')
     .select('id')
     .gte('created_at', startDate.toISOString())
     .lte('created_at', endDate.toISOString());
-  metrics.value.clientesNovos = ticketsSemana?.length || 0;
+  metrics.value.alunosNovos = alunosSemana?.length || 0;
 }
 
 // Buscar quantidade de tickets do mês atual na tabela relatorios
-async function fetchTicketsMes() {
+async function fetchAlunosMes() {
   if (!process.client) return
   const supabase = useSupabaseClient()
   const now = new Date()
@@ -168,22 +168,22 @@ async function fetchTicketsMes() {
   const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0)
   firstDay.setHours(0, 0, 0, 0)
   lastDay.setHours(23, 59, 59, 999)
-  const { data: ticketsMes, error: errorMes } = await supabase
+  const { data: alunosMes, error: errorMes } = await supabase
     .from('relatorios')
     .select('id')
     .gte('created_at', firstDay.toISOString())
     .lte('created_at', lastDay.toISOString())
-  metrics.value.clientesVencendo = ticketsMes?.length || 0
+  metrics.value.alunosVencendo = alunosMes?.length || 0
 }
 
 onMounted(() => {
   nextTick(() => {
     createLineChart()
-    fetchTicketsHoje()
-    fetchTicketsSemana()
-    fetchTicketsMes()
-    fetchTotalClientes()
-    fetchTicketsTotais()
+    fetchAlunosHoje()
+    fetchAlunosSemana()
+    fetchAlunosMes()
+    fetchTotalAlunos()
+    fetchAlunosTotais()
   })
 })
 
@@ -210,7 +210,7 @@ async function createLineChart() {
     months.push({ firstDay, lastDay })
   }
 
-  // Buscar total de tickets por mês
+  // Buscar total de alunos por mês
   for (const m of months) {
     const { count, error } = await supabase
       .from('relatorios')
@@ -223,12 +223,15 @@ async function createLineChart() {
   const ctx = lineChartRef.value.getContext('2d')
   if (!ctx) return
 
+  // Detectar tema atual
+  const isDark = document.documentElement.classList.contains('dark')
+  
   new Chart(ctx, {
     type: 'line',
     data: {
       labels,
       datasets: [{
-        label: 'Tickets',
+        label: 'Alunos',
         data,
         borderColor: '#10B981',
         backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -250,7 +253,7 @@ async function createLineChart() {
       plugins: {
         legend: {
           labels: {
-            color: '#F3F4F6',
+            color: isDark ? '#FFFFFF' : '#1F2937',
             font: {
               size: 12,
               weight: 'bold'
@@ -258,14 +261,14 @@ async function createLineChart() {
           }
         },
         tooltip: {
-          backgroundColor: '#1F2937',
-          titleColor: '#F3F4F6',
-          bodyColor: '#F3F4F6',
-          borderColor: '#374151',
+          backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+          titleColor: isDark ? '#F3F4F6' : '#1F2937',
+          bodyColor: isDark ? '#F3F4F6' : '#1F2937',
+          borderColor: isDark ? '#374151' : '#E5E7EB',
           borderWidth: 1,
           callbacks: {
             label: function(context) {
-              return 'Tickets: ' + context.parsed.y.toLocaleString('pt-BR')
+              return 'Alunos: ' + context.parsed.y.toLocaleString('pt-BR')
             }
           }
         }
@@ -273,27 +276,27 @@ async function createLineChart() {
       scales: {
         x: {
           ticks: {
-            color: '#9CA3AF',
+            color: isDark ? '#9CA3AF' : '#4B5563',
             font: {
               size: 11
             }
           },
           grid: {
-            color: '#374151'
+            color: isDark ? '#374151' : '#E5E7EB'
           }
         },
         y: {
           ticks: {
-            color: '#9CA3AF',
+            color: isDark ? '#9CA3AF' : '#4B5563',
             font: {
               size: 11
             },
             callback: function(value) {
-              return value + ' tickets'
+              return value + ' alunos'
             }
           },
           grid: {
-            color: '#374151'
+            color: isDark ? '#374151' : '#E5E7EB'
           }
         }
       }

@@ -1,4 +1,4 @@
-# Agzap - Gestão de Clientes
+# Instituto Fios de Ouro - Gestão de Alunos
 
 ## Ambiente (.env)
 

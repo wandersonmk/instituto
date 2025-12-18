@@ -25,45 +25,45 @@
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           
-          <!-- Limpar Lista de Clientes -->
+          <!-- Limpar Lista de Alunos -->
           <div class="bg-muted/30 border border-border rounded-lg p-4">
             <div class="flex items-start space-x-3">
               <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center mt-1">
                 <Icon icon="users" class-name="w-4 h-4 text-blue-600 dark:text-blue-400" fallback="" />
               </div>
               <div class="flex-1">
-                <h4 class="font-medium text-foreground mb-1">Limpar Lista de Clientes</h4>
+                <h4 class="font-medium text-foreground mb-1">Limpar Lista de Alunos</h4>
                 <p class="text-sm text-muted-foreground mb-3">
-                  Remove todos os clientes cadastrados no sistema. Esta ação não pode ser desfeita.
+                  Remove todos os alunos cadastrados no sistema. Esta ação não pode ser desfeita.
                 </p>
                 <button
-                  @click="confirmarLimpezaClientes"
+                  @click="confirmarLimpezaAlunos"
                   class="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
                 >
                   <Icon icon="trash-alt" class-name="w-4 h-4" fallback="" />
-                  <span>Limpar Clientes</span>
+                  <span>Limpar Alunos</span>
                 </button>
               </div>
             </div>
           </div>
 
-          <!-- Limpar Registros de Tickets -->
+          <!-- Limpar Relatórios -->
           <div class="bg-muted/30 border border-border rounded-lg p-4">
             <div class="flex items-start space-x-3">
               <div class="w-8 h-8 bg-red-100 dark:bg-red-900/20 rounded-lg flex items-center justify-center mt-1">
                 <Icon icon="file-alt" class-name="w-4 h-4 text-red-600 dark:text-red-400" fallback="" />
               </div>
               <div class="flex-1">
-                <h4 class="font-medium text-foreground mb-1">Limpar Todos os Registros de Tickets</h4>
+                <h4 class="font-medium text-foreground mb-1">Limpar Todos os Relatórios</h4>
                 <p class="text-sm text-muted-foreground mb-3">
-                  Remove todos os registros de tickets do sistema. Esta ação não pode ser desfeita.
+                  Remove todos os relatórios do sistema. Esta ação não pode ser desfeita.
                 </p>
                 <button
-                  @click="confirmarLimpezaTickets"
+                  @click="confirmarLimpezaRelatorios"
                   class="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm font-medium"
                 >
                   <Icon icon="trash-alt" class-name="w-4 h-4" fallback="" />
-                  <span>Limpar Tickets</span>
+                  <span>Limpar Relatórios</span>
                 </button>
               </div>
             </div>
@@ -91,29 +91,29 @@
     </div>
   </div>
 
-  <!-- Modal de Confirmação para Clientes -->
-  <div v-if="mostrarModalClientes" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <!-- Modal de Confirmação para Alunos -->
+  <div v-if="mostrarModalAlunos" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div class="bg-card border border-border rounded-lg p-6 max-w-md w-full mx-4">
       <div class="flex items-center space-x-3 mb-4">
         <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
           <Icon icon="users" class-name="w-5 h-5 text-blue-600 dark:text-blue-400" fallback="" />
         </div>
-        <h3 class="text-lg font-semibold text-foreground">Confirmar Limpeza de Clientes</h3>
+        <h3 class="text-lg font-semibold text-foreground">Confirmar Limpeza de Alunos</h3>
       </div>
       
       <p class="text-muted-foreground mb-6">
-        Tem certeza que deseja remover todos os clientes do sistema? Esta ação não pode ser desfeita.
+        Tem certeza que deseja remover todos os alunos do sistema? Esta ação não pode ser desfeita.
       </p>
       
       <div class="flex space-x-3">
         <button
-          @click="mostrarModalClientes = false"
+          @click="mostrarModalAlunos = false"
           class="flex-1 px-4 py-2 border border-border text-foreground hover:bg-muted rounded-lg transition-colors"
         >
           Cancelar
         </button>
         <button
-          @click="limparClientes"
+          @click="limparAlunos"
           class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
         >
           Confirmar
@@ -122,29 +122,29 @@
     </div>
   </div>
 
-  <!-- Modal de Confirmação para Tickets -->
-  <div v-if="mostrarModalTickets" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <!-- Modal de Confirmação para Relatórios -->
+  <div v-if="mostrarModalRelatorios" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div class="bg-card border border-border rounded-lg p-6 max-w-md w-full mx-4">
       <div class="flex items-center space-x-3 mb-4">
         <div class="w-10 h-10 bg-red-100 dark:bg-red-900/20 rounded-lg flex items-center justify-center">
           <Icon icon="file-alt" class-name="w-5 h-5 text-red-600 dark:text-red-400" fallback="" />
         </div>
-        <h3 class="text-lg font-semibold text-foreground">Confirmar Limpeza de Tickets</h3>
+        <h3 class="text-lg font-semibold text-foreground">Confirmar Limpeza de Relatórios</h3>
       </div>
       
       <p class="text-muted-foreground mb-6">
-        Tem certeza que deseja remover todos os registros de tickets do sistema? Esta ação não pode ser desfeita.
+        Tem certeza que deseja remover todos os relatórios do sistema? Esta ação não pode ser desfeita.
       </p>
       
       <div class="flex space-x-3">
         <button
-          @click="mostrarModalTickets = false"
+          @click="mostrarModalRelatorios = false"
           class="flex-1 px-4 py-2 border border-border text-foreground hover:bg-muted rounded-lg transition-colors"
         >
           Cancelar
         </button>
         <button
-          @click="limparTickets"
+          @click="limparRelatorios"
           class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
         >
           Confirmar
@@ -162,41 +162,41 @@ import { useToastSafe } from '../composables/useToastSafe'
 const supabase = useSupabaseClient()
 
 // Estados dos modais
-const mostrarModalClientes = ref(false)
-const mostrarModalTickets = ref(false)
+const mostrarModalAlunos = ref(false)
+const mostrarModalRelatorios = ref(false)
 
-// Função para confirmar limpeza de clientes
-function confirmarLimpezaClientes() {
-  mostrarModalClientes.value = true
+// Função para confirmar limpeza de alunos
+function confirmarLimpezaAlunos() {
+  mostrarModalAlunos.value = true
 }
 
-// Função para confirmar limpeza de tickets
-function confirmarLimpezaTickets() {
-  mostrarModalTickets.value = true
+// Função para confirmar limpeza de relatórios
+function confirmarLimpezaRelatorios() {
+  mostrarModalRelatorios.value = true
 }
 
-// Função para limpar clientes (placeholder - sem ação de banco ainda)
-async function limparClientes() {
+// Função para limpar alunos (placeholder - sem ação de banco ainda)
+async function limparAlunos() {
   const toast = await useToastSafe();
   try {
-    // Buscar todos os IDs dos clientes
-    const { data, error: selectError } = await supabase.from('clientes').select('id')
+    // Buscar todos os IDs dos alunos
+    const { data, error: selectError } = await supabase.from('alunos').select('id')
     if (selectError) throw selectError
     if (data && data.length) {
-      const { error: deleteError } = await supabase.from('clientes').delete().in('id', data.map(c => c.id))
+      const { error: deleteError } = await supabase.from('alunos').delete().in('id', data.map(c => c.id))
       if (deleteError) throw deleteError
-      toast?.success('Todos os clientes foram removidos com sucesso!')
+      toast?.success('Todos os alunos foram removidos com sucesso!')
     } else {
-      toast?.info('Nenhum cliente para remover.')
+      toast?.info('Nenhum aluno para remover.')
     }
-    mostrarModalClientes.value = false
+    mostrarModalAlunos.value = false
   } catch (err) {
-    toast?.error('Erro ao limpar clientes: ' + String(err))
+    toast?.error('Erro ao limpar alunos: ' + String(err))
   }
 }
 
-// Função para limpar tickets (placeholder - sem ação de banco ainda)
-async function limparTickets() {
+// Função para Limpar Relatórios
+async function limparRelatorios() {
   const toast = await useToastSafe();
   try {
     const { data, error: selectError } = await supabase.from('relatorios').select('id')
@@ -208,10 +208,10 @@ async function limparTickets() {
     } else {
       toast?.info('Nenhum relatório para remover.')
     }
-    mostrarModalTickets.value = false
+    mostrarModalRelatorios.value = false
   } catch (err) {
     toast?.error('Erro ao limpar relatórios: ' + String(err))
-    mostrarModalTickets.value = false
+    mostrarModalRelatorios.value = false
   }
 }
 </script>

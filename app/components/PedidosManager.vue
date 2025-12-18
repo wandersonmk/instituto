@@ -142,7 +142,7 @@ interface PedidoItem {
 interface Pedido {
   id: string
   numero: number
-  cliente: string
+  aluno: string
   telefone: string
   endereco?: string
   items: PedidoItem[]
@@ -175,7 +175,7 @@ const pedidos = ref<Pedido[]>([
   {
     id: '1',
     numero: 1001,
-    cliente: 'João Silva',
+    aluno: 'João Silva',
     telefone: '(11) 99999-9999',
     endereco: 'Rua das Flores, 123',
     items: [
@@ -193,7 +193,7 @@ const pedidos = ref<Pedido[]>([
   {
     id: '2',
     numero: 1002,
-    cliente: 'Maria Santos',
+    aluno: 'Maria Santos',
     telefone: '(11) 88888-8888',
     items: [
       { nome: 'Hambúrguer Artesanal', quantidade: 2, preco: 25.90 },
@@ -209,7 +209,7 @@ const pedidos = ref<Pedido[]>([
   {
     id: '3',
     numero: 1003,
-    cliente: 'Pedro Costa',
+    aluno: 'Pedro Costa',
     telefone: '(11) 77777-7777',
     endereco: 'Av. Principal, 456',
     items: [
@@ -404,7 +404,7 @@ const printOrder = (pedido: Pedido) => {
       
       <div class="section">
         <div class="section-title">CLIENTE:</div>
-        <div>${pedido.cliente}</div>
+        <div>${pedido.aluno}</div>
         <div>${pedido.telefone}</div>
         ${pedido.endereco ? `<div>${pedido.endereco}</div>` : '<div><strong>RETIRADA NO BALCÃO</strong></div>'}
       </div>

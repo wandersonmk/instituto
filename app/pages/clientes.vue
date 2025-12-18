@@ -34,12 +34,12 @@ if (isClient) {
     <!-- Sempre mostra loading até o client terminar de carregar -->
     <AppLoading 
       v-if="isLoading || !isClient" 
-      title="Carregando Clientes"
-      description="Preparando a área de gerenciamento de clientes..."
+      title="Carregando Alunos"
+      description="Preparando a área de cadastro de alunos..."
     />
     <!-- Conteúdo só aparece após carregamento client-side -->
     <div v-else class="space-y-6">
-      <ClientesManager />
+      <AlunosCadastroManager />
     </div>
   </div>
 </template>

@@ -13,7 +13,7 @@ export function useAuth() {
   // Computed para verificar se está autenticado
   const isAuthenticated = computed(() => !!user.value && !!session.value)
 
-  // Obtém o cliente Supabase apenas no lado do cliente
+  // Obtém o aluno Supabase apenas no lado do aluno
   const getSupabase = () => {
     if (process.server) return null
     return useSupabaseClient()

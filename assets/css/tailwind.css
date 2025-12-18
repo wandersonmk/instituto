@@ -6,6 +6,54 @@
   html, body, #__nuxt {
     height: 100%;
   }
+
+  /* Tema Escuro (padrão) */
+  :root, .dark {
+    --background: 20 21 24;
+    --foreground: 255 255 255;
+    --primary: 253 215 61;
+    --primary-foreground: 20 21 24;
+    --secondary: 26 27 31;
+    --secondary-foreground: 255 255 255;
+    --accent: 34 28 61;
+    --accent-foreground: 255 255 255;
+    --muted: 38 39 43;
+    --muted-foreground: 78 82 91;
+    --card: 26 27 31;
+    --card-foreground: 255 255 255;
+    --popover: 26 27 31;
+    --popover-foreground: 255 255 255;
+    --destructive: 239 68 68;
+    --destructive-foreground: 255 255 255;
+    --destructive-surface: 47 31 31;
+    --border: 38 39 43;
+    --input: 38 39 43;
+    --ring: 253 215 61;
+  }
+
+  /* Tema Claro */
+  .light {
+    --background: 255 255 255;
+    --foreground: 15 23 42;
+    --primary: 253 215 61;
+    --primary-foreground: 20 21 24;
+    --secondary: 241 245 249;
+    --secondary-foreground: 15 23 42;
+    --accent: 240 240 255;
+    --accent-foreground: 15 23 42;
+    --muted: 248 250 252;
+    --muted-foreground: 100 116 139;
+    --card: 255 255 255;
+    --card-foreground: 15 23 42;
+    --popover: 255 255 255;
+    --popover-foreground: 15 23 42;
+    --destructive: 239 68 68;
+    --destructive-foreground: 255 255 255;
+    --destructive-surface: 254 242 242;
+    --border: 226 232 240;
+    --input: 255 255 255;
+    --ring: 253 215 61;
+  }
 }
 
 

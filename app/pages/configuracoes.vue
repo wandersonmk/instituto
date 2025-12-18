@@ -11,7 +11,7 @@ let authLoading: any = ref(false)
 const isClient = typeof window !== 'undefined'
 
 if (isClient) {
-  // Só executa useAuth no cliente
+  // Só executa useAuth no aluno
   const auth = useAuth()
   authLoading = auth.isLoading
 

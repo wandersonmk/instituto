@@ -5,55 +5,55 @@ const config: Partial<Config> = {
   theme: {
     extend: {
       colors: {
-        // Core semantic tokens
-        background: '#141518',
-        foreground: '#FFFFFF',
+        // Core semantic tokens (Dark theme)
+        background: 'rgb(var(--background) / <alpha-value>)',
+        foreground: 'rgb(var(--foreground) / <alpha-value>)',
 
         // Brand / primary actions
         primary: {
-          DEFAULT: '#8162FF',
-          foreground: '#FFFFFF'
+          DEFAULT: 'rgb(var(--primary) / <alpha-value>)',
+          foreground: 'rgb(var(--primary-foreground) / <alpha-value>)'
         },
 
         // Secondary surfaces
         secondary: {
-          DEFAULT: '#1A1B1F',
-          foreground: '#FFFFFF'
+          DEFAULT: 'rgb(var(--secondary) / <alpha-value>)',
+          foreground: 'rgb(var(--secondary-foreground) / <alpha-value>)'
         },
 
         // Accent (deep purple)
         accent: {
-          DEFAULT: '#221C3D',
-          foreground: '#FFFFFF'
+          DEFAULT: 'rgb(var(--accent) / <alpha-value>)',
+          foreground: 'rgb(var(--accent-foreground) / <alpha-value>)'
         },
 
         // Muted content and surfaces
         muted: {
-          DEFAULT: '#26272B',
-          foreground: '#4E525B'
+          DEFAULT: 'rgb(var(--muted) / <alpha-value>)',
+          foreground: 'rgb(var(--muted-foreground) / <alpha-value>)'
         },
 
         // Cards / popovers
         card: {
-          DEFAULT: '#1A1B1F',
-          foreground: '#FFFFFF'
+          DEFAULT: 'rgb(var(--card) / <alpha-value>)',
+          foreground: 'rgb(var(--card-foreground) / <alpha-value>)'
         },
         popover: {
-          DEFAULT: '#1A1B1F',
-          foreground: '#FFFFFF'
+          DEFAULT: 'rgb(var(--popover) / <alpha-value>)',
+          foreground: 'rgb(var(--popover-foreground) / <alpha-value>)'
         },
 
         // Status / feedback
         destructive: {
-          DEFAULT: '#EF4444',
-          foreground: '#FFFFFF'
+          DEFAULT: 'rgb(var(--destructive) / <alpha-value>)',
+          foreground: 'rgb(var(--destructive-foreground) / <alpha-value>)'
         },
-        destructiveSurface: '#2F1F1F',
+        destructiveSurface: 'rgb(var(--destructive-surface) / <alpha-value>)',
 
         // UI primitives
-        border: '#26272B',
-        input: '#26272B',
-        ring: '#8162FF',
+        border: 'rgb(var(--border) / <alpha-value>)',
+        input: 'rgb(var(--input) / <alpha-value>)',
+        ring: 'rgb(var(--ring) / <alpha-value>)',
 
         // Neutrals
         white: '#FFFFFF'

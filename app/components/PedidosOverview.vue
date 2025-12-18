@@ -87,7 +87,7 @@
           <thead>
             <tr class="border-b border-border">
               <th class="text-left py-3 px-4 text-sm font-medium text-muted-foreground">ID</th>
-              <th class="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Cliente</th>
+              <th class="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Aluno</th>
               <th class="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Data</th>
               <th class="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Status</th>
               <th class="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Valor</th>
@@ -96,7 +96,7 @@
           <tbody>
             <tr v-for="pedido in pedidosRecentes" :key="pedido.id" class="border-b border-border hover:bg-muted/50 transition-colors">
               <td class="py-3 px-4 text-sm text-foreground">#{{ pedido.id }}</td>
-              <td class="py-3 px-4 text-sm text-foreground">{{ pedido.cliente }}</td>
+              <td class="py-3 px-4 text-sm text-foreground">{{ pedido.aluno }}</td>
               <td class="py-3 px-4 text-sm text-muted-foreground">{{ pedido.data }}</td>
               <td class="py-3 px-4">
                 <span 
@@ -128,35 +128,35 @@ const metrics = reactive({
 const pedidosRecentes = reactive([
   {
     id: '001',
-    cliente: 'João Silva',
+    aluno: 'João Silva',
     data: '27/08/2025',
     status: 'Concluído',
     valor: 1250
   },
   {
     id: '002',
-    cliente: 'Maria Santos',
+    aluno: 'Maria Santos',
     data: '27/08/2025',
     status: 'Pendente',
     valor: 890
   },
   {
     id: '003',
-    cliente: 'Carlos Oliveira',
+    aluno: 'Carlos Oliveira',
     data: '26/08/2025',
     status: 'Processando',
     valor: 2150
   },
   {
     id: '004',
-    cliente: 'Ana Costa',
+    aluno: 'Ana Costa',
     data: '26/08/2025',
     status: 'Concluído',
     valor: 750
   },
   {
     id: '005',
-    cliente: 'Pedro Lima',
+    aluno: 'Pedro Lima',
     data: '25/08/2025',
     status: 'Concluído',
     valor: 1680

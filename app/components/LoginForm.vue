@@ -131,6 +131,75 @@ async function handleLogin() {
   </div>
 </template>
 
+<style>
+/* Força fundo claro nos inputs do login no tema claro */
+.light input[type="email"],
+.light input[type="password"] {
+  background-color: #f5f5f5 !important;
+  border-color: #d0d0d0 !important;
+  color: rgb(15 23 42) !important;
+}
+
+.light input[type="email"]:hover,
+.light input[type="password"]:hover {
+  background-color: #ebebeb !important;
+  border-color: #c0c0c0 !important;
+}
+
+.light input[type="email"]:focus,
+.light input[type="password"]:focus {
+  background-color: #ffffff !important;
+  border-color: rgb(253 215 61) !important;
+  box-shadow: 0 0 0 3px rgba(253, 215, 61, 0.1) !important;
+}
+
+.light input[type="email"]:-webkit-autofill,
+.light input[type="email"]:-webkit-autofill:hover,
+.light input[type="email"]:-webkit-autofill:focus,
+.light input[type="email"]:-webkit-autofill:active,
+.light input[type="password"]:-webkit-autofill,
+.light input[type="password"]:-webkit-autofill:hover,
+.light input[type="password"]:-webkit-autofill:focus,
+.light input[type="password"]:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #f5f5f5 inset !important;
+  box-shadow: 0 0 0 1000px #f5f5f5 inset !important;
+  -webkit-text-fill-color: rgb(15 23 42) !important;
+  background-color: #f5f5f5 !important;
+  background-image: none !important;
+  border-color: #d0d0d0 !important;
+}
+
+/* Força fundo escuro nos inputs do login no tema escuro */
+.dark input[type="email"],
+.dark input[type="password"],
+:root input[type="email"],
+:root input[type="password"] {
+  background-color: rgb(38 39 43) !important;
+}
+
+.dark input[type="email"]:-webkit-autofill,
+.dark input[type="email"]:-webkit-autofill:hover,
+.dark input[type="email"]:-webkit-autofill:focus,
+.dark input[type="email"]:-webkit-autofill:active,
+.dark input[type="password"]:-webkit-autofill,
+.dark input[type="password"]:-webkit-autofill:hover,
+.dark input[type="password"]:-webkit-autofill:focus,
+.dark input[type="password"]:-webkit-autofill:active,
+:root input[type="email"]:-webkit-autofill,
+:root input[type="email"]:-webkit-autofill:hover,
+:root input[type="email"]:-webkit-autofill:focus,
+:root input[type="email"]:-webkit-autofill:active,
+:root input[type="password"]:-webkit-autofill,
+:root input[type="password"]:-webkit-autofill:hover,
+:root input[type="password"]:-webkit-autofill:focus,
+:root input[type="password"]:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px rgb(38 39 43) inset !important;
+  box-shadow: 0 0 0 1000px rgb(38 39 43) inset !important;
+  -webkit-text-fill-color: rgb(255 255 255) !important;
+  background-color: rgb(38 39 43) !important;
+  background-image: none !important;
+}
+</style>
 
 
 

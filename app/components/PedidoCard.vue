@@ -27,7 +27,7 @@
 
     <!-- Informações essenciais -->
     <div class="mb-2">
-      <p class="font-medium text-foreground text-sm">{{ pedido.cliente }}</p>
+      <p class="font-medium text-foreground text-sm">{{ pedido.aluno }}</p>
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-1">
           <span :class="[
@@ -116,7 +116,7 @@ interface PedidoItem {
 interface Pedido {
   id: string
   numero: number
-  cliente: string
+  aluno: string
   telefone: string
   endereco?: string
   items: PedidoItem[]

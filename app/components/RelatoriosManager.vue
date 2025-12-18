@@ -376,9 +376,9 @@ function formatarDataFiltro(dataString: string): string {
 
 // Função para exportar para PDF
 async function exportToPDF() {
-  // Verificar se estamos no cliente
+  // Verificar se estamos no aluno
   if (typeof window === 'undefined') {
-    console.warn('Exportação PDF só funciona no cliente')
+    console.warn('Exportação PDF só funciona no aluno')
     return
   }
 
@@ -418,7 +418,7 @@ async function exportToPDF() {
     doc.setTextColor(textColor[0], textColor[1], textColor[2])
     doc.setFontSize(18)
     doc.setFont('helvetica', 'bold')
-    doc.text('Relatórios de Tickets', 20, 55)
+    doc.text('Relatórios de alunos', 20, 55)
     
     // Data de geração
     const agora = new Date()
@@ -543,7 +543,7 @@ async function exportToPDF() {
     }
     
     // Salvar o arquivo
-    const nomeArquivo = `relatorios_tickets_${agora.toISOString().split('T')[0]}.pdf`
+    const nomeArquivo = `relatorios_alunos_${agora.toISOString().split('T')[0]}.pdf`
     doc.save(nomeArquivo)
     
     console.log('PDF de relatórios exportado com sucesso!')
@@ -556,9 +556,9 @@ async function exportToPDF() {
 
 // Função para exportar para Excel
 async function exportToExcel() {
-  // Verificar se estamos no cliente
+  // Verificar se estamos no aluno
   if (typeof window === 'undefined') {
-    console.warn('Exportação Excel só funciona no cliente')
+    console.warn('Exportação Excel só funciona no aluno')
     return
   }
 
@@ -580,7 +580,7 @@ async function exportToExcel() {
     const dadosCompletos = [
       // Informações do cabeçalho
       ['Instituto Fios de Ouro - Sistema de Relatórios'],
-      ['Relatórios de Tickets'],
+      ['Relatórios de alunos'],
       [`Gerado em: ${dataFormatada}`],
       [`Total de registros: ${relatoriosFiltrados.value.length}`]
     ]
@@ -712,7 +712,7 @@ async function exportToExcel() {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Relatórios')
     
     // Salvar o arquivo
-    const nomeArquivo = `relatorios_tickets_${agora.toISOString().split('T')[0]}.xlsx`
+    const nomeArquivo = `relatorios_alunos_${agora.toISOString().split('T')[0]}.xlsx`
     XLSX.writeFile(workbook, nomeArquivo)
     
     console.log('Excel de relatórios exportado com sucesso!')

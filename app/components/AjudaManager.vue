@@ -127,14 +127,14 @@
               <span>Scroll Infinito</span>
             </h4>
             <p class="text-sm text-muted-foreground ml-8">
-              As tabelas de relatórios e clientes agora carregam mais registros automaticamente conforme você rola a página. Não é necessário clicar em "Carregar mais" — basta rolar até o final da lista para ver mais resultados.
+              As tabelas de relatórios e alunos agora carregam mais registros automaticamente conforme você rola a página. Não é necessário clicar em "Carregar mais" — basta rolar até o final da lista para ver mais resultados.
             </p>
             <h4 class="font-medium text-foreground flex items-center space-x-2">
               <span class="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm">3</span>
               <span>Exibição de Totais</span>
             </h4>
             <p class="text-sm text-muted-foreground ml-8">
-              O sistema exibe o <strong>total de clientes</strong> e o <strong>total de registros</strong> diretamente acima das tabelas, facilitando o acompanhamento dos dados.
+              O sistema exibe o <strong>total de alunos</strong> e o <strong>total de registros</strong> diretamente acima das tabelas, facilitando o acompanhamento dos dados.
             </p>
             <h4 class="font-medium text-foreground flex items-center space-x-2">
               <span class="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm">4</span>
@@ -173,18 +173,18 @@
           
           <h4 class="font-medium text-foreground flex items-center space-x-2">
             <span class="w-6 h-6 bg-orange-600 text-white rounded-full flex items-center justify-center text-sm">2</span>
-            <span>Limpar Lista de Clientes</span>
+            <span>Limpar Lista de Alunos</span>
           </h4>
           <p class="text-sm text-muted-foreground ml-8">
-            Remove todos os clientes cadastrados no sistema. Útil para fazer limpeza periódica ou ao migrar dados.
+            Remove todos os alunos cadastrados no sistema. Útil para fazer limpeza periódica ou ao migrar dados.
           </p>
           
           <h4 class="font-medium text-foreground flex items-center space-x-2">
             <span class="w-6 h-6 bg-orange-600 text-white rounded-full flex items-center justify-center text-sm">3</span>
-            <span>Limpar Registros de Tickets</span>
+            <span>Limpar Registros de Alunos</span>
           </h4>
           <p class="text-sm text-muted-foreground ml-8">
-            Remove todos os registros de tickets/chamados do sistema. Ideal para limpeza após análises ou arquivamento de dados antigos.
+            Remove todos os registros de alunos/chamados do sistema. Ideal para limpeza após análises ou arquivamento de dados antigos.
           </p>
           
           <h4 class="font-medium text-foreground flex items-center space-x-2">

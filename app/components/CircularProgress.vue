@@ -1,6 +1,6 @@
 <template>
   <div class="bg-card text-card-foreground rounded-lg border border-border shadow-sm p-6">
-    <h3 class="text-lg font-semibold text-foreground mb-6">Visão geral de clientes</h3>
+    <h3 class="text-lg font-semibold text-foreground mb-6">Visão geral de alunos</h3>
 
     <!-- Gráfico Circular Principal -->
     <div class="flex flex-col items-center mb-8">
@@ -38,7 +38,7 @@
             <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" style="stop-color:#06B6D4;stop-opacity:1" />
               <stop offset="50%" style="stop-color:#3B82F6;stop-opacity:1" />
-              <stop offset="100%" style="stop-color:#8B5CF6;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#fdd73d;stop-opacity:1" />
             </linearGradient>
           </defs>
         </svg>
@@ -46,7 +46,7 @@
         <!-- Texto central -->
         <div class="absolute inset-0 flex flex-col items-center justify-center">
           <div class="text-4xl font-bold text-foreground">{{ displayTotal }}</div>
-          <div class="text-[10px] text-gray-400 uppercase tracking-wide font-medium">CLIENTES TOTAIS</div>
+          <div class="text-[10px] text-gray-400 uppercase tracking-wide font-medium">ALUNOS TOTAIS</div>
         </div>
       </div>
     </div>
@@ -54,7 +54,7 @@
     <!-- Barra de Progresso Mensal -->
     <div>
       <div class="flex justify-between text-sm mb-2">
-        <span class="text-gray-400 uppercase tracking-wide">CLIENTES</span>
+        <span class="text-gray-400 uppercase tracking-wide">ALUNOS</span>
         <span class="text-foreground font-medium">{{ displayTotal }}</span>
       </div>
       <div class="relative h-3 bg-muted rounded-full overflow-hidden">
@@ -69,7 +69,7 @@
         ></div>
       </div>
       <div class="flex justify-center text-xs text-gray-400 mt-2">
-        <span>Clientes atendidos em todo período</span>
+        <span>Alunos atendidos em todo período</span>
       </div>
     </div>
   </div>
@@ -101,7 +101,7 @@ const strokeDashoffset = computed(() => {
 
 // Função para animar os valores
 const animateProgress = () => {
-  // Animar círculo principal e total de tickets
+  // Animar círculo principal e total de alunos
   const duration1 = 2000
   const startTime1 = Date.now()
 

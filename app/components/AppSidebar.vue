@@ -36,15 +36,27 @@
             </NuxtLink>
           </li>
 
-          <!-- Clientes -->
+          <!-- Alunos -->
           <li>
             <NuxtLink 
-              to="/clientes"
+              to="/alunos"
               class="flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted group relative"
-              :class="$route.path === '/clientes' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
+              :class="$route.path === '/alunos' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
             >
-              <Icon icon="users" class-name="w-5 h-5 mr-3" fallback="" />
-              <span>Clientes</span>
+              <Icon icon="user-graduate" class-name="w-5 h-5 mr-3" fallback="🎓" />
+              <span>Alunos</span>
+            </NuxtLink>
+          </li>
+
+          <!-- Indicações Recebidas -->
+          <li>
+            <NuxtLink 
+              to="/indicacoes"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted group relative"
+              :class="$route.path === '/indicacoes' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
+            >
+              <Icon icon="handshake" class-name="w-5 h-5 mr-3" fallback="🤝" />
+              <span>Indicações Recebidas</span>
             </NuxtLink>
           </li>
 
@@ -55,7 +67,7 @@
               class="flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted group relative"
               :class="$route.path === '/relatorios' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
             >
-              <Icon icon="life-ring" class-name="w-5 h-5 mr-3" fallback="🆘" />
+              <Icon icon="chart-bar" class-name="w-5 h-5 mr-3" fallback="📊" />
               <span>Relatórios</span>
             </NuxtLink>
           </li>
@@ -86,7 +98,7 @@
         </ul>
       </nav>
 
-      <!-- Seção inferior com informações do usuário e botão sair -->
+      <!-- Seção inferior com informações do usuário -->
       <div class="mt-auto">
         <!-- Informações do usuário -->
         <div v-if="isLoggedIn" class="p-3 border-t border-border bg-muted/30">
@@ -164,16 +176,29 @@
             </NuxtLink>
           </li>
 
-          <!-- Clientes -->
+          <!-- Alunos -->
           <li>
             <NuxtLink 
-              to="/clientes"
+              to="/alunos"
               @click="$emit('close-mobile')"
               class="flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted group relative"
-              :class="$route.path === '/clientes' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
+              :class="$route.path === '/alunos' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
             >
-              <Icon icon="users" class-name="w-5 h-5 mr-3" fallback="" />
-              <span>Clientes</span>
+              <Icon icon="user-graduate" class-name="w-5 h-5 mr-3" fallback="🎓" />
+              <span>Alunos</span>
+            </NuxtLink>
+          </li>
+
+          <!-- Indicações Recebidas -->
+          <li>
+            <NuxtLink 
+              to="/indicacoes"
+              @click="$emit('close-mobile')"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted group relative"
+              :class="$route.path === '/indicacoes' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
+            >
+              <Icon icon="handshake" class-name="w-5 h-5 mr-3" fallback="🤝" />
+              <span>Indicações Recebidas</span>
             </NuxtLink>
           </li>
 
@@ -185,7 +210,7 @@
               class="flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted group relative"
               :class="$route.path === '/relatorios' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
             >
-              <Icon icon="file-alt" class-name="w-5 h-5 mr-3" fallback="" />
+              <Icon icon="chart-bar" class-name="w-5 h-5 mr-3" fallback="📊" />
               <span>Relatórios</span>
             </NuxtLink>
           </li>

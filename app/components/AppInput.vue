@@ -58,7 +58,7 @@ function togglePasswordVisibility() {
       :readonly="props.readonly"
       :autocomplete="props.autocomplete"
       @input="onInput"
-      class="w-full rounded-md !bg-secondary hover:!bg-secondary focus:!bg-secondary active:!bg-secondary text-foreground placeholder-muted-foreground focus-visible:outline-none focus-visible:ring-2 disabled:opacity-50 disabled:cursor-not-allowed border px-3 py-2 [&:-webkit-autofill]:!bg-secondary [&:-webkit-autofill:hover]:!bg-secondary [&:-webkit-autofill:focus]:!bg-secondary [&:-webkit-autofill:active]:!bg-secondary"
+      class="w-full rounded-md text-foreground placeholder-muted-foreground focus-visible:outline-none focus-visible:ring-2 disabled:opacity-50 disabled:cursor-not-allowed border px-3 py-2"
       :class="{ 
         'border-destructive ring-destructive focus-visible:ring-destructive': props.invalid,
         'border-green-500 ring-green-500 focus-visible:ring-green-500': props.valid && !props.invalid,
@@ -103,27 +103,101 @@ function togglePasswordVisibility() {
   </div>
 </template>
 
-<style scoped>
-/* Força fundo escuro em todos os estados, incluindo autocomplete */
-input {
-  background-color: hsl(var(--secondary)) !important;
+<style>
+/* Estilos para modo claro */
+html.light input,
+html.light input[type="text"],
+html.light input[type="email"],
+html.light input[type="password"],
+html.light input[type="tel"],
+html.light input:hover,
+html.light input:focus,
+html.light input:active {
+  background-color: #f5f5f5 !important;
+  border-color: #d0d0d0 !important;
+  color: rgb(15 23 42) !important;
 }
 
-input:hover,
-input:focus,
-input:active {
-  background-color: hsl(var(--secondary)) !important;
+html.light input:hover,
+html.light input[type="text"]:hover,
+html.light input[type="email"]:hover,
+html.light input[type="password"]:hover,
+html.light input[type="tel"]:hover {
+  background-color: #ebebeb !important;
+  border-color: #c0c0c0 !important;
 }
 
-/* Força fundo escuro no autocomplete do webkit (Chrome, Safari, Edge) */
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus,
-input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 1000px hsl(var(--secondary)) inset !important;
-  box-shadow: 0 0 0 1000px hsl(var(--secondary)) inset !important;
-  -webkit-text-fill-color: hsl(var(--foreground)) !important;
-  background-color: hsl(var(--secondary)) !important;
+html.light input:focus,
+html.light input[type="text"]:focus,
+html.light input[type="email"]:focus,
+html.light input[type="password"]:focus,
+html.light input[type="tel"]:focus {
+  background-color: #ffffff !important;
+  border-color: rgb(253 215 61) !important;
+  box-shadow: 0 0 0 3px rgba(253, 215, 61, 0.1) !important;
+}
+
+html.light input:-webkit-autofill,
+html.light input[type="text"]:-webkit-autofill,
+html.light input[type="email"]:-webkit-autofill,
+html.light input[type="password"]:-webkit-autofill,
+html.light input[type="tel"]:-webkit-autofill,
+html.light input:-webkit-autofill:hover,
+html.light input:-webkit-autofill:focus,
+html.light input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #f5f5f5 inset !important;
+  box-shadow: 0 0 0 1000px #f5f5f5 inset !important;
+  -webkit-text-fill-color: rgb(15 23 42) !important;
+  background-color: #f5f5f5 !important;
+  background-image: none !important;
+  border-color: #d0d0d0 !important;
+}
+
+/* Estilos para modo escuro */
+:global(html.dark) input,
+:global(html:not(.light)) input,
+:global(.dark) input,
+:global(:root:not(.light)) input {
+  background-color: rgb(38 39 43) !important;
+  border-color: rgb(63 63 70) !important;
+  color: rgb(255 255 255) !important;
+}
+
+:global(html.dark) input:hover,
+:global(html:not(.light)) input:hover,
+:global(.dark) input:hover,
+:global(:root:not(.light)) input:hover {
+  background-color: rgb(38 39 43) !important;
+}
+
+:global(html.dark) input:focus,
+:global(html:not(.light)) input:focus,
+:global(.dark) input:focus,
+:global(:root:not(.light)) input:focus {
+  background-color: rgb(38 39 43) !important;
+}
+
+:global(html.dark) input:-webkit-autofill,
+:global(html.dark) input:-webkit-autofill:hover,
+:global(html.dark) input:-webkit-autofill:focus,
+:global(html.dark) input:-webkit-autofill:active,
+:global(html:not(.light)) input:-webkit-autofill,
+:global(html:not(.light)) input:-webkit-autofill:hover,
+:global(html:not(.light)) input:-webkit-autofill:focus,
+:global(html:not(.light)) input:-webkit-autofill:active,
+:global(.dark) input:-webkit-autofill,
+:global(.dark) input:-webkit-autofill:hover,
+:global(.dark) input:-webkit-autofill:focus,
+:global(.dark) input:-webkit-autofill:active,
+:global(:root:not(.light)) input:-webkit-autofill,
+:global(:root:not(.light)) input:-webkit-autofill:hover,
+:global(:root:not(.light)) input:-webkit-autofill:focus,
+:global(:root:not(.light)) input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px rgb(38 39 43) inset !important;
+  box-shadow: 0 0 0 1000px rgb(38 39 43) inset !important;
+  -webkit-text-fill-color: rgb(255 255 255) !important;
+  background-color: rgb(38 39 43) !important;
+  background-image: none !important;
 }
 </style>
 

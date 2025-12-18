@@ -30,13 +30,13 @@
       <!-- Conteúdo -->
       <div class="overflow-y-auto max-h-[calc(90vh-200px)]">
         <div class="p-6 space-y-6">
-          <!-- Informações do Cliente -->
+          <!-- Informações do Aluno -->
           <div class="bg-muted/30 rounded-lg p-4">
-            <h3 class="font-semibold text-foreground mb-3">Informações do Cliente</h3>
+            <h3 class="font-semibold text-foreground mb-3">Informações do Aluno</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="text-sm font-medium text-muted-foreground">Nome</label>
-                <p class="text-foreground">{{ pedido?.cliente }}</p>
+                <p class="text-foreground">{{ pedido?.aluno }}</p>
               </div>
               <div>
                 <label class="text-sm font-medium text-muted-foreground">Telefone</label>
@@ -184,7 +184,7 @@ interface PedidoItem {
 interface Pedido {
   id: string
   numero: number
-  cliente: string
+  aluno: string
   telefone: string
   endereco?: string
   items: PedidoItem[]
@@ -382,7 +382,7 @@ const printPedido = () => {
       
       <div class="section">
         <div class="section-title">CLIENTE:</div>
-        <div>${props.pedido.cliente}</div>
+        <div>${props.pedido.aluno}</div>
         <div>${props.pedido.telefone}</div>
         ${props.pedido.endereco ? `<div>${props.pedido.endereco}</div>` : '<div><strong>RETIRADA NO BALCÃO</strong></div>'}
       </div>

@@ -3,7 +3,7 @@
     <div class="text-center">
       <p class="text-sm text-muted-foreground">
         © {{ currentYear }} 
-        <span class="font-medium text-foreground">WiseDigital Sistemas de Relatórios</span>
+        <span class="font-medium text-foreground">Instituto Fios de Ouro Sistemas de Relatórios</span>
         - Todos os direitos reservados
       </p>
     </div>

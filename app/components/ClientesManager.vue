@@ -273,7 +273,7 @@ const exportToPDF = async () => {
     doc.setTextColor(255, 255, 255) // Texto branco
     doc.setFontSize(24)
     doc.setFont('helvetica', 'bold')
-    doc.text('Wise Digital', 20, 20)
+    doc.text('Instituto Fios de Ouro', 20, 20)
 
     // Subtítulo
     doc.setFontSize(14)
@@ -389,7 +389,7 @@ const exportToExcel = async () => {
     // Preparar dados com todas as colunas conforme a imagem
     const dadosExcel = [
       // Cabeçalho do sistema
-      ['Wise Digital - Sistema de Relatórios'],
+      ['Instituto Fios de Ouro - Sistema de Relatórios'],
       ['Relatórios de Clientes'],
       [`Gerado em: ${dataFormatada}, ${horaFormatada}`],
       [`Total de registros: ${clientes.value.length}`],
@@ -436,7 +436,7 @@ const exportToExcel = async () => {
     
     // Mesclar células do título principal
     worksheet['!merges'] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }, // Wise Digital - Sistema de Relatórios
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }, // Instituto Fios de Ouro - Sistema de Relatórios
       { s: { r: 1, c: 0 }, e: { r: 1, c: 8 } }, // Relatórios de Clientes
       { s: { r: 2, c: 0 }, e: { r: 2, c: 8 } }, // Gerado em
       { s: { r: 3, c: 0 }, e: { r: 3, c: 8 } }  // Total de registros

@@ -15,7 +15,7 @@
       <div class="flex items-center p-4 border-b border-border">
         <div class="flex-1 min-w-0">
           <h1 class="text-lg font-bold truncate">
-            Wise Digital
+            Instituto Fios de Ouro
           </h1>
           <p class="text-xs text-muted-foreground">Sistema de Relatório</p>
         </div>
@@ -132,7 +132,7 @@
       <div class="flex items-center justify-between p-4 border-b border-border">
         <div class="flex-1 min-w-0">
           <h1 class="text-lg font-bold truncate">
-            Wise Digital
+            Instituto Fios de Ouro
           </h1>
           <p class="text-xs text-muted-foreground">Sistema de Relatório</p>
         </div>

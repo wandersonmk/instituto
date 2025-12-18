@@ -15,12 +15,12 @@
 
       <!-- Subtítulo -->
       <h2 class="text-xl font-bold text-foreground mb-6">
-        Bem-vindo ao Sistema Wise Digital
+        Bem-vindo ao Sistema Instituto Fios de Ouro
       </h2>
 
       <!-- Mensagem de agradecimento -->
       <p class="text-base text-gray-300 mb-8 leading-relaxed">
-        Agradecemos por se cadastrar no <strong class="text-primary font-semibold">Wise Digital</strong>!
+        Agradecemos por se cadastrar no <strong class="text-primary font-semibold">Instituto Fios de Ouro</strong>!
         <br><br>
         Sua conta foi criada com sucesso. Verifique seu email para confirmar 
         sua conta e começar a usar nossa plataforma.
@@ -40,10 +40,10 @@
       <!-- Logo ou marca -->
       <div class="mt-8 pt-6 border-t border-border">
         <p class="text-sm font-semibold text-foreground">
-          Wise Digital Gestão de Relatórios
+          Instituto Fios de Ouro Gestão de Relatórios
         </p>
         <p class="text-xs text-gray-400 mt-1">
-          © 2025 Wise Digital - Todos os direitos reservados
+          © 2025 Instituto Fios de Ouro - Todos os direitos reservados
         </p>
       </div>
     </div>

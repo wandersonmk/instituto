@@ -4,9 +4,9 @@
 
 // Meta tags para SEO
 useHead({
-  title: 'Obrigado - Wise Digital',
+  title: 'Obrigado - Instituto Fios de Ouro',
   meta: [
-    { name: 'description', content: 'Obrigado por se cadastrar no Wise Digital Gestão de Relatórios' }
+    { name: 'description', content: 'Obrigado por se cadastrar no Instituto Fios de Ouro Gestão de Relatórios' }
   ]
 })
 

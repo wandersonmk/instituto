@@ -14,6 +14,8 @@ const paginaAtualModal = ref(1) // Paginação do modal de cadastro
 const mostrarModalVisualizacao = ref(false)
 const alunoVisualizacao = ref<any>(null)
 const paginaAtualVisualizacao = ref(1) // Paginação do modal de visualização
+const cursosVisualizacao = ref<any[]>([]) // Cursos do aluno em visualização
+const cursosExpandidos = ref<Set<string>>(new Set()) // IDs dos cursos expandidos
 
 // Controle do modal de confirmação de exclusão
 const alunoParaExcluir = ref<any>(null)
@@ -60,7 +62,7 @@ const cep = ref('')
 const estado = ref('')
 const pais = ref('Brasil')
 
-// Dados do formulário - Página 2 (Dados do Curso)
+// Dados do formulário - Página 2 (Dados do Curso) - NOVO: Múltiplos Cursos
 const cursoId = ref('')
 const cursoContratado = ref('')
 const buscaCurso = ref('')
@@ -68,7 +70,7 @@ const mostrarListaCursos = ref(false)
 const quantidadeHoras = ref('')
 const quantidadeAulas = ref('')
 const aulasConcluidas = ref('')
-const diasSemana = ref<string[]>([])
+const diasSemana = ref<number[]>([])
 const localAulas = ref('')
 const horaEntrada = ref('')
 const horaSaida = ref('')
@@ -76,15 +78,19 @@ const multaFalta = ref('')
 const acessoVideos = ref(false)
 const mostrarModalNovoCurso = ref(false)
 
-// Dias da semana disponíveis
+// NOVO: Lista de cursos adicionados ao aluno
+const cursosAdicionados = ref<any[]>([])
+const cursoParaRemover = ref<any>(null)
+
+// Dias da semana disponíveis (0=Domingo, 1=Segunda, etc.)
 const diasDisponiveis = [
-  { value: 'segunda', label: 'Segunda-feira' },
-  { value: 'terca', label: 'Terça-feira' },
-  { value: 'quarta', label: 'Quarta-feira' },
-  { value: 'quinta', label: 'Quinta-feira' },
-  { value: 'sexta', label: 'Sexta-feira' },
-  { value: 'sabado', label: 'Sábado' },
-  { value: 'domingo', label: 'Domingo' }
+  { value: 1, label: 'Segunda-feira' },
+  { value: 2, label: 'Terça-feira' },
+  { value: 3, label: 'Quarta-feira' },
+  { value: 4, label: 'Quinta-feira' },
+  { value: 5, label: 'Sexta-feira' },
+  { value: 6, label: 'Sábado' },
+  { value: 0, label: 'Domingo' }
 ]
 
 // Lista de alunos (do banco de dados)
@@ -99,14 +105,45 @@ async function buscarAlunos() {
   const supabase = useSupabaseClient()
   
   try {
+    // Verificar autenticação
+    const { data: { session } } = await supabase.auth.getSession()
+    console.log('🔐 Sessão atual:', session?.user?.email, session?.user?.user_metadata)
+    
+    if (!session) {
+      console.error('❌ Usuário não autenticado')
+      await useToastSafe().then(toast => toast?.error('Você precisa fazer login'))
+      navigateTo('/login')
+      return
+    }
+    
     // RLS já filtra por empresa automaticamente
-    const { data, error } = await supabase
+    console.log('🔍 Buscando alunos...')
+    
+    // Criar timeout de 10 segundos
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Timeout: A requisição demorou mais de 10 segundos')), 10000)
+    )
+    
+    const queryPromise = supabase
       .from('alunos')
       .select('*')
       .order('created_at', { ascending: false })
     
+    const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any
+    
+    console.log('📊 Resultado da busca:', { quantidadeAlunos: data?.length, error })
+    
     if (error) {
-      console.error('Erro ao buscar alunos:', error)
+      console.error('❌ Erro ao buscar alunos:', error)
+      await useToastSafe().then(toast => toast?.error('Erro ao carregar alunos: ' + error.message))
+      carregandoAlunos.value = false
+      return
+    }
+    
+    if (!data || data.length === 0) {
+      console.log('ℹ️ Nenhum aluno encontrado')
+      alunos.value = []
+      carregandoAlunos.value = false
       return
     }
     
@@ -137,8 +174,11 @@ async function buscarAlunos() {
       debitoFaltas: aluno.debito_faltas || '0',
       acessoVideos: aluno.acesso_videos || false
     }))
-  } catch (error) {
-    console.error('Erro inesperado ao buscar alunos:', error)
+    
+    console.log('✅ Alunos carregados com sucesso:', alunos.value.length)
+  } catch (error: any) {
+    console.error('❌ Erro inesperado ao buscar alunos:', error)
+    await useToastSafe().then(toast => toast?.error('Erro ao carregar: ' + (error?.message || 'Erro desconhecido')))
   } finally {
     carregandoAlunos.value = false
   }
@@ -359,6 +399,110 @@ function handleTelefoneInput(event: Event) {
   telefone.value = formatarTelefone(input.value)
 }
 
+// NOVO: Adicionar curso à lista
+function adicionarCursoALista() {
+  if (!cursoId.value) {
+    useToastSafe().then(toast => toast?.error('Selecione um curso'))
+    return
+  }
+
+  if (!diasSemana.value || diasSemana.value.length === 0) {
+    useToastSafe().then(toast => toast?.error('Selecione ao menos um dia da semana'))
+    return
+  }
+
+  if (!localAulas.value) {
+    useToastSafe().then(toast => toast?.error('Informe o local das aulas'))
+    return
+  }
+
+  if (!horaEntrada.value || !horaSaida.value) {
+    useToastSafe().then(toast => toast?.error('Informe os horários de entrada e saída'))
+    return
+  }
+  
+  // Verificar se o curso já foi adicionado
+  if (cursosAdicionados.value.some(c => c.curso_id === cursoId.value)) {
+    useToastSafe().then(toast => toast?.warning('Este curso já foi adicionado'))
+    return
+  }
+  
+  const cursoSelecionado = cursosAtivos.value.find(c => c.id === cursoId.value)
+  if (!cursoSelecionado) return
+  
+  console.log('🔵 Adicionando curso com dias:', diasSemana.value)
+  
+  // Adicionar à lista
+  cursosAdicionados.value.push({
+    curso_id: cursoId.value,
+    curso: cursoSelecionado,
+    dias_semana: [...diasSemana.value], // Cria cópia do array
+    local_aulas: localAulas.value,
+    hora_entrada: horaEntrada.value,
+    hora_saida: horaSaida.value,
+    aulas_concluidas: 0,
+    status: 'ativo'
+  })
+
+  console.log('✅ Curso adicionado:', cursosAdicionados.value[cursosAdicionados.value.length - 1])
+  
+  // Limpar campos do curso
+  limparCamposCurso()
+  
+  useToastSafe().then(toast => toast?.success(`✓ ${cursoSelecionado.nome} adicionado!`))
+}
+
+// NOVO: Limpar apenas campos do curso
+function limparCamposCurso() {
+  cursoId.value = ''
+  cursoContratado.value = ''
+  buscaCurso.value = ''
+  quantidadeHoras.value = ''
+  quantidadeAulas.value = ''
+  aulasConcluidas.value = ''
+  diasSemana.value = []
+  localAulas.value = ''
+  horaEntrada.value = ''
+  horaSaida.value = ''
+  multaFalta.value = ''
+  multaFormatada.value = ''
+}
+
+// Fechar lista de cursos com delay
+function fecharListaCursos() {
+  setTimeout(() => {
+    mostrarListaCursos.value = false
+  }, 200)
+}
+
+// NOVO: Remover curso da lista
+function removerCursoDaLista(index: number) {
+  cursosAdicionados.value.splice(index, 1)
+  useToastSafe().then(toast => toast?.info('Curso removido da lista'))
+}
+
+// Função para formatar dias da semana
+function formatarDias(dias: any): string {
+  if (!dias || !Array.isArray(dias) || dias.length === 0) return 'Não definido'
+  
+  const nomesDias: { [key: number]: string } = {
+    0: 'Dom',
+    1: 'Seg',
+    2: 'Ter',
+    3: 'Qua',
+    4: 'Qui',
+    5: 'Sex',
+    6: 'Sáb'
+  }
+  
+  return dias
+    .filter((d: any) => d !== null && d !== undefined && d !== '')
+    .sort((a: number, b: number) => a - b)
+    .map((d: number) => nomesDias[d] || '')
+    .filter((nome: string) => nome !== '')
+    .join(', ') || 'Não definido'
+}
+
 // Função para limpar formulário
 function limparFormulario() {
   // Página 1 - Dados Pessoais
@@ -374,18 +518,8 @@ function limparFormulario() {
   pais.value = 'Brasil'
   
   // Página 2 - Dados do Curso
-  cursoId.value = ''
-  cursoContratado.value = ''
-  buscaCurso.value = ''
-  quantidadeHoras.value = ''
-  quantidadeAulas.value = ''
-  aulasConcluidas.value = ''
-  diasSemana.value = []
-  localAulas.value = ''
-  horaEntrada.value = ''
-  horaSaida.value = ''
-  multaFalta.value = ''
-  multaFormatada.value = ''
+  limparCamposCurso()
+  cursosAdicionados.value = []
   acessoVideos.value = false
   
   modoEdicao.value = false
@@ -400,7 +534,7 @@ function abrirModalNovo() {
 }
 
 // Abrir modal para editar aluno
-function editarAluno(aluno: any, event?: Event) {
+async function editarAluno(aluno: any, event?: Event) {
   if (event) event.stopPropagation()
   modoEdicao.value = true
   alunoEditando.value = aluno
@@ -425,25 +559,27 @@ function editarAluno(aluno: any, event?: Event) {
   cep.value = aluno.cep || ''
   estado.value = aluno.estado || ''
   pais.value = aluno.pais || 'Brasil'
-  
-  // Página 2 - Dados do Curso
-  cursoId.value = aluno.curso_id || ''
-  cursoContratado.value = aluno.cursoContratado || ''
-  buscaCurso.value = aluno.cursoContratado || ''
-  quantidadeHoras.value = aluno.quantidadeHoras || ''
-  quantidadeAulas.value = aluno.quantidadeAulas || ''
-  aulasConcluidas.value = aluno.aulasConcluidas || ''
-  diasSemana.value = aluno.diasSemana || []
-  localAulas.value = aluno.localAulas || ''
-  horaEntrada.value = aluno.horaEntrada || ''
-  horaSaida.value = aluno.horaSaida || ''
-  multaFalta.value = aluno.multaFalta || ''
   acessoVideos.value = aluno.acessoVideos || false
   
-  // Formatar multa
-  if (aluno.multaFalta) {
-    multaFormatada.value = formatarMoeda(parseFloat(aluno.multaFalta))
-  }
+  // NOVO: Buscar cursos do aluno
+  const { buscarCursosDoAluno } = useAlunosCursos()
+  const cursosDoAlunoData = await buscarCursosDoAluno(aluno.id)
+  
+  console.log('📚 Cursos carregados do banco:', cursosDoAlunoData)
+  
+  cursosAdicionados.value = cursosDoAlunoData.map((ac: any) => ({
+    id: ac.id, // ID do registro alunos_cursos
+    curso_id: ac.curso_id,
+    curso: ac.curso,
+    dias_semana: ac.dias_semana || [],
+    local_aulas: ac.local_aulas || '',
+    hora_entrada: ac.hora_entrada || '',
+    hora_saida: ac.hora_saida || '',
+    aulas_concluidas: ac.aulas_concluidas || 0,
+    status: ac.status || 'ativo'
+  }))
+  
+  console.log('✅ cursosAdicionados.value:', cursosAdicionados.value)
   
   mostrarModal.value = true
   paginaAtualModal.value = 1
@@ -457,6 +593,13 @@ async function salvarAluno() {
   const supabase = useSupabaseClient()
   const { user } = useAuth()
   const toast = await useToastSafe()
+  const { adicionarCurso, atualizarCurso, removerCurso, buscarCursosDoAluno } = useAlunosCursos()
+  
+  // Validar se há ao menos um curso (apenas para novos alunos)
+  if (!modoEdicao.value && cursosAdicionados.value.length === 0) {
+    toast?.error('Adicione ao menos um curso antes de salvar')
+    return
+  }
   
   const alunoData = {
     nome_completo: nomeCompleto.value,
@@ -469,22 +612,14 @@ async function salvarAluno() {
     cep: cep.value,
     estado: estado.value,
     pais: pais.value,
-    curso_id: cursoId.value || null,
-    curso_contratado: cursoContratado.value,
-    quantidade_horas: quantidadeHoras.value ? parseInt(quantidadeHoras.value) : null,
-    quantidade_aulas: quantidadeAulas.value ? parseInt(quantidadeAulas.value) : null,
-    aulas_concluidas: aulasConcluidas.value ? parseInt(aulasConcluidas.value) : 0,
-    dias_semana: diasSemana.value,
-    local_aulas: localAulas.value,
-    hora_entrada: horaEntrada.value || null,
-    hora_saida: horaSaida.value || null,
-    multa_falta: multaFalta.value,
     acesso_videos: acessoVideos.value
   }
   
   try {
+    let alunoId: string
+    
     if (modoEdicao.value && alunoEditando.value) {
-      // Atualizar aluno existente (NÃO atualizar user_id)
+      // Atualizar aluno existente
       const { error } = await supabase
         .from('alunos')
         .update(alunoData)
@@ -494,6 +629,53 @@ async function salvarAluno() {
         console.error('Erro ao atualizar aluno:', error)
         toast?.error('Erro ao atualizar aluno')
         return
+      }
+      
+      alunoId = alunoEditando.value.id
+      
+      console.log('🔄 Iniciando gerenciamento de cursos para aluno:', alunoId)
+      console.log('📋 Cursos na lista para salvar:', cursosAdicionados.value)
+      
+      // Gerenciar cursos: buscar cursos atuais para comparar
+      const cursosAtuais = await buscarCursosDoAluno(alunoId)
+      console.log('💾 Cursos atuais no banco:', cursosAtuais)
+      
+      // Mapear cursos atuais por ID do registro (alunos_cursos.id)
+      const mapaCursosAtuais = new Map(cursosAtuais.map((c: any) => [c.id, c]))
+      
+      // Mapear cursos adicionados que já existem (têm id de alunos_cursos)
+      const idsNovos = new Set(cursosAdicionados.value.filter((c: any) => c.id).map((c: any) => c.id))
+      
+      // Remover cursos que não estão mais na lista
+      for (const cursoAtual of cursosAtuais) {
+        if (!idsNovos.has(cursoAtual.id)) {
+          console.log('🗑️ Removendo curso:', cursoAtual.curso?.nome)
+          await removerCurso(cursoAtual.id)
+        }
+      }
+      
+      // Atualizar ou adicionar cursos
+      for (const curso of cursosAdicionados.value) {
+        const dadosCurso = {
+          aluno_id: alunoId,
+          curso_id: curso.curso_id,
+          dias_semana: curso.dias_semana,
+          local_aulas: curso.local_aulas,
+          hora_entrada: curso.hora_entrada,
+          hora_saida: curso.hora_saida,
+          aulas_concluidas: curso.aulas_concluidas || 0,
+          status: curso.status || 'ativo'
+        }
+        
+        if (curso.id) {
+          // Atualizar curso existente (tem id de alunos_cursos)
+          console.log('♻️ Atualizando curso:', curso.curso?.nome)
+          await atualizarCurso(curso.id, dadosCurso)
+        } else {
+          // Adicionar novo curso (não tem id ainda)
+          console.log('➕ Adicionando novo curso:', curso.curso?.nome)
+          await adicionarCurso(dadosCurso)
+        }
       }
       
       toast?.success('Aluno atualizado com sucesso!')
@@ -511,6 +693,22 @@ async function salvarAluno() {
         return
       }
       
+      alunoId = alunoInserido.id
+      
+      // Adicionar cursos do aluno
+      for (const curso of cursosAdicionados.value) {
+        await adicionarCurso({
+          aluno_id: alunoId,
+          curso_id: curso.curso_id,
+          dias_semana: curso.dias_semana,
+          local_aulas: curso.local_aulas,
+          hora_entrada: curso.hora_entrada,
+          hora_saida: curso.hora_saida,
+          aulas_concluidas: curso.aulas_concluidas || 0,
+          status: curso.status || 'ativo'
+        })
+      }
+      
       // Criar conta de autenticação para o aluno via API do servidor
       try {
         const response = await $fetch('/api/auth/create-user', {
@@ -519,18 +717,16 @@ async function salvarAluno() {
             email: email.value,
             nome: nomeCompleto.value,
             aluno_id: alunoInserido.id,
-            telefone: telefone.value // Envia telefone para usar como senha padrão
+            telefone: telefone.value
           }
         })
         
         if (response.success && response.user_id) {
-          // Atualizar o user_id do aluno com o ID do usuário Auth criado
           await supabase
             .from('alunos')
             .update({ user_id: response.user_id })
             .eq('id', alunoInserido.id)
           
-          // Senha padrão = telefone sem formatação
           const senhaGerada = telefone.value?.replace(/\D/g, '') || 'Aluno2024'
           toast?.success(`Aluno cadastrado! Login: ${email.value} | Senha: ${senhaGerada}`, { duration: 10000 })
         } else {
@@ -561,9 +757,11 @@ function fecharModal() {
 function proximaPaginaModal() {
   if (paginaAtualModal.value < 2) {
     paginaAtualModal.value++
+    console.log('🔵 Mudando para página:', paginaAtualModal.value)
     // Scroll para o topo do modal
     nextTick(() => {
       const modalContent = document.getElementById('modal-aluno-content')
+      console.log('🔍 Modal content:', modalContent)
       if (modalContent) {
         modalContent.scrollTo({ top: 0, behavior: 'smooth' })
       }
@@ -777,9 +975,26 @@ async function exportarParaExcel() {
 }
 
 // Abrir modal de visualização
-function visualizarAluno(aluno: any) {
+async function visualizarAluno(aluno: any) {
   alunoVisualizacao.value = aluno
+  
+  // Buscar cursos do aluno
+  const { buscarCursosDoAluno } = useAlunosCursos()
+  const cursos = await buscarCursosDoAluno(aluno.id)
+  cursosVisualizacao.value = cursos
+  
+  console.log('📚 Cursos carregados para visualização:', cursos)
+  
   mostrarModalVisualizacao.value = true
+}
+
+// Alternar expansão de um curso
+function toggleCursoExpansao(cursoId: string) {
+  if (cursosExpandidos.value.has(cursoId)) {
+    cursosExpandidos.value.delete(cursoId)
+  } else {
+    cursosExpandidos.value.add(cursoId)
+  }
 }
 
 // Fechar modal de visualização
@@ -787,6 +1002,8 @@ function fecharModalVisualizacao() {
   mostrarModalVisualizacao.value = false
   alunoVisualizacao.value = null
   paginaAtualVisualizacao.value = 1
+  cursosVisualizacao.value = []
+  cursosExpandidos.value.clear()
 }
 
 // Abrir modal de edição de multa padrão (agora também registra falta)
@@ -1326,7 +1543,7 @@ async function registrarPagamento() {
                 class="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
                 title="Marcar como Pago"
               >
-                <Icon icon="check-circle" class-name="w-5 h-5" fallback="✅" />
+                <span class="text-lg">✅</span>
               </button>
               
               <button
@@ -1351,7 +1568,7 @@ async function registrarPagamento() {
                 :class="aluno.ativo ? 'text-yellow-600' : 'text-green-600'"
                 :title="aluno.ativo ? 'Bloquear' : 'Desbloquear'"
               >
-                <Icon :icon="aluno.ativo ? 'ban' : 'check-circle'" class-name="w-5 h-5" fallback="" />
+                <span class="text-lg">{{ aluno.ativo ? '🚫' : '✅' }}</span>
               </button>
               
               <button
@@ -1375,7 +1592,7 @@ async function registrarPagamento() {
   >
     <div id="modal-aluno-content" class="bg-card border border-border rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" @click.stop>
       <!-- Header do Modal -->
-      <div class="flex items-center justify-between p-6 border-b border-border sticky top-0 bg-card z-10">
+      <div class="flex items-center justify-between p-6 border-b border-border bg-card sticky top-0 z-10">
         <div class="flex items-center space-x-3">
           <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
             <Icon icon="user-graduate" class-name="w-5 h-5 text-primary" fallback="" />
@@ -1581,12 +1798,71 @@ async function registrarPagamento() {
         </div>
 
         <!-- Página 2: Dados do Curso -->
-        <div v-if="paginaAtualModal === 2" class="space-y-6">
-          <!-- Seção: Detalhes do Curso -->
-          <div class="space-y-4">
+        <div v-if="paginaAtualModal === 2" class="space-y-6 pb-8">
+          
+          <!-- Lista de Cursos Adicionados (Topo) -->
+          <div v-if="cursosAdicionados.length > 0" class="space-y-3 p-4 bg-green-50 dark:bg-green-900/10 rounded-lg border-2 border-green-200 dark:border-green-800">
+            <div class="flex items-center justify-between pb-2 border-b border-green-200 dark:border-green-800">
+              <div class="flex items-center space-x-2">
+                <span class="text-xl">✅</span>
+                <h4 class="text-base font-semibold text-green-900 dark:text-green-100">
+                  {{ cursosAdicionados.length }} Curso{{ cursosAdicionados.length > 1 ? 's' : '' }} Adicionado{{ cursosAdicionados.length > 1 ? 's' : '' }}
+                </h4>
+              </div>
+              <span class="text-xs text-green-700 dark:text-green-300">
+                Pronto para salvar
+              </span>
+            </div>
+
+            <div class="space-y-2">
+              <div
+                v-for="(curso, index) in cursosAdicionados"
+                :key="index"
+                class="p-3 bg-white dark:bg-gray-900 rounded-lg border border-green-200 dark:border-green-800"
+              >
+                <div class="flex items-start justify-between">
+                  <div class="flex-1 space-y-2">
+                    <div class="flex items-center space-x-2">
+                      <Icon icon="book" class-name="w-4 h-4 text-primary" fallback="📚" />
+                      <h5 class="font-semibold text-foreground">{{ curso.curso.nome }}</h5>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                      <div class="flex items-center space-x-1" v-if="curso.dias_semana && curso.dias_semana.length > 0">
+                        <span>🗓️</span>
+                        <span>{{ formatarDias(curso.dias_semana) }}</span>
+                      </div>
+                      <div class="flex items-center space-x-1">
+                        <span>⏰</span>
+                        <span>{{ curso.hora_entrada }} - {{ curso.hora_saida }}</span>
+                      </div>
+                      <div class="flex items-center space-x-1 col-span-2">
+                        <span class="w-3 h-3">📍</span>
+                        <span>{{ curso.local_aulas }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    @click="removerCursoDaLista(index)"
+                    class="ml-3 p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                    title="Remover curso"
+                  >
+                    <Icon icon="trash" class-name="w-4 h-4" fallback="🗑️" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Seção: Adicionar Novo Curso -->
+          <div class="space-y-4 p-4 bg-muted/30 dark:bg-muted/10 rounded-lg border border-border">
             <div class="flex items-center space-x-2 pb-2 border-b border-border">
-              <Icon icon="book" class-name="w-5 h-5 text-primary" fallback="" />
-              <h4 class="text-base font-semibold text-foreground">Detalhes do Curso Contratado</h4>
+              <Icon icon="plus" class-name="w-5 h-5 text-primary" fallback="+" />
+              <h4 class="text-base font-semibold text-foreground">
+                {{ cursosAdicionados.length > 0 ? 'Adicionar Outro Curso' : 'Adicionar Curso' }}
+              </h4>
             </div>
 
             <!-- Curso Contratado -->
@@ -1598,10 +1874,9 @@ async function registrarPagamento() {
                 id="buscaCurso"
                 v-model="buscaCurso"
                 @focus="mostrarListaCursos = true"
-                @blur="setTimeout(() => mostrarListaCursos = false, 200)"
+                @blur="fecharListaCursos"
                 type="text"
                 placeholder="Digite para buscar um curso..."
-                required
                 autocomplete="off"
                 class="w-full px-3 py-2 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
               />
@@ -1662,7 +1937,6 @@ async function registrarPagamento() {
                   v-model="quantidadeHoras"
                   type="number"
                   placeholder="Ex: 40"
-                  required
                 />
               </div>
 
@@ -1675,7 +1949,6 @@ async function registrarPagamento() {
                   v-model="quantidadeAulas"
                   type="number"
                   placeholder="Ex: 10"
-                  required
                 />
               </div>
 
@@ -1687,8 +1960,7 @@ async function registrarPagamento() {
                   id="aulasConcluidas"
                   v-model="aulasConcluidas"
                   type="number"
-                  placeholder="Ex: 5"
-                  required
+                  placeholder="Ex: 0"
                 />
               </div>
             </div>
@@ -1726,7 +1998,6 @@ async function registrarPagamento() {
                 v-model="localAulas"
                 type="text"
                 placeholder="Ex: Presencial - Sede Centro, Online, etc."
-                required
               />
             </div>
 
@@ -1740,7 +2011,6 @@ async function registrarPagamento() {
                   id="horaEntrada"
                   v-model="horaEntrada"
                   type="time"
-                  required
                 />
               </div>
 
@@ -1752,7 +2022,6 @@ async function registrarPagamento() {
                   id="horaSaida"
                   v-model="horaSaida"
                   type="time"
-                  required
                 />
               </div>
             </div>
@@ -1772,11 +2041,30 @@ async function registrarPagamento() {
                   @input="handleMultaInput"
                   type="text"
                   placeholder="0,00"
-                  required
                   class="w-full pl-12 pr-3 py-2 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
                 />
               </div>
             </div>
+          </div>
+
+          <!-- Botão Adicionar Curso -->
+          <div class="flex justify-center pt-2">
+            <button
+              type="button"
+              @click="adicionarCursoALista"
+              class="w-full md:w-auto px-8 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all font-medium flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
+            >
+              <Icon icon="plus" class-name="w-5 h-5" fallback="+" />
+              <span class="text-base">{{ cursosAdicionados.length > 0 ? 'Adicionar Mais Um Curso' : 'Adicionar à Lista' }}</span>
+            </button>
+          </div>
+          </div>
+
+          <!-- Mensagem quando não há cursos -->
+          <div v-if="cursosAdicionados.length === 0" class="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800">
+            <p class="text-sm text-blue-700 dark:text-blue-300 text-center">
+              ℹ️ Adicione ao menos um curso antes de salvar
+            </p>
           </div>
 
           <!-- Seção: Recursos Adicionais -->
@@ -1804,7 +2092,6 @@ async function registrarPagamento() {
               </div>
             </div>
           </div>
-        </div>
 
         <!-- Botões -->
         <div class="flex justify-between pt-4 border-t border-border">
@@ -1951,83 +2238,107 @@ async function registrarPagamento() {
         </div>
         </div>
 
-        <!-- Página 2: Dados do Curso -->
-        <div v-if="paginaAtualVisualizacao === 2" class="space-y-6">
+        <!-- Página 2: Cursos do Aluno -->
+        <div v-if="paginaAtualVisualizacao === 2" class="space-y-4">
           <div>
             <h4 class="text-sm font-semibold text-foreground mb-3 flex items-center space-x-2">
-              <Icon icon="book" class-name="w-4 h-4" fallback="" />
-              <span>Detalhes do Curso Contratado</span>
+              <span class="text-lg">📚</span>
+              <span>Cursos Matriculados ({{ cursosVisualizacao.length }})</span>
             </h4>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="p-3 rounded-lg bg-muted/20 md:col-span-2">
-                <label class="text-xs font-medium text-muted-foreground uppercase">Curso Contratado</label>
-                <p class="text-sm text-foreground font-medium mt-1">{{ alunoVisualizacao.cursoContratado || 'Não informado' }}</p>
-              </div>
-
-              <div class="p-3 rounded-lg bg-muted/20">
-                <label class="text-xs font-medium text-muted-foreground uppercase">Quantidade de Horas</label>
-                <p class="text-sm text-foreground font-medium mt-1">{{ alunoVisualizacao.quantidadeHoras || 'Não informado' }}</p>
-              </div>
-
-              <div class="p-3 rounded-lg bg-muted/20">
-                <label class="text-xs font-medium text-muted-foreground uppercase">Quantidade de Aulas</label>
-                <p class="text-sm text-foreground font-medium mt-1">{{ alunoVisualizacao.quantidadeAulas || 'Não informado' }}</p>
-              </div>
-
-              <div class="p-3 rounded-lg bg-muted/20 md:col-span-2">
-                <label class="text-xs font-medium text-muted-foreground uppercase">Aulas Concluídas</label>
-                <div class="flex items-center justify-between mt-1">
-                  <p class="text-sm text-foreground font-medium">
-                    {{ alunoVisualizacao.aulasConcluidas || '0' }} de {{ alunoVisualizacao.quantidadeAulas || '0' }} aulas
-                  </p>
-                  <div class="flex items-center space-x-2">
-                    <div class="w-32 bg-muted rounded-full h-2">
-                      <div 
-                        class="h-2 rounded-full transition-all"
-                        :class="parseFloat(alunoVisualizacao.aulasConcluidas || 0) >= parseFloat(alunoVisualizacao.quantidadeAulas || 1) 
-                          ? 'bg-green-500' 
-                          : 'bg-primary'"
-                        :style="{ width: `${Math.min(100, (parseFloat(alunoVisualizacao.aulasConcluidas || 0) / parseFloat(alunoVisualizacao.quantidadeAulas || 1)) * 100)}%` }"
-                      ></div>
+            
+            <!-- Lista de Cursos -->
+            <div v-if="cursosVisualizacao.length > 0" class="space-y-3">
+              <div
+                v-for="curso in cursosVisualizacao"
+                :key="curso.id"
+                class="border border-border rounded-lg overflow-hidden transition-all"
+              >
+                <!-- Cabeçalho do Curso (sempre visível) -->
+                <button
+                  @click="toggleCursoExpansao(curso.id)"
+                  class="w-full p-4 flex items-center justify-between bg-muted/20 hover:bg-muted/40 transition-colors"
+                >
+                  <div class="flex items-center space-x-3 flex-1 text-left">
+                    <span class="text-2xl">📖</span>
+                    <div class="flex-1">
+                      <p class="font-semibold text-foreground">{{ curso.curso?.nome }}</p>
+                      <div class="flex items-center space-x-4 mt-1">
+                        <span class="text-xs text-muted-foreground">
+                          {{ curso.aulas_concluidas || 0 }}/{{ curso.curso?.quantidade_aulas || 0 }} aulas
+                        </span>
+                        <span class="text-xs px-2 py-0.5 rounded-full" :class="curso.status === 'ativo' ? 'bg-green-100 dark:bg-green-900/20 text-green-600' : 'bg-gray-100 text-gray-600'">
+                          {{ curso.status }}
+                        </span>
+                      </div>
                     </div>
-                    <span class="text-xs font-medium text-muted-foreground">
-                      {{ Math.round((parseFloat(alunoVisualizacao.aulasConcluidas || 0) / parseFloat(alunoVisualizacao.quantidadeAulas || 1)) * 100) }}%
-                    </span>
+                  </div>
+                  <span class="text-xl transition-transform" :class="{ 'rotate-180': cursosExpandidos.has(curso.id) }">
+                    ▼
+                  </span>
+                </button>
+
+                <!-- Detalhes Expandidos -->
+                <div
+                  v-if="cursosExpandidos.has(curso.id)"
+                  class="p-4 bg-background border-t border-border space-y-3"
+                >
+                  <!-- Progresso -->
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-medium text-muted-foreground">Progresso</span>
+                    <div class="flex items-center space-x-2">
+                      <div class="w-32 bg-muted rounded-full h-2">
+                        <div 
+                          class="h-2 rounded-full transition-all bg-primary"
+                          :style="{ width: `${Math.min(100, ((curso.aulas_concluidas || 0) / (curso.curso?.quantidade_aulas || 1)) * 100)}%` }"
+                        ></div>
+                      </div>
+                      <span class="text-xs font-medium text-muted-foreground">
+                        {{ Math.round(((curso.aulas_concluidas || 0) / (curso.curso?.quantidade_aulas || 1)) * 100) }}%
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Dias da Semana -->
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <label class="text-xs font-medium text-muted-foreground uppercase">Dias da Semana</label>
+                      <p class="text-sm text-foreground font-medium mt-1">
+                        {{ formatarDias(curso.dias_semana) }}
+                      </p>
+                    </div>
+
+                    <div>
+                      <label class="text-xs font-medium text-muted-foreground uppercase">Local</label>
+                      <p class="text-sm text-foreground font-medium mt-1">
+                        📍 {{ curso.local_aulas || 'Não informado' }}
+                      </p>
+                    </div>
+
+                    <div>
+                      <label class="text-xs font-medium text-muted-foreground uppercase">Horário</label>
+                      <p class="text-sm text-foreground font-medium mt-1">
+                        ⏰ {{ curso.hora_entrada?.substring(0, 5) || '00:00' }} - {{ curso.hora_saida?.substring(0, 5) || '00:00' }}
+                      </p>
+                    </div>
+
+                    <div>
+                      <label class="text-xs font-medium text-muted-foreground uppercase">Carga Horária</label>
+                      <p class="text-sm text-foreground font-medium mt-1">
+                        {{ curso.curso?.carga_horaria || 0 }}h
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
+            </div>
 
-              <div class="p-3 rounded-lg bg-muted/20 md:col-span-2">
-                <label class="text-xs font-medium text-muted-foreground uppercase">Dias da Semana</label>
-                <p class="text-sm text-foreground font-medium mt-1">
-                  {{ alunoVisualizacao.diasSemana && alunoVisualizacao.diasSemana.length > 0 
-                    ? alunoVisualizacao.diasSemana.map(d => diasDisponiveis.find(dia => dia.value === d)?.label).join(', ') 
-                    : 'Não informado' }}
-                </p>
-              </div>
-
-              <div class="p-3 rounded-lg bg-muted/20 md:col-span-2">
-                <label class="text-xs font-medium text-muted-foreground uppercase">Local das Aulas</label>
-                <p class="text-sm text-foreground font-medium mt-1">{{ alunoVisualizacao.localAulas || 'Não informado' }}</p>
-              </div>
-
-              <div class="p-3 rounded-lg bg-muted/20">
-                <label class="text-xs font-medium text-muted-foreground uppercase">Hora de Entrada</label>
-                <p class="text-sm text-foreground font-medium mt-1">{{ alunoVisualizacao.horaEntrada || 'Não informado' }}</p>
-              </div>
-
-              <div class="p-3 rounded-lg bg-muted/20">
-                <label class="text-xs font-medium text-muted-foreground uppercase">Hora de Saída</label>
-                <p class="text-sm text-foreground font-medium mt-1">{{ alunoVisualizacao.horaSaida || 'Não informado' }}</p>
-              </div>
-
-              <div class="p-3 rounded-lg bg-muted/20 md:col-span-2">
-                <label class="text-xs font-medium text-muted-foreground uppercase">Multa por Falta</label>
-                <p class="text-sm text-foreground font-medium mt-1">{{ alunoVisualizacao.multaFalta || 'Não informado' }}</p>
-              </div>
+            <!-- Mensagem se não houver cursos -->
+            <div v-else class="p-8 text-center bg-muted/20 rounded-lg">
+              <span class="text-4xl mb-3 block">📚</span>
+              <p class="text-muted-foreground">Nenhum curso matriculado</p>
             </div>
           </div>
-
+          
           <!-- Recursos Adicionais -->
           <div>
             <h4 class="text-sm font-semibold text-foreground mb-3 flex items-center space-x-2">
@@ -2103,7 +2414,7 @@ async function registrarPagamento() {
               ? 'bg-yellow-600 text-white hover:bg-yellow-700' 
               : 'bg-green-600 text-white hover:bg-green-700'"
           >
-            <Icon :icon="alunoVisualizacao.ativo ? 'ban' : 'check-circle'" class-name="w-4 h-4" fallback="" />
+            <span>{{ alunoVisualizacao.ativo ? '🚫' : '✅' }}</span>
             <span>{{ alunoVisualizacao.ativo ? 'Bloquear' : 'Desbloquear' }}</span>
           </button>
           
@@ -2471,7 +2782,7 @@ async function registrarPagamento() {
             <div class="flex items-center justify-between mb-6">
               <div class="flex items-center space-x-3">
                 <div class="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                  <Icon icon="check-circle" class-name="w-5 h-5 text-green-600 dark:text-green-400" fallback="✅" />
+                  <span class="text-2xl">✅</span>
                 </div>
                 <div>
                   <h3 class="text-lg font-semibold text-foreground">

@@ -67,18 +67,12 @@ async function verificarPresencasHoje(alunoId: string) {
 }
 
 // Verificar se hoje é dia de aula para um curso específico
-function ehDiaDeAula(diasSemana: number[] | string[]) {
+function ehDiaDeAula(diasSemana: string[]) {
   if (!diasSemana || diasSemana.length === 0) return false
   
   const hoje = new Date()
-  const diaSemana = hoje.getDay() // 0 = Domingo, 1 = Segunda, etc.
+  const diaSemana = hoje.getDay()
   
-  // Suporta tanto números quanto strings (para compatibilidade)
-  if (typeof diasSemana[0] === 'number') {
-    return (diasSemana as number[]).includes(diaSemana)
-  }
-  
-  // Fallback para strings antigas
   const mapaDias: Record<number, string> = {
     0: 'domingo',
     1: 'segunda',
@@ -90,55 +84,7 @@ function ehDiaDeAula(diasSemana: number[] | string[]) {
   }
   
   const diaHoje = mapaDias[diaSemana]
-  return (diasSemana as string[]).includes(diaHoje)
-}
-
-// Formatar dias da semana para exibição
-function formatarDiasSemana(diasSemana: number[] | string[]) {
-  if (!diasSemana || diasSemana.length === 0) return ['Não definido']
-  
-  const nomesDias: Record<number, string> = {
-    0: 'Dom',
-    1: 'Seg',
-    2: 'Ter',
-    3: 'Qua',
-    4: 'Qui',
-    5: 'Sex',
-    6: 'Sáb'
-  }
-  
-  // Se for array de números
-  if (typeof diasSemana[0] === 'number') {
-    return (diasSemana as number[]).sort().map(d => nomesDias[d])
-  }
-  
-  // Se for array de strings (fallback)
-  const mapaDiasString: Record<string, string> = {
-    'domingo': 'Dom',
-    'segunda': 'Seg',
-    'terca': 'Ter',
-    'quarta': 'Qua',
-    'quinta': 'Qui',
-    'sexta': 'Sex',
-    'sabado': 'Sáb'
-  }
-  
-  return (diasSemana as string[]).map(d => mapaDiasString[d] || d)
-}
-
-// Obter nome do dia atual
-function getDiaAtual() {
-  const nomesDias: Record<number, string> = {
-    0: 'Dom',
-    1: 'Seg',
-    2: 'Ter',
-    3: 'Qua',
-    4: 'Qui',
-    5: 'Sex',
-    6: 'Sáb'
-  }
-  
-  return nomesDias[new Date().getDay()]
+  return diasSemana.includes(diaHoje)
 }
 
 // Calcular progresso de um curso
@@ -243,8 +189,8 @@ onMounted(() => {
   <div>
     <AppLoading 
       v-if="isLoading" 
-      title="Carregando Cursos"
-      description="Buscando seus cursos matriculados..."
+      title="Carregando Aulas"
+      description="Buscando informações do seu curso..."
     />
     
     <div v-else class="space-y-4">
@@ -252,128 +198,133 @@ onMounted(() => {
       <div>
         <h2 class="text-lg sm:text-2xl font-bold text-foreground">Meus Cursos</h2>
         <p class="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
-          Registre sua presença e acompanhe seu progresso em cada curso
+          Registre sua presença e acompanhe seu progresso no curso
         </p>
       </div>
       
-      <!-- Mensagem se não tiver cursos -->
-      <div v-if="cursos.length === 0" class="bg-card border border-border rounded-lg p-6 text-center">
-        <div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-          <Icon icon="book" class-name="w-8 h-8 text-muted-foreground" fallback="📚" />
+      <!-- Card de Progresso Grande -->
+      <div class="bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg p-4 sm:p-8 text-white">
+        <div class="text-center mb-4 sm:mb-6">
+          <h3 class="text-3xl sm:text-4xl font-bold mb-1 sm:mb-2">{{ progresso }}%</h3>
+          <p class="text-xs sm:text-sm text-blue-100">Progresso no Curso</p>
         </div>
-        <h3 class="text-lg font-semibold text-foreground mb-2">Nenhum curso ativo</h3>
-        <p class="text-sm text-muted-foreground">
-          Você não está matriculado em nenhum curso no momento.
-        </p>
+        
+        <div class="w-full bg-blue-800/50 rounded-full h-2 sm:h-4 mb-3 sm:mb-4">
+          <div 
+            class="bg-white h-2 sm:h-4 rounded-full transition-all duration-500"
+            :style="{ width: `${progresso}%` }"
+          ></div>
+        </div>
+        
+        <div class="grid grid-cols-3 gap-2 sm:gap-4 text-center">
+          <div>
+            <p class="text-lg sm:text-2xl font-bold">{{ aluno?.aulas_concluidas || 0 }}</p>
+            <p class="text-xs sm:text-sm text-blue-100">Concluídas</p>
+          </div>
+          <div>
+            <p class="text-lg sm:text-2xl font-bold">{{ aulasRestantes }}</p>
+            <p class="text-xs sm:text-sm text-blue-100">Restantes</p>
+          </div>
+          <div>
+            <p class="text-lg sm:text-2xl font-bold">{{ aluno?.quantidade_aulas || 0 }}</p>
+            <p class="text-xs sm:text-sm text-blue-100">Total</p>
+          </div>
+        </div>
       </div>
       
-      <!-- Lista de Cursos -->
-      <div v-else class="space-y-4">
-        <div
-          v-for="curso in cursos"
-          :key="curso.id"
-          class="bg-card border border-border rounded-lg p-4 sm:p-6"
-        >
-          <!-- Header do Curso -->
-          <div class="flex items-start justify-between mb-4">
-            <div class="flex-1">
-              <h3 class="text-base sm:text-xl font-bold text-foreground mb-1">
-                {{ curso.curso.nome }}
-              </h3>
-              <p class="text-xs sm:text-sm text-muted-foreground">
-                {{ curso.curso.carga_horaria }}h • {{ formatarDias(curso.dias_semana || []) }}
-              </p>
-            </div>
-            <div class="text-right">
-              <div class="text-2xl sm:text-3xl font-bold text-primary">
-                {{ calcularProgresso(curso) }}%
-              </div>
-              <p class="text-xs text-muted-foreground">Progresso</p>
-            </div>
+      <!-- Check-in -->
+      <div class="bg-card border border-border rounded-lg p-4 sm:p-6">
+        <div class="text-center max-w-md mx-auto">
+          <div class="w-14 h-14 sm:w-20 sm:h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+            <Icon icon="check-circle" class-name="w-7 h-7 sm:w-10 sm:h-10 text-green-600 dark:text-green-400" fallback="✓" />
           </div>
           
-          <!-- Barra de Progresso -->
-          <div class="w-full bg-muted rounded-full h-2 mb-4">
-            <div 
-              class="bg-primary h-2 rounded-full transition-all duration-500"
-              :style="{ width: `${calcularProgresso(curso)}%` }"
-            ></div>
-          </div>
+          <h3 class="text-base sm:text-xl font-bold text-foreground mb-1 sm:mb-2">Registrar Presença</h3>
+          <p class="text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6">
+            Clique no botão abaixo para confirmar sua presença na aula de hoje
+          </p>
           
-          <!-- Estatísticas -->
-          <div class="grid grid-cols-3 gap-2 sm:gap-4 mb-4">
-            <div class="text-center">
-              <p class="text-lg sm:text-xl font-bold text-foreground">{{ curso.aulas_concluidas || 0 }}</p>
-              <p class="text-xs text-muted-foreground">Concluídas</p>
-            </div>
-            <div class="text-center">
-              <p class="text-lg sm:text-xl font-bold text-foreground">{{ calcularAulasRestantes(curso) }}</p>
-              <p class="text-xs text-muted-foreground">Restantes</p>
-            </div>
-            <div class="text-center">
-              <p class="text-lg sm:text-xl font-bold text-foreground">{{ curso.curso.quantidade_aulas || 0 }}</p>
-              <p class="text-xs text-muted-foreground">Total</p>
-            </div>
-          </div>
-          
-          <!-- Informações Adicionais -->
-          <div class="grid grid-cols-2 gap-3 mb-3 text-xs sm:text-sm">
-            <div class="flex items-center space-x-2">
-              <Icon icon="clock" class-name="w-4 h-4 text-muted-foreground" fallback="🕐" />
-              <span class="text-muted-foreground">
-                {{ curso.hora_entrada || '--:--' }} - {{ curso.hora_saida || '--:--' }}
-              </span>
-            </div>
-            <div class="flex items-center space-x-2">
-              <Icon icon="map-marker" class-name="w-4 h-4 text-muted-foreground" fallback="📍" />
-              <span class="text-muted-foreground truncate">
-                {{ curso.local_aulas || 'Local não definido' }}
-              </span>
-            </div>
-          </div>
-
-          <!-- Dias da Semana -->
-          <div class="mb-4 p-3 rounded-lg bg-muted/30 border border-border">
-            <div class="flex items-start space-x-2">
-              <Icon icon="calendar" class-name="w-4 h-4 text-primary mt-0.5" fallback="📅" />
-              <div class="flex-1">
-                <p class="text-xs font-medium text-muted-foreground mb-1">Dias de Aula:</p>
-                <div class="flex flex-wrap gap-1.5">
-                  <span
-                    v-for="dia in formatarDiasSemana(curso.dias_semana)"
-                    :key="dia"
-                    class="px-2 py-1 text-xs font-medium rounded-md"
-                    :class="ehDiaDeAula(curso.dias_semana) && dia === getDiaAtual() 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-muted text-muted-foreground'"
-                  >
-                    {{ dia }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Botão de Registrar Presença -->
           <button
-            @click="abrirModalConfirmacao(curso)"
-            :disabled="presencasRegistradas.has(curso.curso_id) || !ehDiaDeAula(curso.dias_semana) || calcularAulasRestantes(curso) === 0"
-            class="w-full py-2.5 rounded-lg font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            :class="presencasRegistradas.has(curso.curso_id) 
-              ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' 
-              : 'bg-primary hover:bg-primary/90 text-primary-foreground'"
+            @click="abrirModalConfirmacao"
+            :disabled="jaRegistrouHoje || !ehDiaDeAula || aulasRestantes === 0"
+            class="w-full py-2.5 sm:py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-bold text-sm sm:text-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Icon icon="check-circle" class-name="w-4 h-4 inline mr-2" fallback="✓" />
-            {{
-              presencasRegistradas.has(curso.curso_id)
-                ? 'Presença Confirmada Hoje'
-                : calcularAulasRestantes(curso) === 0
-                  ? 'Curso Concluído'
-                  : ehDiaDeAula(curso.dias_semana)
-                    ? 'Registrar Presença'
-                    : 'Hoje não é dia de aula'
-            }}
+            <Icon icon="check-circle" class-name="w-4 h-4 sm:w-6 sm:h-6 inline mr-1 sm:mr-2" fallback="✓" />
+            {{ jaRegistrouHoje ? 'Presença Confirmada Hoje!' : aulasRestantes === 0 ? 'Curso Concluído!' : ehDiaDeAula ? 'Confirmar Presença' : 'Hoje não é dia de aula' }}
           </button>
+          
+          <p v-if="jaRegistrouHoje" class="text-xs text-green-600 dark:text-green-400 mt-3 sm:mt-4">
+            ✅ Você já registrou sua presença hoje!
+          </p>
+          
+          <p v-else-if="aulasRestantes === 0" class="text-xs text-green-600 dark:text-green-400 mt-3 sm:mt-4">
+            🎉 Parabéns! Você completou todas as aulas do curso!
+          </p>
+          
+          <p v-else-if="!ehDiaDeAula" class="text-xs text-amber-600 dark:text-amber-400 mt-3 sm:mt-4">
+            ⚠️ A confirmação de presença só está disponível nos dias de aula
+          </p>
+        </div>
+      </div>
+      
+      <!-- Informações do Curso -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
+        <div class="bg-card border border-border rounded-lg p-4 sm:p-6">
+          <h3 class="text-sm sm:text-base font-semibold text-foreground mb-3 sm:mb-4">Informações do Curso</h3>
+          <div class="space-y-2 sm:space-y-3 text-xs sm:text-sm">
+            <div class="flex justify-between">
+              <span class="text-muted-foreground">Curso:</span>
+              <span class="font-medium text-foreground">{{ aluno?.curso_contratado || 'N/A' }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-muted-foreground">Carga Horária:</span>
+              <span class="font-medium text-foreground">{{ aluno?.quantidade_horas || 0 }}h</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-muted-foreground">Local:</span>
+              <span class="font-medium text-foreground">{{ aluno?.local_aulas || 'N/A' }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="bg-card border border-border rounded-lg p-4 sm:p-6">
+          <h3 class="text-sm sm:text-base font-semibold text-foreground mb-3 sm:mb-4">Horários</h3>
+          <div class="space-y-2 sm:space-y-3 text-xs sm:text-sm">
+            <div class="flex justify-between">
+              <span class="text-muted-foreground">Entrada:</span>
+              <span class="font-medium text-foreground">{{ aluno?.hora_entrada || '--:--' }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-muted-foreground">Saída:</span>
+              <span class="font-medium text-foreground">{{ aluno?.hora_saida || '--:--' }}</span>
+            </div>
+            <div v-if="aluno?.multa_falta" class="flex justify-between pt-2 border-t border-border">
+              <span class="text-muted-foreground">Multa por Falta:</span>
+              <span class="font-medium text-red-600">R$ {{ parseFloat(aluno.multa_falta).toFixed(2).replace('.', ',') }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Dias da Semana -->
+      <div class="bg-card border border-border rounded-lg p-4 sm:p-6">
+        <h3 class="text-sm sm:text-base font-semibold text-foreground mb-3 sm:mb-4">Dias de Aula</h3>
+        <div class="flex flex-wrap gap-1.5 sm:gap-2">
+          <span 
+            v-for="dia in aluno?.dias_semana || []"
+            :key="dia"
+            class="px-3 py-1.5 sm:px-4 sm:py-2 bg-primary/10 text-primary rounded-lg font-medium text-xs sm:text-sm"
+          >
+            {{ {
+              'segunda': 'Segunda-feira',
+              'terca': 'Terça-feira',
+              'quarta': 'Quarta-feira',
+              'quinta': 'Quinta-feira',
+              'sexta': 'Sexta-feira',
+              'sabado': 'Sábado',
+              'domingo': 'Domingo'
+            }[dia] || dia }}
+          </span>
         </div>
       </div>
     </div>
@@ -382,7 +333,7 @@ onMounted(() => {
   <!-- Modal de Confirmação -->
   <Transition name="fade">
     <div
-      v-if="mostrarModalConfirmacao && cursoSelecionado"
+      v-if="mostrarModalConfirmacao"
       class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       @click="fecharModal"
     >
@@ -402,7 +353,7 @@ onMounted(() => {
                 Confirmar Presença
               </h3>
               <p class="text-sm text-muted-foreground">
-                {{ cursoSelecionado.curso.nome }}
+                Você está prestes a registrar sua presença na aula de hoje
               </p>
             </div>
 
@@ -414,19 +365,11 @@ onMounted(() => {
               </div>
               <div class="flex justify-between">
                 <span class="text-muted-foreground">Horário:</span>
-                <span class="font-medium text-foreground">
-                  {{ cursoSelecionado.hora_entrada || '--:--' }} - {{ cursoSelecionado.hora_saida || '--:--' }}
-                </span>
+                <span class="font-medium text-foreground">{{ aluno?.hora_entrada || '--:--' }} - {{ aluno?.hora_saida || '--:--' }}</span>
               </div>
               <div class="flex justify-between">
                 <span class="text-muted-foreground">Aula:</span>
-                <span class="font-medium text-foreground">
-                  {{ (cursoSelecionado.aulas_concluidas || 0) + 1 }} de {{ cursoSelecionado.curso.quantidade_aulas || 0 }}
-                </span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-muted-foreground">Local:</span>
-                <span class="font-medium text-foreground">{{ cursoSelecionado.local_aulas || 'N/A' }}</span>
+                <span class="font-medium text-foreground">{{ (aluno?.aulas_concluidas || 0) + 1 }} de {{ aluno?.quantidade_aulas || 0 }}</span>
               </div>
             </div>
 
@@ -439,7 +382,8 @@ onMounted(() => {
                   class="mt-1 w-5 h-5 rounded border-2 border-amber-400 text-amber-600 focus:ring-2 focus:ring-amber-500 cursor-pointer"
                 />
                 <span class="text-sm text-amber-800 dark:text-amber-200 leading-relaxed">
-                  Declaro que estou presente na aula e confirmo a veracidade desta informação.
+                  Declaro que estou presente na aula e confirmo a veracidade desta informação. 
+                  Estou ciente de que declarações falsas podem resultar em penalidades.
                 </span>
               </label>
             </div>
@@ -455,7 +399,7 @@ onMounted(() => {
               <button
                 @click="registrarPresenca"
                 :disabled="!aceitouTermos"
-                class="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                class="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
               >
                 Confirmar
               </button>

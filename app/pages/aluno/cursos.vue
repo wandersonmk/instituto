@@ -197,21 +197,27 @@ async function registrarPresenca() {
   try {
     await registrarPresencaCurso(aluno.value.id, cursoSelecionado.value.curso_id)
     
-    toast?.success(`Presença registrada no curso ${cursoSelecionado.value.curso.nome}!`)
-    
     // Adicionar à lista de presenças registradas
     presencasRegistradas.value.add(cursoSelecionado.value.curso_id)
     
-    // Atualizar o curso localmente
+    // Atualizar o curso localmente para feedback imediato
     const cursoIndex = cursos.value.findIndex(c => c.id === cursoSelecionado.value.id)
     if (cursoIndex !== -1) {
-      cursos.value[cursoIndex].aulas_concluidas++
+      const curso = cursos.value[cursoIndex]
+      curso.aulas_concluidas = (curso.aulas_concluidas || 0) + 1
+      
+      // Calcular novo progresso
+      const novoProgresso = Math.round((curso.aulas_concluidas / (curso.curso.quantidade_aulas || 1)) * 100)
+      
+      console.log(`📚 Aula concluída! Progresso: ${novoProgresso}% (${curso.aulas_concluidas}/${curso.curso.quantidade_aulas} aulas)`)
     }
+    
+    toast?.success(`✓ Presença confirmada! Aula concluída com sucesso.`)
     
     // Fechar modal
     fecharModal()
     
-    // Recarregar dados
+    // Recarregar dados do servidor para sincronizar
     await buscarDadosAluno()
   } catch (error: any) {
     console.error('Erro ao registrar presença:', error)
@@ -220,19 +226,6 @@ async function registrarPresenca() {
 }
 
 // Formatar dias da semana
-function formatarDias(dias: string[]) {
-  const mapa: Record<string, string> = {
-    'segunda': 'Seg',
-    'terca': 'Ter',
-    'quarta': 'Qua',
-    'quinta': 'Qui',
-    'sexta': 'Sex',
-    'sabado': 'Sáb',
-    'domingo': 'Dom'
-  }
-  return dias.map(d => mapa[d] || d).join(', ')
-}
-
 // Buscar ao montar
 onMounted(() => {
   buscarDadosAluno()
@@ -281,7 +274,7 @@ onMounted(() => {
                 {{ curso.curso.nome }}
               </h3>
               <p class="text-xs sm:text-sm text-muted-foreground">
-                {{ curso.curso.carga_horaria }}h • {{ formatarDias(curso.dias_semana || []) }}
+                {{ curso.curso.carga_horaria }}h
               </p>
             </div>
             <div class="text-right">

@@ -42,8 +42,9 @@ async function handleLogin() {
   }
   
   try {
-    console.log('LoginForm: Iniciando login...')
+    console.log('LoginForm: Iniciando login...', { isLoading: isLoading.value })
     const result = await signInWithEmailAndPassword(email.value, password.value)
+    console.log('LoginForm: Login finalizado', { isLoading: isLoading.value, result })
     
     // Se login falhou, mostra erro
     if (result === false) {

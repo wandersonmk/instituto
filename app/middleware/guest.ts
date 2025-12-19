@@ -5,38 +5,37 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   }
   
   try {
-    const { isAuthenticated, user, isLoading } = useAuth()
+    const supabase = useSupabaseClient()
+    const { user } = useAuth()
     
-    console.log('Guest middleware - Estado auth:', { 
-      isAuthenticated: isAuthenticated.value, 
+    // Verificar sessão atual do Supabase diretamente
+    const { data: { session } } = await supabase.auth.getSession()
+    
+    console.log('Guest middleware - Verificando sessão:', { 
+      hasSession: !!session,
       hasUser: !!user.value,
-      isLoading: isLoading.value,
-      email: user.value?.email 
+      sessionEmail: session?.user?.email,
+      userEmail: user.value?.email,
+      userRole: user.value?.user_metadata?.role || session?.user?.user_metadata?.role
     })
     
-    // Aguarda apenas um curto período se ainda estiver carregando
-    if (isLoading.value) {
-      await new Promise(resolve => setTimeout(resolve, 500))
+    // Se tem sessão válida, redireciona para área apropriada
+    if (session?.user) {
+      const userRole = session.user.user_metadata?.role
+      
+      if (userRole === 'aluno') {
+        console.log('Guest middleware: Aluno autenticado, redirecionando para /aluno')
+        return navigateTo('/aluno', { replace: true })
+      } else {
+        console.log('Guest middleware: Admin autenticado, redirecionando para /alunos')
+        return navigateTo('/alunos', { replace: true })
+      }
     }
     
-    console.log('Guest middleware - Após loading:', { 
-      isAuthenticated: isAuthenticated.value, 
-      hasUser: !!user.value,
-      isLoading: isLoading.value,
-      email: user.value?.email 
-    })
-    
-    // APENAS redireciona se estiver REALMENTE autenticado (com sessão válida)
-    if (isAuthenticated.value && user.value) {
-      console.log('Guest middleware: Usuário autenticado, redirecionando para /')
-      return navigateTo('/')
-    }
-    
-    // Se não estiver autenticado, permite acesso à página de login
-    console.log('Guest middleware: Usuário não autenticado, permitindo acesso ao login')
+    // Se não tem sessão, permite acesso ao login
+    console.log('Guest middleware: Sem sessão, permitindo acesso ao login')
   } catch (error) {
-    // Se houver erro na inicialização, permite acesso à página de login
     console.error('Erro no middleware guest:', error)
-    // Não redireciona, permite que o usuário veja a página de login
+    // Em caso de erro, permite acesso ao login
   }
 })

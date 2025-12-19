@@ -12,7 +12,8 @@ const {
   buscarCategorias,
   buscarVideosPorCategoria,
   buscarEstatisticas,
-  marcarConcluido
+  marcarConcluido,
+  reverterConclusao
 } = useVideos()
 
 const estatisticas = ref<any>(null)
@@ -140,6 +141,39 @@ const marcarComoConcluido = async () => {
   } catch (error) {
     console.error('Erro ao marcar como concluído:', error)
     alert('Erro ao marcar vídeo como concluído. Tente novamente.')
+  }
+}
+
+const reverterConclusaoVideo = async (video: VideoComCategoria) => {
+  try {
+    const sucesso = await reverterConclusao(video.id)
+    
+    if (sucesso) {
+      // Atualizar vídeo na lista de categorias
+      const categoriaId = video.categoria_id
+      if (categoriaId && videosCategoria.value[categoriaId]) {
+        const videoIndex = videosCategoria.value[categoriaId].findIndex(
+          v => v.id === video.id
+        )
+        if (videoIndex !== -1) {
+          videosCategoria.value[categoriaId][videoIndex] = {
+            ...videosCategoria.value[categoriaId][videoIndex],
+            concluido: false,
+            progresso: 0
+          }
+        }
+      }
+
+      // Recarregar estatísticas
+      estatisticas.value = await buscarEstatisticas()
+
+      console.log('Conclusão revertida com sucesso!')
+    } else {
+      throw new Error('Falha ao reverter conclusão')
+    }
+  } catch (error) {
+    console.error('Erro ao reverter conclusão:', error)
+    alert('Erro ao reverter conclusão. Tente novamente.')
   }
 }
 
@@ -286,9 +320,18 @@ const calcularProgressoCategoria = (categoriaId: string): number => {
                 <div class="flex-1 min-w-0">
                   <h4 class="font-semibold text-sm text-foreground line-clamp-2">{{ video.titulo }}</h4>
                   <p class="text-xs text-muted-foreground mt-1">{{ formatarDuracao(video.duracao) }}</p>
-                  <div v-if="video.concluido" class="flex items-center gap-1 mt-2">
-                    <Icon icon="check-circle" class-name="w-4 h-4 text-green-500" fallback="✓" />
-                    <span class="text-xs text-green-600 dark:text-green-400">Concluído</span>
+                  <div v-if="video.concluido" class="flex items-center gap-2 mt-2">
+                    <div class="flex items-center gap-1">
+                      <Icon icon="check-circle" class-name="w-4 h-4 text-green-500" fallback="✓" />
+                      <span class="text-xs text-green-600 dark:text-green-400">Concluído</span>
+                    </div>
+                    <button
+                      @click.stop="reverterConclusaoVideo(video)"
+                      class="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors"
+                      title="Reverter conclusão"
+                    >
+                      <Icon icon="rotate-left" class-name="w-5 h-5 text-gray-500 hover:text-orange-500" fallback="↺" />
+                    </button>
                   </div>
                   <div v-else-if="video.progresso > 0" class="mt-2">
                     <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1">
@@ -439,13 +482,24 @@ const calcularProgressoCategoria = (categoriaId: string): number => {
 
                 <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                   <span>{{ formatarDuracao(video.duracao) }}</span>
-                  <span v-if="video.concluido" class="text-green-600 dark:text-green-400 font-semibold flex items-center gap-1">
-                    <Icon icon="check-circle" class-name="w-4 h-4" fallback="✓" />
-                    Concluído
-                  </span>
-                  <span v-else-if="video.progresso && video.progresso > 0" class="text-blue-600 dark:text-blue-400 font-semibold">
-                    {{ Math.round(video.progresso) }}%
-                  </span>
+                  <div class="flex items-center gap-2">
+                    <span v-if="video.concluido" class="text-green-600 dark:text-green-400 font-semibold flex items-center gap-1">
+                      <Icon icon="check-circle" class-name="w-4 h-4" fallback="✓" />
+                      Concluído
+                    </span>
+                    <span v-else-if="video.progresso && video.progresso > 0" class="text-blue-600 dark:text-blue-400 font-semibold">
+                      {{ Math.round(video.progresso) }}%
+                    </span>
+                    <!-- Botão de reverter conclusão -->
+                    <button
+                      v-if="video.concluido"
+                      @click.stop="reverterConclusaoVideo(video)"
+                      class="ml-1 p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors"
+                      title="Reverter conclusão"
+                    >
+                      <Icon icon="rotate-left" class-name="w-5 h-5 text-gray-500 hover:text-orange-500" fallback="↺" />
+                    </button>
+                  </div>
                 </div>
 
                 <!-- Tags -->

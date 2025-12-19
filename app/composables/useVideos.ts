@@ -412,6 +412,56 @@ export const useVideos = () => {
   }
 
   /**
+   * Reverter conclusão do vídeo (marcar como não concluído)
+   */
+  const reverterConclusao = async (videoId: string) => {
+    if (!user.value) {
+      console.error('Usuário não autenticado')
+      return false
+    }
+
+    try {
+      const alunoId = await buscarAlunoId()
+      if (!alunoId) {
+        console.error('Aluno não encontrado')
+        return false
+      }
+
+      // Verificar se existe um registro
+      const { data: existente, error: erroConsulta } = await supabase
+        .from('videos_visualizacoes')
+        .select('id')
+        .eq('video_id', videoId)
+        .eq('aluno_id', alunoId)
+        .maybeSingle()
+
+      if (erroConsulta) throw erroConsulta
+
+      if (existente) {
+        // Atualizar para não concluído
+        const { error } = await supabase
+          .from('videos_visualizacoes')
+          .update({
+            progresso: 0,
+            concluido: false,
+            data_conclusao: null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existente.id)
+
+        if (error) throw error
+        return true
+      }
+
+      // Se não existe registro, não há nada para reverter
+      return false
+    } catch (e: any) {
+      console.error('Erro ao reverter conclusão:', e)
+      return false
+    }
+  }
+
+  /**
    * Buscar estatísticas de visualização do aluno
    */
   const buscarEstatisticas = async () => {
@@ -459,6 +509,7 @@ export const useVideos = () => {
     buscarVideoPorId,
     atualizarProgresso,
     marcarConcluido,
+    reverterConclusao,
     buscarEstatisticas
   }
 }

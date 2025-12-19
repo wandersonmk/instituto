@@ -170,6 +170,23 @@ watch(termoPesquisa, () => {
   filtrarVideos()
 })
 
+// Verificar se uma categoria/módulo está completo
+const isCategoriaCompleta = (categoriaId: string): boolean => {
+  const videos = videosCategoria.value[categoriaId] || []
+  if (videos.length === 0) return false
+  
+  return videos.every(video => video.concluido === true)
+}
+
+// Calcular progresso de uma categoria
+const calcularProgressoCategoria = (categoriaId: string): number => {
+  const videos = videosCategoria.value[categoriaId] || []
+  if (videos.length === 0) return 0
+  
+  const concluidos = videos.filter(video => video.concluido === true).length
+  return Math.round((concluidos / videos.length) * 100)
+}
+
 </script>
 
 <template>
@@ -320,16 +337,41 @@ watch(termoPesquisa, () => {
             @click="toggleCategoria(categoria.id)"
             class="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
           >
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 flex-1">
               <div v-if="categoria.icone" class="text-2xl sm:text-3xl">{{ categoria.icone }}</div>
-              <div class="text-left">
-                <h2 class="text-lg sm:text-xl font-bold dark:text-white">{{ categoria.nome }}</h2>
+              <div class="text-left flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                  <h2 class="text-lg sm:text-xl font-bold dark:text-white">{{ categoria.nome }}</h2>
+                  <!-- Badge de conclusão -->
+                  <span
+                    v-if="isCategoriaCompleta(categoria.id)"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full"
+                  >
+                    <Icon icon="check-circle" class-name="w-3 h-3" fallback="✓" />
+                    Completo
+                  </span>
+                </div>
                 <p v-if="categoria.descricao" class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                   {{ categoria.descricao }}
                 </p>
-                <p class="text-xs text-muted-foreground mt-1">
-                  {{ (videosCategoria[categoria.id] || []).length }} vídeo(s)
-                </p>
+                <div class="flex items-center gap-3 mt-1">
+                  <p class="text-xs text-muted-foreground">
+                    {{ (videosCategoria[categoria.id] || []).length }} vídeo(s)
+                  </p>
+                  <!-- Barra de progresso da categoria -->
+                  <div class="flex items-center gap-2 flex-1 max-w-[200px]">
+                    <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                      <div 
+                        class="h-1.5 rounded-full transition-all"
+                        :class="isCategoriaCompleta(categoria.id) ? 'bg-green-500' : 'bg-blue-500'"
+                        :style="{ width: `${calcularProgressoCategoria(categoria.id)}%` }"
+                      ></div>
+                    </div>
+                    <span class="text-xs font-semibold text-muted-foreground">
+                      {{ calcularProgressoCategoria(categoria.id) }}%
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
             

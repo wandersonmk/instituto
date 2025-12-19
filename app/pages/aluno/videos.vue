@@ -118,13 +118,12 @@ const abrirVideo = async (video: VideoComCategoria) => {
   
   console.log('Abrindo vídeo:', video.id, 'Progresso atual:', video.progresso)
   
-  // Registrar que o vídeo foi aberto (atualizar updated_at)
-  // Se o vídeo ainda não tem progresso, iniciar com 1%
-  if (!video.progresso || video.progresso === 0) {
-    console.log('Registrando visualização do vídeo...')
-    const sucesso = await atualizarProgresso(video.id, 1, 0, 0)
-    console.log('Resultado:', sucesso ? 'sucesso' : 'falha')
-  }
+  // Sempre registrar que o vídeo foi aberto (atualizar updated_at)
+  // Mantém o progresso atual ou inicia com 1% se for novo
+  const progressoAtual = video.progresso || 1
+  console.log('Registrando visualização do vídeo com progresso:', progressoAtual)
+  const sucesso = await atualizarProgresso(video.id, progressoAtual, video.tempo_assistido || 0, video.ultima_posicao || 0)
+  console.log('Resultado:', sucesso ? 'sucesso' : 'falha')
 }
 
 const fecharVideo = () => {

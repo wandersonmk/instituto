@@ -33,7 +33,7 @@ const variantClasses = computed(() => {
       return 'bg-destructive text-destructive-foreground hover:opacity-90'
     case 'primary':
     default:
-      return 'bg-primary text-primary-foreground hover:opacity-90'
+      return 'btn-gradient text-gray-800 hover:opacity-90'
   }
 })
 
@@ -68,8 +68,20 @@ const sizeClasses = computed(() => {
     <slot />
     <span v-if="props.loading" class="sr-only">Carregando</span>
   </button>
-  
 </template>
+
+<style scoped>
+.btn-gradient {
+  background: radial-gradient(circle at top left, #ffd700 0%, #f0c000 50%, #daa520 100%);
+  box-shadow: 0 4px 8px rgba(255, 215, 0, 0.5);
+}
+
+.btn-gradient:hover {
+  background: radial-gradient(circle at top left, #ffe44d 0%, #ffd700 45%, #f0c000 100%);
+  box-shadow: 0 6px 12px rgba(255, 215, 0, 0.6);
+  transform: translateY(-1px);
+}
+</style>
 
 
 

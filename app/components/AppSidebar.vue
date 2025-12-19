@@ -28,7 +28,7 @@
           <li>
             <NuxtLink 
               to="/"
-              class="flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted group relative"
+              class="flex items-center px-3 py-2 rounded-lg text-sm transition-colors hover:bg-muted group relative"
               :class="$route.path === '/' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
             >
               <Icon icon="home" class-name="w-5 h-5 mr-3" fallback="" />
@@ -40,7 +40,7 @@
           <li>
             <NuxtLink 
               to="/alunos"
-              class="flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted group relative"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-sm transition-colors hover:bg-muted group relative"
               :class="$route.path === '/alunos' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
             >
               <Icon icon="user-graduate" class-name="w-5 h-5 mr-3" fallback="🎓" />
@@ -52,7 +52,7 @@
           <li>
             <NuxtLink 
               to="/cursos"
-              class="flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted group relative"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-sm transition-colors hover:bg-muted group relative"
               :class="$route.path === '/cursos' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
             >
               <Icon icon="book-open" class-name="w-5 h-5 mr-3" fallback="📚" />
@@ -64,7 +64,7 @@
           <li>
             <NuxtLink 
               to="/indicacoes"
-              class="flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted group relative"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-sm transition-colors hover:bg-muted group relative"
               :class="$route.path === '/indicacoes' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
             >
               <Icon icon="handshake" class-name="w-5 h-5 mr-3" fallback="🤝" />
@@ -72,23 +72,11 @@
             </NuxtLink>
           </li>
 
-          <!-- Relatórios -->
-          <li>
-            <NuxtLink 
-              to="/relatorios"
-              class="flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted group relative"
-              :class="$route.path === '/relatorios' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
-            >
-              <Icon icon="chart-bar" class-name="w-5 h-5 mr-3" fallback="📊" />
-              <span>Relatórios</span>
-            </NuxtLink>
-          </li>
-
           <!-- Relatório de Faltas -->
           <li>
             <NuxtLink 
               to="/relatorio-faltas"
-              class="flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted group relative"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-sm transition-colors hover:bg-muted group relative"
               :class="$route.path === '/relatorio-faltas' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
             >
               <Icon icon="calendar-times" class-name="w-5 h-5 mr-3" fallback="📅" />
@@ -100,7 +88,7 @@
           <li>
             <NuxtLink 
               to="/configuracoes"
-              class="flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted group relative"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-sm transition-colors hover:bg-muted group relative"
               :class="$route.path === '/configuracoes' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
             >
               <Icon icon="cog" class-name="w-5 h-5 mr-3" fallback="" />
@@ -112,7 +100,7 @@
           <li>
             <NuxtLink 
               to="/ajuda"
-              class="flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted group relative"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-sm transition-colors hover:bg-muted group relative"
               :class="$route.path === '/ajuda' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
             >
               <Icon icon="question-circle" class-name="w-5 h-5 mr-3" fallback="" />
@@ -192,7 +180,7 @@
             <NuxtLink 
               to="/"
               @click="$emit('close-mobile')"
-              class="flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted group relative"
+              class="flex items-center px-3 py-2 rounded-lg text-sm transition-colors hover:bg-muted group relative"
               :class="$route.path === '/' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
             >
               <Icon icon="home" class-name="w-5 h-5 mr-3" fallback="" />
@@ -205,7 +193,7 @@
             <NuxtLink 
               to="/alunos"
               @click="$emit('close-mobile')"
-              class="flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted group relative"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-sm transition-colors hover:bg-muted group relative"
               :class="$route.path === '/alunos' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
             >
               <Icon icon="user-graduate" class-name="w-5 h-5 mr-3" fallback="🎓" />
@@ -218,7 +206,7 @@
             <NuxtLink 
               to="/cursos"
               @click="$emit('close-mobile')"
-              class="flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted group relative"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-sm transition-colors hover:bg-muted group relative"
               :class="$route.path === '/cursos' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
             >
               <Icon icon="book-open" class-name="w-5 h-5 mr-3" fallback="📚" />
@@ -231,24 +219,11 @@
             <NuxtLink 
               to="/indicacoes"
               @click="$emit('close-mobile')"
-              class="flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted group relative"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-sm transition-colors hover:bg-muted group relative"
               :class="$route.path === '/indicacoes' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
             >
               <Icon icon="handshake" class-name="w-5 h-5 mr-3" fallback="🤝" />
               <span>Indicações Recebidas</span>
-            </NuxtLink>
-          </li>
-
-          <!-- Relatórios -->
-          <li>
-            <NuxtLink 
-              to="/relatorios"
-              @click="$emit('close-mobile')"
-              class="flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted group relative"
-              :class="$route.path === '/relatorios' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
-            >
-              <Icon icon="chart-bar" class-name="w-5 h-5 mr-3" fallback="📊" />
-              <span>Relatórios</span>
             </NuxtLink>
           </li>
 
@@ -257,7 +232,7 @@
             <NuxtLink 
               to="/relatorio-faltas"
               @click="$emit('close-mobile')"
-              class="flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted group relative"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-sm transition-colors hover:bg-muted group relative"
               :class="$route.path === '/relatorio-faltas' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
             >
               <Icon icon="calendar-times" class-name="w-5 h-5 mr-3" fallback="📅" />
@@ -270,7 +245,7 @@
             <NuxtLink 
               to="/configuracoes"
               @click="$emit('close-mobile')"
-              class="flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted group relative"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-sm transition-colors hover:bg-muted group relative"
               :class="$route.path === '/configuracoes' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
             >
               <Icon icon="cog" class-name="w-5 h-5 mr-3" fallback="" />
@@ -283,7 +258,7 @@
             <NuxtLink 
               to="/ajuda"
               @click="$emit('close-mobile')"
-              class="flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted group relative"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-sm transition-colors hover:bg-muted group relative"
               :class="$route.path === '/ajuda' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
             >
               <Icon icon="question-circle" class-name="w-5 h-5 mr-3" fallback="" />
@@ -422,4 +397,17 @@ const checkUserSession = () => {
   }
 }
 </script>
+
+<style scoped>
+/* Gradiente dourado para itens ativos do menu */
+:deep(.bg-primary) {
+  background: radial-gradient(circle at top left, #ffd700 0%, #f0c000 50%, #daa520 100%) !important;
+  box-shadow: 0 2px 4px rgba(255, 215, 0, 0.3);
+}
+
+:deep(.bg-primary:hover) {
+  background: radial-gradient(circle at top left, #ffe44d 0%, #ffd700 45%, #f0c000 100%) !important;
+  box-shadow: 0 3px 6px rgba(255, 215, 0, 0.4);
+}
+</style>
 

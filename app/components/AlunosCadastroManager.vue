@@ -1145,7 +1145,7 @@ async function registrarPagamento() {
       <div class="flex items-center space-x-3">
         <button
           @click="exportarParaExcel"
-          class="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg transition-colors font-medium"
+          class="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg transition-colors"
           title="Exportar alunos para Excel"
         >
           <Icon icon="file-excel" class-name="w-4 h-4" fallback="📊" />
@@ -1154,7 +1154,7 @@ async function registrarPagamento() {
         
         <button
           @click="abrirModalNovo"
-          class="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors font-medium"
+          class="flex items-center space-x-2 px-4 py-2 btn-gradient text-gray-800 hover:opacity-90 rounded-lg transition-all shadow-lg hover:shadow-xl"
         >
           <Icon icon="plus" class-name="w-4 h-4" fallback="" />
           <span>Novo Aluno</span>
@@ -2478,5 +2478,17 @@ html.light select:focus {
 /* Ícones de alunos - modo claro com cor mais escura */
 html.light .text-primary {
   color: #d4a017 !important;
+}
+
+/* Botão gradiente dourado */
+.btn-gradient {
+  background: radial-gradient(circle at top left, #ffd700 0%, #f0c000 50%, #daa520 100%);
+  box-shadow: 0 4px 8px rgba(255, 215, 0, 0.5);
+}
+
+.btn-gradient:hover {
+  background: radial-gradient(circle at top left, #ffe44d 0%, #ffd700 45%, #f0c000 100%);
+  box-shadow: 0 6px 12px rgba(255, 215, 0, 0.6);
+  transform: translateY(-1px);
 }
 </style>

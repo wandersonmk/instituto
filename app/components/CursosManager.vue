@@ -8,7 +8,7 @@
       </div>
       <button
         @click="abrirModalNovo"
-        class="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium shadow-lg"
+        class="btn-gradient flex items-center space-x-2 px-4 py-2 text-gray-800 rounded-lg transition-colors shadow-lg"
       >
         <Icon icon="plus" class-name="w-5 h-5" fallback="" />
         <span>Novo Curso</span>
@@ -112,7 +112,7 @@
           <button
             @click="toggleAtivoCurso(curso)"
             class="flex-1 flex items-center justify-center space-x-1 px-3 py-2 text-sm rounded-lg transition-colors"
-            :class="curso.ativo ? 'bg-amber-600 text-white hover:bg-amber-700' : 'bg-green-600 text-white hover:bg-green-700'"
+            :class="curso.ativo ? 'btn-gradient text-gray-800' : 'bg-green-600 hover:bg-green-700 text-white'"
           >
             <Icon :icon="curso.ativo ? 'ban' : 'check-circle'" class-name="w-4 h-4" fallback="" />
             <span>{{ curso.ativo ? 'Desativar' : 'Ativar' }}</span>
@@ -563,3 +563,17 @@ const cursosFiltrados = computed(() => {
   )
 })
 </script>
+
+<style scoped>
+.btn-gradient {
+  background: radial-gradient(circle at top left, #ffd700 0%, #f0c000 50%, #daa520 100%);
+  box-shadow: 0 4px 6px -1px rgba(255, 215, 0, 0.3), 0 2px 4px -1px rgba(255, 215, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.btn-gradient:hover {
+  background: radial-gradient(circle at top left, #ffe44d 0%, #ffd700 50%, #f0c000 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 8px -1px rgba(255, 215, 0, 0.4), 0 3px 5px -1px rgba(255, 215, 0, 0.3);
+}
+</style>

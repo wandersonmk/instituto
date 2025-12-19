@@ -494,7 +494,7 @@ onMounted(() => {
         <button
           v-if="faltasFiltradas.length > 0"
           @click="gerarPDF"
-          class="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-all shadow-lg hover:shadow-red-500/50"
+          class="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all shadow-lg hover:shadow-red-500/50"
         >
           <Icon icon="file-pdf" class-name="w-4 h-4" fallback="📄" />
           <span>Exportar PDF</span>

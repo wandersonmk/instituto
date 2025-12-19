@@ -15,9 +15,9 @@ function setActiveTab(tab: 'login' | 'register') {
       <button
         @click="setActiveTab('login')"
         :class="[
-          'flex-1 py-2 px-4 text-sm font-medium rounded-md transition-all duration-200',
+          'flex-1 py-2 px-4 text-sm rounded-md transition-all duration-200',
           activeTab === 'login'
-            ? 'bg-primary text-primary-foreground shadow-sm'
+            ? 'btn-gradient text-gray-800 shadow-sm'
             : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
         ]"
       >
@@ -27,9 +27,9 @@ function setActiveTab(tab: 'login' | 'register') {
       <button
         @click="setActiveTab('register')"
         :class="[
-          'flex-1 py-2 px-4 text-sm font-medium rounded-md transition-all duration-200',
+          'flex-1 py-2 px-4 text-sm rounded-md transition-all duration-200',
           activeTab === 'register'
-            ? 'bg-primary text-primary-foreground shadow-sm'
+            ? 'btn-gradient text-gray-800 shadow-sm'
             : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
         ]"
       >
@@ -59,6 +59,17 @@ function setActiveTab(tab: 'login' | 'register') {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+.btn-gradient {
+  background: radial-gradient(circle at top left, #ffd700 0%, #f0c000 50%, #daa520 100%);
+  box-shadow: 0 4px 8px rgba(255, 215, 0, 0.5);
+}
+
+.btn-gradient:hover {
+  background: radial-gradient(circle at top left, #ffe44d 0%, #ffd700 45%, #f0c000 100%);
+  box-shadow: 0 6px 12px rgba(255, 215, 0, 0.6);
+  transform: translateY(-1px);
 }
 </style>
 

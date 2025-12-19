@@ -98,14 +98,6 @@ onMounted(() => {
     />
     
     <div v-else class="space-y-6">
-      <!-- Header -->
-      <div>
-        <h2 class="text-2xl font-bold text-foreground">Indicações Recebidas</h2>
-        <p class="text-muted-foreground mt-1">
-          Gerencie as indicações feitas pelos alunos
-        </p>
-      </div>
-      
       <!-- Stats -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="bg-card border border-border rounded-lg p-4">

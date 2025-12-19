@@ -19,6 +19,8 @@ const estatisticas = ref<any>(null)
 const videosCategoria = ref<Record<string, VideoComCategoria[]>>({})
 const videoSelecionado = ref<VideoComCategoria | null>(null)
 const categoriasExpandidas = ref<Set<string>>(new Set())
+const termoPesquisa = ref('')
+const videosFiltrados = ref<VideoComCategoria[]>([])
 
 // Carregar dados ao montar
 onMounted(async () => {
@@ -115,6 +117,34 @@ const marcarComoConcluido = async () => {
     await carregarDados()
   }
 }
+
+// Filtrar vídeos por termo de pesquisa
+const filtrarVideos = () => {
+  if (!termoPesquisa.value.trim()) {
+    videosFiltrados.value = []
+    return
+  }
+
+  const termo = termoPesquisa.value.toLowerCase().trim()
+  const todosVideos: VideoComCategoria[] = []
+
+  // Coletar todos os vídeos de todas as categorias
+  Object.values(videosCategoria.value).forEach(videos => {
+    todosVideos.push(...videos)
+  })
+
+  // Filtrar por título ou descrição
+  videosFiltrados.value = todosVideos.filter(video => 
+    video.titulo.toLowerCase().includes(termo) ||
+    video.descricao?.toLowerCase().includes(termo)
+  )
+}
+
+// Watch para filtrar automaticamente quando o termo mudar
+watch(termoPesquisa, () => {
+  filtrarVideos()
+})
+
 </script>
 
 <template>
@@ -127,7 +157,7 @@ const marcarComoConcluido = async () => {
     
     <div v-else class="space-y-4 sm:space-y-6">
       <!-- Header -->
-      <div class="bg-white dark:bg-black rounded-lg p-4 sm:p-6 shadow-lg border border-gray-200 dark:border-gray-800">
+      <div class="card-header-custom rounded-lg p-4 sm:p-6 shadow-lg border border-gray-200 dark:border-gray-800">
         <div class="flex items-center space-x-3 mb-2">
           <div class="w-12 h-12 bg-gray-100 dark:bg-gray-900 rounded-lg flex items-center justify-center">
             <Icon icon="video" class-name="w-6 h-6 text-gray-800 dark:text-white" fallback="🎥" />
@@ -176,6 +206,69 @@ const marcarComoConcluido = async () => {
 
       <!-- Categorias e Vídeos -->
       <div v-if="categorias && categorias.length > 0" class="space-y-4">
+        <!-- Campo de Pesquisa -->
+        <div class="bg-card border border-border rounded-lg p-4">
+          <div class="relative">
+            <Icon 
+              icon="search" 
+              class-name="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+              fallback="🔍"
+            />
+            <input
+              v-model="termoPesquisa"
+              type="text"
+              placeholder="Pesquisar aulas por nome..."
+              class="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+            />
+          </div>
+        </div>
+
+        <!-- Resultados da Pesquisa (fora das categorias) -->
+        <div v-if="termoPesquisa.trim() && videosFiltrados.length > 0" class="bg-card border border-border rounded-lg p-4">
+          <h3 class="text-lg font-semibold dark:text-white mb-4">
+            Resultados da Pesquisa ({{ videosFiltrados.length }})
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div
+              v-for="video in videosFiltrados"
+              :key="video.id"
+              @click="abrirVideo(video)"
+              class="bg-white dark:bg-gray-900 rounded-lg p-4 cursor-pointer hover:shadow-lg transition-all border border-gray-200 dark:border-gray-800 hover:border-primary"
+            >
+              <div class="flex items-start space-x-3">
+                <div class="flex-shrink-0">
+                  <div class="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 rounded-lg flex items-center justify-center">
+                    <Icon icon="play" class-name="w-6 h-6 text-primary" fallback="▶️" />
+                  </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h4 class="font-semibold text-sm text-foreground line-clamp-2">{{ video.titulo }}</h4>
+                  <p class="text-xs text-muted-foreground mt-1">{{ formatarDuracao(video.duracao) }}</p>
+                  <div v-if="video.concluido" class="flex items-center gap-1 mt-2">
+                    <Icon icon="check-circle" class-name="w-4 h-4 text-green-500" fallback="✓" />
+                    <span class="text-xs text-green-600 dark:text-green-400">Concluído</span>
+                  </div>
+                  <div v-else-if="video.progresso > 0" class="mt-2">
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1">
+                      <div 
+                        class="bg-primary h-1 rounded-full transition-all"
+                        :style="{ width: `${video.progresso}%` }"
+                      ></div>
+                    </div>
+                    <span class="text-xs text-muted-foreground">{{ video.progresso }}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mensagem se não encontrar resultados -->
+        <div v-if="termoPesquisa.trim() && videosFiltrados.length === 0" class="bg-card border border-border rounded-lg p-6 text-center">
+          <Icon icon="search" class-name="w-12 h-12 text-gray-400 mx-auto mb-2" fallback="🔍" />
+          <p class="text-muted-foreground">Nenhuma aula encontrada com "{{ termoPesquisa }}"</p>
+        </div>
+
         <!-- Controles de expandir/colapsar todos -->
         <div class="flex items-center justify-between px-2">
           <h3 class="text-lg font-semibold dark:text-white">Categorias</h3>
@@ -355,11 +448,9 @@ const marcarComoConcluido = async () => {
     <div
       v-if="videoSelecionado"
       class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
-      @click="fecharVideo"
     >
       <div
         class="bg-white dark:bg-gray-900 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto"
-        @click.stop
       >
         <div class="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4 flex items-center justify-between z-10">
           <h3 class="text-xl font-bold dark:text-white">{{ videoSelecionado.titulo }}</h3>
@@ -419,3 +510,13 @@ const marcarComoConcluido = async () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.card-header-custom {
+  background-color: #ffffff;
+}
+
+.dark .card-header-custom {
+  background-color: #1A1B1F;
+}
+</style>

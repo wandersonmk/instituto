@@ -189,85 +189,85 @@ onMounted(() => {
       description="Buscando informações do seu curso..."
     />
     
-    <div v-else class="space-y-6">
+    <div v-else class="space-y-4">
       <!-- Header -->
       <div>
-        <h2 class="text-2xl font-bold text-foreground">Minhas Aulas</h2>
-        <p class="text-muted-foreground mt-1">
+        <h2 class="text-lg sm:text-2xl font-bold text-foreground">Meus Cursos</h2>
+        <p class="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
           Registre sua presença e acompanhe seu progresso no curso
         </p>
       </div>
       
       <!-- Card de Progresso Grande -->
-      <div class="bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg p-8 text-white">
-        <div class="text-center mb-6">
-          <h3 class="text-4xl font-bold mb-2">{{ progresso }}%</h3>
-          <p class="text-blue-100">Progresso no Curso</p>
+      <div class="bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg p-4 sm:p-8 text-white">
+        <div class="text-center mb-4 sm:mb-6">
+          <h3 class="text-3xl sm:text-4xl font-bold mb-1 sm:mb-2">{{ progresso }}%</h3>
+          <p class="text-xs sm:text-sm text-blue-100">Progresso no Curso</p>
         </div>
         
-        <div class="w-full bg-blue-800/50 rounded-full h-4 mb-4">
+        <div class="w-full bg-blue-800/50 rounded-full h-2 sm:h-4 mb-3 sm:mb-4">
           <div 
-            class="bg-white h-4 rounded-full transition-all duration-500"
+            class="bg-white h-2 sm:h-4 rounded-full transition-all duration-500"
             :style="{ width: `${progresso}%` }"
           ></div>
         </div>
         
-        <div class="grid grid-cols-3 gap-4 text-center">
+        <div class="grid grid-cols-3 gap-2 sm:gap-4 text-center">
           <div>
-            <p class="text-2xl font-bold">{{ aluno?.aulas_concluidas || 0 }}</p>
-            <p class="text-sm text-blue-100">Concluídas</p>
+            <p class="text-lg sm:text-2xl font-bold">{{ aluno?.aulas_concluidas || 0 }}</p>
+            <p class="text-xs sm:text-sm text-blue-100">Concluídas</p>
           </div>
           <div>
-            <p class="text-2xl font-bold">{{ aulasRestantes }}</p>
-            <p class="text-sm text-blue-100">Restantes</p>
+            <p class="text-lg sm:text-2xl font-bold">{{ aulasRestantes }}</p>
+            <p class="text-xs sm:text-sm text-blue-100">Restantes</p>
           </div>
           <div>
-            <p class="text-2xl font-bold">{{ aluno?.quantidade_aulas || 0 }}</p>
-            <p class="text-sm text-blue-100">Total</p>
+            <p class="text-lg sm:text-2xl font-bold">{{ aluno?.quantidade_aulas || 0 }}</p>
+            <p class="text-xs sm:text-sm text-blue-100">Total</p>
           </div>
         </div>
       </div>
       
       <!-- Check-in -->
-      <div class="bg-card border border-border rounded-lg p-6">
+      <div class="bg-card border border-border rounded-lg p-4 sm:p-6">
         <div class="text-center max-w-md mx-auto">
-          <div class="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Icon icon="check-circle" class-name="w-10 h-10 text-green-600 dark:text-green-400" fallback="✓" />
+          <div class="w-14 h-14 sm:w-20 sm:h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+            <Icon icon="check-circle" class-name="w-7 h-7 sm:w-10 sm:h-10 text-green-600 dark:text-green-400" fallback="✓" />
           </div>
           
-          <h3 class="text-xl font-bold text-foreground mb-2">Registrar Presença</h3>
-          <p class="text-muted-foreground mb-6">
+          <h3 class="text-base sm:text-xl font-bold text-foreground mb-1 sm:mb-2">Registrar Presença</h3>
+          <p class="text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6">
             Clique no botão abaixo para confirmar sua presença na aula de hoje
           </p>
           
           <button
             @click="abrirModalConfirmacao"
             :disabled="jaRegistrouHoje || !ehDiaDeAula || aulasRestantes === 0"
-            class="w-full py-3 sm:py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-bold text-base sm:text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            class="w-full py-2.5 sm:py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-bold text-sm sm:text-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Icon icon="check-circle" class-name="w-5 h-5 sm:w-6 sm:h-6 inline mr-2" fallback="✓" />
+            <Icon icon="check-circle" class-name="w-4 h-4 sm:w-6 sm:h-6 inline mr-1 sm:mr-2" fallback="✓" />
             {{ jaRegistrouHoje ? 'Presença Confirmada Hoje!' : aulasRestantes === 0 ? 'Curso Concluído!' : ehDiaDeAula ? 'Confirmar Presença' : 'Hoje não é dia de aula' }}
           </button>
           
-          <p v-if="jaRegistrouHoje" class="text-xs sm:text-sm text-green-600 dark:text-green-400 mt-4">
+          <p v-if="jaRegistrouHoje" class="text-xs text-green-600 dark:text-green-400 mt-3 sm:mt-4">
             ✅ Você já registrou sua presença hoje!
           </p>
           
-          <p v-else-if="aulasRestantes === 0" class="text-xs sm:text-sm text-green-600 dark:text-green-400 mt-4">
+          <p v-else-if="aulasRestantes === 0" class="text-xs text-green-600 dark:text-green-400 mt-3 sm:mt-4">
             🎉 Parabéns! Você completou todas as aulas do curso!
           </p>
           
-          <p v-else-if="!ehDiaDeAula" class="text-xs sm:text-sm text-amber-600 dark:text-amber-400 mt-4">
+          <p v-else-if="!ehDiaDeAula" class="text-xs text-amber-600 dark:text-amber-400 mt-3 sm:mt-4">
             ⚠️ A confirmação de presença só está disponível nos dias de aula
           </p>
         </div>
       </div>
       
       <!-- Informações do Curso -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-card border border-border rounded-lg p-6">
-          <h3 class="font-semibold text-foreground mb-4">Informações do Curso</h3>
-          <div class="space-y-3 text-sm">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
+        <div class="bg-card border border-border rounded-lg p-4 sm:p-6">
+          <h3 class="text-sm sm:text-base font-semibold text-foreground mb-3 sm:mb-4">Informações do Curso</h3>
+          <div class="space-y-2 sm:space-y-3 text-xs sm:text-sm">
             <div class="flex justify-between">
               <span class="text-muted-foreground">Curso:</span>
               <span class="font-medium text-foreground">{{ aluno?.curso_contratado || 'N/A' }}</span>
@@ -283,9 +283,9 @@ onMounted(() => {
           </div>
         </div>
         
-        <div class="bg-card border border-border rounded-lg p-6">
-          <h3 class="font-semibold text-foreground mb-4">Horários</h3>
-          <div class="space-y-3 text-sm">
+        <div class="bg-card border border-border rounded-lg p-4 sm:p-6">
+          <h3 class="text-sm sm:text-base font-semibold text-foreground mb-3 sm:mb-4">Horários</h3>
+          <div class="space-y-2 sm:space-y-3 text-xs sm:text-sm">
             <div class="flex justify-between">
               <span class="text-muted-foreground">Entrada:</span>
               <span class="font-medium text-foreground">{{ aluno?.hora_entrada || '--:--' }}</span>
@@ -303,13 +303,13 @@ onMounted(() => {
       </div>
       
       <!-- Dias da Semana -->
-      <div class="bg-card border border-border rounded-lg p-6">
-        <h3 class="font-semibold text-foreground mb-4">Dias de Aula</h3>
-        <div class="flex flex-wrap gap-2">
+      <div class="bg-card border border-border rounded-lg p-4 sm:p-6">
+        <h3 class="text-sm sm:text-base font-semibold text-foreground mb-3 sm:mb-4">Dias de Aula</h3>
+        <div class="flex flex-wrap gap-1.5 sm:gap-2">
           <span 
             v-for="dia in aluno?.dias_semana || []"
             :key="dia"
-            class="px-4 py-2 bg-primary/10 text-primary rounded-lg font-medium"
+            class="px-3 py-1.5 sm:px-4 sm:py-2 bg-primary/10 text-primary rounded-lg font-medium text-xs sm:text-sm"
           >
             {{ {
               'segunda': 'Segunda-feira',

@@ -62,14 +62,14 @@
           </NuxtLink>
           
           <NuxtLink
-            to="/aluno/aulas"
+            to="/aluno/cursos"
             class="px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex items-center justify-center"
-            :class="$route.path === '/aluno/aulas' 
+            :class="$route.path === '/aluno/cursos' 
               ? 'border-primary text-primary' 
               : 'border-transparent text-muted-foreground dark:text-gray-300 hover:text-foreground dark:hover:text-gray-100 hover:border-border'"
           >
             <Icon icon="book" class-name="w-4 h-4 sm:inline mr-0 sm:mr-2" fallback="📚" />
-            <span class="hidden sm:inline">Aulas</span>
+            <span class="hidden sm:inline">Cursos</span>
           </NuxtLink>
           
           <NuxtLink

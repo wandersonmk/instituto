@@ -102,19 +102,55 @@ const fecharVideo = () => {
 const marcarComoConcluido = async () => {
   if (!videoSelecionado.value) return
 
-  const sucesso = await marcarConcluido(videoSelecionado.value.id)
-  if (sucesso) {
-    // Atualizar estado local
-    if (videoSelecionado.value) {
-      videoSelecionado.value.concluido = true
-      videoSelecionado.value.progresso = 100
+  try {
+    const sucesso = await marcarConcluido(videoSelecionado.value.id)
+    
+    if (sucesso) {
+      // Atualizar estado local do vídeo atual
+      if (videoSelecionado.value) {
+        videoSelecionado.value.concluido = true
+        videoSelecionado.value.progresso = 100
+      }
+
+      // Atualizar vídeo na lista de categorias
+      const categoriaId = videoSelecionado.value.categoria_id
+      if (categoriaId && videosCategoria.value[categoriaId]) {
+        const videoIndex = videosCategoria.value[categoriaId].findIndex(
+          v => v.id === videoSelecionado.value?.id
+        )
+        if (videoIndex !== -1) {
+          videosCategoria.value[categoriaId][videoIndex] = {
+            ...videosCategoria.value[categoriaId][videoIndex],
+            concluido: true,
+            progresso: 100
+          }
+        }
+      }
+
+      // Recarregar estatísticas
+      estatisticas.value = await buscarEstatisticas()
+
+      // Fechar modal
+      fecharVideo()
+
+      // Mostrar mensagem de sucesso
+      const toast = useToastSafe()
+      if (toast) {
+        toast.success('Vídeo marcado como concluído!', {
+          duration: 3000
+        })
+      }
+    } else {
+      throw new Error('Falha ao marcar vídeo como concluído')
     }
-
-    // Recarregar estatísticas
-    estatisticas.value = await buscarEstatisticas()
-
-    // Atualizar lista de vídeos
-    await carregarDados()
+  } catch (error) {
+    console.error('Erro ao marcar como concluído:', error)
+    const toast = useToastSafe()
+    if (toast) {
+      toast.error('Erro ao marcar vídeo como concluído', {
+        duration: 3000
+      })
+    }
   }
 }
 

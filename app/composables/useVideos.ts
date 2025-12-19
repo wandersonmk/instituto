@@ -297,22 +297,55 @@ export const useVideos = () => {
    * Marcar vídeo como concluído
    */
   const marcarConcluido = async (videoId: string) => {
-    if (!user.value) return
+    if (!user.value) {
+      console.error('Usuário não autenticado')
+      return false
+    }
 
     try {
-      const { error } = await supabase
+      // Primeiro, verificar se já existe um registro
+      const { data: existente, error: erroConsulta } = await supabase
         .from('videos_visualizacoes')
-        .upsert({
-          video_id: videoId,
-          aluno_id: user.value.id,
-          progresso: 100,
-          concluido: true,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'video_id,aluno_id'
-        })
+        .select('id')
+        .eq('video_id', videoId)
+        .eq('aluno_id', user.value.id)
+        .maybeSingle()
 
-      if (error) throw error
+      if (erroConsulta) throw erroConsulta
+
+      const agora = new Date().toISOString()
+
+      if (existente) {
+        // Atualizar registro existente
+        const { error } = await supabase
+          .from('videos_visualizacoes')
+          .update({
+            progresso: 100,
+            concluido: true,
+            data_conclusao: agora,
+            updated_at: agora
+          })
+          .eq('id', existente.id)
+
+        if (error) throw error
+      } else {
+        // Criar novo registro
+        const { error } = await supabase
+          .from('videos_visualizacoes')
+          .insert({
+            video_id: videoId,
+            aluno_id: user.value.id,
+            progresso: 100,
+            concluido: true,
+            data_inicio: agora,
+            data_conclusao: agora,
+            tempo_assistido: 0,
+            ultima_posicao: 0,
+            updated_at: agora
+          })
+
+        if (error) throw error
+      }
 
       return true
     } catch (e: any) {

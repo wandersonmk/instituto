@@ -127,16 +127,16 @@ const marcarComoConcluido = async () => {
     
     <div v-else class="space-y-4 sm:space-y-6">
       <!-- Header -->
-      <div class="bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg p-4 sm:p-6 text-white">
+      <div class="bg-white dark:bg-black rounded-lg p-4 sm:p-6 shadow-lg border border-gray-200 dark:border-gray-800">
         <div class="flex items-center space-x-3 mb-2">
-          <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-            <Icon icon="video" class-name="w-6 h-6 text-white" fallback="🎥" />
+          <div class="w-12 h-12 bg-gray-100 dark:bg-gray-900 rounded-lg flex items-center justify-center">
+            <Icon icon="video" class-name="w-6 h-6 text-gray-800 dark:text-white" fallback="🎥" />
           </div>
           <div>
-            <h2 class="text-lg sm:text-2xl font-bold">
+            <h2 class="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
               Aulas em Vídeo
             </h2>
-            <p class="text-sm text-purple-100">
+            <p class="text-sm text-gray-600 dark:text-gray-300">
               Acesse conteúdos exclusivos em vídeo
             </p>
           </div>

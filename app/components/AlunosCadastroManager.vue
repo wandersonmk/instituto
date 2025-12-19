@@ -63,6 +63,8 @@ const pais = ref('Brasil')
 // Dados do formulário - Página 2 (Dados do Curso)
 const cursoId = ref('')
 const cursoContratado = ref('')
+const buscaCurso = ref('')
+const mostrarListaCursos = ref(false)
 const quantidadeHoras = ref('')
 const quantidadeAulas = ref('')
 const aulasConcluidas = ref('')
@@ -148,12 +150,28 @@ onMounted(() => {
   buscarCursos()
 })
 
+// Computed para filtrar cursos conforme digita
+const cursosFiltrados = computed(() => {
+  if (!buscaCurso.value) return cursosAtivos.value
+  return cursosAtivos.value.filter(curso => 
+    curso.nome.toLowerCase().includes(buscaCurso.value.toLowerCase())
+  )
+})
+
 // Watch para preencher campos quando o curso for selecionado
 watch(cursoId, (novoId) => {
   if (novoId) {
     selecionarCurso()
   }
 })
+
+// Função para selecionar curso da lista
+function selecionarCursoDaLista(curso: any) {
+  cursoId.value = curso.id
+  buscaCurso.value = curso.nome
+  mostrarListaCursos.value = false
+  selecionarCurso()
+}
 
 // Função para atualizar campos quando seleciona um curso
 function selecionarCurso() {
@@ -358,6 +376,7 @@ function limparFormulario() {
   // Página 2 - Dados do Curso
   cursoId.value = ''
   cursoContratado.value = ''
+  buscaCurso.value = ''
   quantidadeHoras.value = ''
   quantidadeAulas.value = ''
   aulasConcluidas.value = ''
@@ -410,6 +429,7 @@ function editarAluno(aluno: any, event?: Event) {
   // Página 2 - Dados do Curso
   cursoId.value = aluno.curso_id || ''
   cursoContratado.value = aluno.cursoContratado || ''
+  buscaCurso.value = aluno.cursoContratado || ''
   quantidadeHoras.value = aluno.quantidadeHoras || ''
   quantidadeAulas.value = aluno.quantidadeAulas || ''
   aulasConcluidas.value = aluno.aulasConcluidas || ''
@@ -1570,22 +1590,54 @@ async function registrarPagamento() {
             </div>
 
             <!-- Curso Contratado -->
-            <div>
-              <label for="cursoId" class="block text-sm font-medium text-foreground mb-2">
+            <div class="relative">
+              <label for="buscaCurso" class="block text-sm font-medium text-foreground mb-2">
                 Curso Contratado <span class="text-red-500">*</span>
               </label>
-              <select
-                id="cursoId"
-                v-model="cursoId"
-                @change="selecionarCurso"
+              <input
+                id="buscaCurso"
+                v-model="buscaCurso"
+                @focus="mostrarListaCursos = true"
+                @blur="setTimeout(() => mostrarListaCursos = false, 200)"
+                type="text"
+                placeholder="Digite para buscar um curso..."
                 required
+                autocomplete="off"
                 class="w-full px-3 py-2 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
+              />
+              
+              <!-- Lista de cursos filtrados -->
+              <div
+                v-if="mostrarListaCursos && cursosFiltrados.length > 0"
+                class="absolute z-50 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto"
               >
-                <option value="">Selecione um curso</option>
-                <option v-for="curso in cursosAtivos" :key="curso.id" :value="curso.id">
-                  {{ curso.nome }}
-                </option>
-              </select>
+                <button
+                  v-for="curso in cursosFiltrados"
+                  :key="curso.id"
+                  type="button"
+                  @click="selecionarCursoDaLista(curso)"
+                  class="w-full px-4 py-3 text-left hover:bg-muted transition-colors border-b border-border last:border-b-0 flex items-center justify-between"
+                >
+                  <span class="text-foreground">{{ curso.nome }}</span>
+                  <span class="text-xs text-muted-foreground">{{ curso.carga_horaria }}h</span>
+                </button>
+              </div>
+              
+              <!-- Mensagem quando não encontra cursos -->
+              <div
+                v-if="mostrarListaCursos && buscaCurso && cursosFiltrados.length === 0"
+                class="absolute z-50 w-full mt-1 bg-card border border-border rounded-lg shadow-lg p-4 text-center"
+              >
+                <p class="text-sm text-muted-foreground mb-2">Nenhum curso encontrado</p>
+                <button
+                  type="button"
+                  @click="$router.push('/cursos')"
+                  class="text-sm text-primary hover:underline"
+                >
+                  + Cadastrar novo curso
+                </button>
+              </div>
+              
               <p v-if="cursoId" class="text-xs text-muted-foreground mt-2">
                 💡 Os campos abaixo foram preenchidos automaticamente. Você pode ajustá-los se necessário.
               </p>

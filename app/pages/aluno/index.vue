@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { VideoComCategoria } from '~/composables/useVideos'
+
 definePageMeta({
   middleware: 'aluno',
   layout: 'aluno'
@@ -7,11 +9,13 @@ definePageMeta({
 const { user } = useAuth()
 const supabase = useSupabaseClient()
 const { buscarCursosDoAluno } = useAlunosCursos()
+const { buscarUltimoVideoAssistido } = useVideos()
 
 // Estado
 const isLoading = ref(true)
 const aluno = ref<any>(null)
 const cursos = ref<any[]>([])
+const ultimoVideo = ref<VideoComCategoria | null>(null)
 
 // Buscar dados do aluno
 async function buscarDadosAluno() {
@@ -37,11 +41,22 @@ async function buscarDadosAluno() {
       const cursosData = await buscarCursosDoAluno(alunoData.id)
       cursos.value = cursosData || []
     }
+
+    // Buscar último vídeo assistido (se aluno tem acesso)
+    if (alunoData?.acesso_videos) {
+      ultimoVideo.value = await buscarUltimoVideoAssistido()
+    }
   } catch (error) {
     console.error('Erro ao buscar dados:', error)
   } finally {
     isLoading.value = false
   }
+}
+
+const formatarDuracao = (segundos: number) => {
+  const minutos = Math.floor(segundos / 60)
+  const segs = segundos % 60
+  return `${minutos}:${segs.toString().padStart(2, '0')}`
 }
 
 // Estatísticas dos cursos
@@ -167,6 +182,33 @@ onMounted(() => {
             <strong>Local:</strong> {{ cursoProximo.local_aulas || 'Não informado' }}
           </p>
         </div>
+      </div>
+      
+      <!-- Card Continuar Assistindo (se houver último vídeo) -->
+      <div v-if="ultimoVideo" class="bg-gradient-to-br from-orange-50 via-amber-50/80 to-yellow-50/90 dark:from-orange-900/20 dark:via-amber-900/15 dark:to-yellow-900/20 border-2 border-orange-200 dark:border-orange-700/40 rounded-lg p-3 sm:p-6 shadow-md hover:shadow-lg transition-all">
+        <div class="flex items-start space-x-3 mb-3">
+          <div class="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-orange-100 to-amber-100 dark:from-orange-800/40 dark:to-amber-800/30 rounded-lg flex items-center justify-center flex-shrink-0">
+            <Icon icon="play-circle" class-name="w-6 h-6 sm:w-8 sm:h-8 text-orange-600 dark:text-orange-400" fallback="▶️" />
+          </div>
+          <div class="flex-1 min-w-0">
+            <h3 class="text-xs sm:text-sm font-medium text-orange-700 dark:text-orange-400 mb-1">Continue Assistindo</h3>
+            <p class="text-sm sm:text-lg font-bold text-orange-900 dark:text-orange-100 line-clamp-2">
+              {{ ultimoVideo.titulo }}
+            </p>
+            <p v-if="ultimoVideo.categoria" class="text-xs text-orange-600 dark:text-orange-400 mt-1">
+              {{ ultimoVideo.categoria.icone }} {{ ultimoVideo.categoria.nome }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Botão continuar -->
+        <NuxtLink
+          :to="`/aluno/videos?video=${ultimoVideo.id}&continuar=true`"
+          class="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-lg transition-all shadow-md hover:shadow-lg font-semibold text-sm"
+        >
+          <Icon icon="play" class-name="w-4 h-4" fallback="▶" />
+          Continuar Assistindo
+        </NuxtLink>
       </div>
       
       <!-- Alerta de Débito (se houver) -->

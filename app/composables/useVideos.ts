@@ -297,16 +297,22 @@ export const useVideos = () => {
     tempoAssistido: number,
     ultimaPosicao: number
   ) => {
-    if (!user.value) return
+    if (!user.value) return false
 
     try {
+      const alunoId = await buscarAlunoId()
+      if (!alunoId) {
+        console.error('Aluno não encontrado')
+        return false
+      }
+
       const concluido = progressoAtual >= 90 // Considera concluído se assistiu 90%+
 
       const { error } = await supabase
         .from('videos_visualizacoes')
         .upsert({
           video_id: videoId,
-          aluno_id: user.value.id,
+          aluno_id: alunoId,
           progresso: progressoAtual,
           tempo_assistido: tempoAssistido,
           ultima_posicao: ultimaPosicao,
@@ -494,6 +500,52 @@ export const useVideos = () => {
     }
   }
 
+  /**
+   * Buscar último vídeo assistido (não concluído com maior updated_at)
+   */
+  const buscarUltimoVideoAssistido = async () => {
+    if (!user.value) return null
+
+    try {
+      const alunoId = await buscarAlunoId()
+      if (!alunoId) return null
+
+      const { data, error } = await supabase
+        .from('videos_visualizacoes')
+        .select(`
+          *,
+          video:videos(
+            *,
+            categoria:categorias_videos(*)
+          )
+        `)
+        .eq('aluno_id', alunoId)
+        .eq('concluido', false)
+        .gt('progresso', 0)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (error) throw error
+      
+      if (!data || !data.video) return null
+
+      // Enriquecer vídeo com dados de progresso
+      const videoEnriquecido: VideoComCategoria = {
+        ...data.video,
+        progresso: data.progresso || 0,
+        concluido: data.concluido || false,
+        tempo_assistido: data.tempo_assistido || 0,
+        ultima_posicao: data.ultima_posicao || 0
+      }
+
+      return videoEnriquecido
+    } catch (e: any) {
+      console.error('Erro ao buscar último vídeo:', e)
+      return null
+    }
+  }
+
   return {
     // Estados
     categorias,
@@ -510,6 +562,7 @@ export const useVideos = () => {
     atualizarProgresso,
     marcarConcluido,
     reverterConclusao,
-    buscarEstatisticas
+    buscarEstatisticas,
+    buscarUltimoVideoAssistido
   }
 }

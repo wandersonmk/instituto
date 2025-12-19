@@ -13,9 +13,12 @@ const {
   buscarVideosPorCategoria,
   buscarEstatisticas,
   marcarConcluido,
-  reverterConclusao
+  reverterConclusao,
+  buscarVideoPorId,
+  atualizarProgresso
 } = useVideos()
 
+const route = useRoute()
 const estatisticas = ref<any>(null)
 const videosCategoria = ref<Record<string, VideoComCategoria[]>>({})
 const videoSelecionado = ref<VideoComCategoria | null>(null)
@@ -30,7 +33,25 @@ onMounted(async () => {
   if (categorias.value && categorias.value.length > 0) {
     categorias.value.forEach(cat => categoriasExpandidas.value.add(cat.id))
   }
+
+  // Se veio da URL com videoId, abrir automaticamente (apenas do botão "Continuar Assistindo")
+  const videoId = route.query.video as string
+  if (videoId && route.query.continuar === 'true') {
+    await abrirVideoPorId(videoId)
+  }
 })
+
+// Abrir vídeo por ID
+const abrirVideoPorId = async (videoId: string) => {
+  try {
+    const video = await buscarVideoPorId(videoId)
+    if (video) {
+      videoSelecionado.value = video
+    }
+  } catch (error) {
+    console.error('Erro ao abrir vídeo:', error)
+  }
+}
 
 // Toggle expansão de categoria
 const toggleCategoria = (categoriaId: string) => {
@@ -92,8 +113,18 @@ const getEmbedUrl = (url: string) => {
   return url
 }
 
-const abrirVideo = (video: VideoComCategoria) => {
+const abrirVideo = async (video: VideoComCategoria) => {
   videoSelecionado.value = video
+  
+  console.log('Abrindo vídeo:', video.id, 'Progresso atual:', video.progresso)
+  
+  // Registrar que o vídeo foi aberto (atualizar updated_at)
+  // Se o vídeo ainda não tem progresso, iniciar com 1%
+  if (!video.progresso || video.progresso === 0) {
+    console.log('Registrando visualização do vídeo...')
+    const sucesso = await atualizarProgresso(video.id, 1, 0, 0)
+    console.log('Resultado:', sucesso ? 'sucesso' : 'falha')
+  }
 }
 
 const fecharVideo = () => {

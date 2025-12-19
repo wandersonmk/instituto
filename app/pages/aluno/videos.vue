@@ -133,24 +133,13 @@ const marcarComoConcluido = async () => {
       // Fechar modal
       fecharVideo()
 
-      // Mostrar mensagem de sucesso
-      const toast = useToastSafe()
-      if (toast) {
-        toast.success('Vídeo marcado como concluído!', {
-          duration: 3000
-        })
-      }
+      console.log('Vídeo marcado como concluído com sucesso!')
     } else {
       throw new Error('Falha ao marcar vídeo como concluído')
     }
   } catch (error) {
     console.error('Erro ao marcar como concluído:', error)
-    const toast = useToastSafe()
-    if (toast) {
-      toast.error('Erro ao marcar vídeo como concluído', {
-        duration: 3000
-      })
-    }
+    alert('Erro ao marcar vídeo como concluído. Tente novamente.')
   }
 }
 

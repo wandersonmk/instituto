@@ -31,6 +31,31 @@ export const useVideos = () => {
   const erro = useState<string | null>('videos-erro', () => null)
 
   /**
+   * Buscar ID do aluno a partir do user_id autenticado
+   */
+  const buscarAlunoId = async (): Promise<string | null> => {
+    if (!user.value) return null
+
+    try {
+      const { data: aluno, error } = await supabase
+        .from('alunos')
+        .select('id')
+        .eq('user_id', user.value.id)
+        .single()
+
+      if (error || !aluno) {
+        console.error('Aluno não encontrado:', error)
+        return null
+      }
+
+      return aluno.id
+    } catch (e) {
+      console.error('Erro ao buscar aluno:', e)
+      return null
+    }
+  }
+
+  /**
    * Buscar todas as categorias ativas
    */
   const buscarCategorias = async () => {
@@ -80,12 +105,18 @@ export const useVideos = () => {
 
       // Se usuário logado, buscar progresso
       if (user.value) {
+        const alunoId = await buscarAlunoId()
+        if (!alunoId) {
+          videos.value = videosData || []
+          return videosData
+        }
+
         const videosIds = videosData?.map(v => v.id) || []
         
         const { data: progressoData, error: progressoError } = await supabase
           .from('videos_visualizacoes')
           .select('*')
-          .eq('aluno_id', user.value.id)
+          .eq('aluno_id', alunoId)
           .in('video_id', videosIds)
 
         if (progressoError) throw progressoError
@@ -155,12 +186,18 @@ export const useVideos = () => {
 
       // Se usuário logado, buscar progresso
       if (user.value && videosData) {
+        const alunoId = await buscarAlunoId()
+        if (!alunoId) {
+          videos.value = videosData
+          return videosData
+        }
+
         const videosIds = videosData.map(v => v.id)
         
         const { data: progressoData, error: progressoError } = await supabase
           .from('videos_visualizacoes')
           .select('*')
-          .eq('aluno_id', user.value.id)
+          .eq('aluno_id', alunoId)
           .in('video_id', videosIds)
 
         if (progressoError) throw progressoError
@@ -213,11 +250,17 @@ export const useVideos = () => {
 
       // Se usuário logado, buscar progresso
       if (user.value) {
+        const alunoId = await buscarAlunoId()
+        if (!alunoId) {
+          videoAtual.value = videoData
+          return videoData
+        }
+
         const { data: progressoData, error: progressoError } = await supabase
           .from('videos_visualizacoes')
           .select('*')
           .eq('video_id', videoId)
-          .eq('aluno_id', user.value.id)
+          .eq('aluno_id', alunoId)
           .maybeSingle()
 
         if (progressoError) throw progressoError
@@ -303,12 +346,26 @@ export const useVideos = () => {
     }
 
     try {
-      // Primeiro, verificar se já existe um registro
+      // Buscar ID do aluno a partir do user_id
+      const { data: aluno, error: erroAluno } = await supabase
+        .from('alunos')
+        .select('id')
+        .eq('user_id', user.value.id)
+        .single()
+
+      if (erroAluno || !aluno) {
+        console.error('Aluno não encontrado:', erroAluno)
+        return false
+      }
+
+      const alunoId = aluno.id
+
+      // Verificar se já existe um registro
       const { data: existente, error: erroConsulta } = await supabase
         .from('videos_visualizacoes')
         .select('id')
         .eq('video_id', videoId)
-        .eq('aluno_id', user.value.id)
+        .eq('aluno_id', alunoId)
         .maybeSingle()
 
       if (erroConsulta) throw erroConsulta
@@ -334,7 +391,7 @@ export const useVideos = () => {
           .from('videos_visualizacoes')
           .insert({
             video_id: videoId,
-            aluno_id: user.value.id,
+            aluno_id: alunoId,
             progresso: 100,
             concluido: true,
             data_inicio: agora,
@@ -361,10 +418,13 @@ export const useVideos = () => {
     if (!user.value) return null
 
     try {
+      const alunoId = await buscarAlunoId()
+      if (!alunoId) return null
+
       const { data, error } = await supabase
         .from('videos_visualizacoes')
         .select('*')
-        .eq('aluno_id', user.value.id)
+        .eq('aluno_id', alunoId)
 
       if (error) throw error
 

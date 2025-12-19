@@ -186,7 +186,7 @@ onMounted(() => {
               <span 
                 v-for="dia in aluno?.dias_semana || []"
                 :key="dia"
-                class="px-2 py-0.5 sm:px-3 sm:py-1 bg-primary/10 text-primary text-xs sm:text-sm rounded-full"
+                class="px-2 py-0.5 sm:px-3 sm:py-1 bg-yellow-100 text-yellow-800 dark:bg-primary/10 dark:text-primary text-xs sm:text-sm rounded-full"
               >
                 {{ {
                   'segunda': 'Segunda-feira',

@@ -74,6 +74,19 @@
             <Icon icon="calendar-times" class-name="w-4 h-4 sm:inline mr-0 sm:mr-2" fallback="📅" />
             <span class="hidden sm:inline">Faltas</span>
           </NuxtLink>
+          
+          <!-- Aba de Vídeos (só aparece se tiver permissão) -->
+          <NuxtLink
+            v-if="temAcessoVideos"
+            to="/aluno/videos"
+            class="px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex items-center justify-center"
+            :class="$route.path === '/aluno/videos' 
+              ? 'border-primary text-primary' 
+              : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'"
+          >
+            <Icon icon="video" class-name="w-4 h-4 sm:inline mr-0 sm:mr-2" fallback="🎥" />
+            <span class="hidden sm:inline">Vídeos</span>
+          </NuxtLink>
         </div>
       </div>
     </nav>
@@ -88,9 +101,36 @@
 <script setup lang="ts">
 const { user, signOut } = useAuth()
 const router = useRouter()
+const supabase = useSupabaseClient()
 
 const userNome = computed(() => {
   return user.value?.user_metadata?.nome || user.value?.email || 'Aluno'
+})
+
+// Verificar se aluno tem acesso a vídeos
+const temAcessoVideos = ref(false)
+
+async function verificarAcessoVideos() {
+  if (!user.value) return
+  
+  try {
+    const { data, error } = await supabase
+      .from('alunos')
+      .select('acesso_videos')
+      .eq('user_id', user.value.id)
+      .single()
+    
+    if (!error && data) {
+      temAcessoVideos.value = data.acesso_videos || false
+    }
+  } catch (error) {
+    console.error('Erro ao verificar acesso a vídeos:', error)
+  }
+}
+
+// Verificar acesso ao montar
+onMounted(() => {
+  verificarAcessoVideos()
 })
 
 async function sair() {

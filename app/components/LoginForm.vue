@@ -43,19 +43,20 @@ async function handleLogin() {
   try {
     console.log('LoginForm: Iniciando login...')
     const result = await signInWithEmailAndPassword(email.value, password.value)
-    await new Promise(resolve => setTimeout(resolve, 200))
-
+    
     // Se login falhou, mostra erro
-    if (!result) {
+    if (result === false) {
       console.error('LoginForm: Erro no login:', errorMessage.value)
       toast?.error(errorMessage.value || 'Erro ao efetuar login. Verifique seus dados.')
       return
     }
 
+    // Aguardar um pouco para garantir que o estado foi atualizado
+    await new Promise(resolve => setTimeout(resolve, 300))
+
     // Se login OK, mostra sucesso
-    const { isAuthenticated, user } = useAuth()
-    console.log('LoginForm: Estado atual após delay:', { 
-      isAuthenticated: isAuthenticated.value, 
+    const { user } = useAuth()
+    console.log('LoginForm: Login bem-sucedido:', { 
       hasUser: !!user.value,
       email: user.value?.email 
     })
@@ -73,11 +74,11 @@ async function handleLogin() {
     
     // Redirecionar baseado no role
     if (userRole === 'aluno') {
-      await navigateTo('/aluno')
-      console.log('LoginForm: Aluno redirecionado para /aluno')
+      console.log('LoginForm: Redirecionando aluno para /aluno')
+      await navigateTo('/aluno', { replace: true })
     } else {
-      await navigateTo('/alunos')
-      console.log('LoginForm: Admin redirecionado para /alunos')
+      console.log('LoginForm: Redirecionando admin para /alunos')
+      await navigateTo('/alunos', { replace: true })
     }
   } catch (error) {
     console.error('LoginForm: Erro inesperado no login:', error)

@@ -1,9 +1,13 @@
 export default defineNuxtRouteMiddleware(async (to, from) => {
   const { user, isLoading } = useAuth()
   
-  // Aguarda o carregamento da autenticação
-  while (isLoading.value) {
+  // Aguarda o carregamento da autenticação (máximo 3 segundos)
+  let attempts = 0
+  const maxAttempts = 60
+  
+  while (isLoading.value && attempts < maxAttempts) {
     await new Promise(resolve => setTimeout(resolve, 50))
+    attempts++
   }
   
   // Se não estiver autenticado, redireciona para login

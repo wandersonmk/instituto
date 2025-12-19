@@ -24,8 +24,7 @@ export default defineNuxtPlugin(() => {
       persistSession: true,
       autoRefreshToken: true,
       storage: window.localStorage,
-      storageKey: 'agzap-auth-token',
-      flowType: 'pkce'
+      storageKey: 'agzap-auth-token'
     }
   })
 

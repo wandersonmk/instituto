@@ -71,6 +71,7 @@ const localAulas = ref('')
 const horaEntrada = ref('')
 const horaSaida = ref('')
 const multaFalta = ref('')
+const acessoVideos = ref(false)
 const mostrarModalNovoCurso = ref(false)
 
 // Dias da semana disponíveis
@@ -131,7 +132,8 @@ async function buscarAlunos() {
       horaEntrada: aluno.hora_entrada || '',
       horaSaida: aluno.hora_saida || '',
       multaFalta: aluno.multa_falta || '',
-      debitoFaltas: aluno.debito_faltas || '0'
+      debitoFaltas: aluno.debito_faltas || '0',
+      acessoVideos: aluno.acesso_videos || false
     }))
   } catch (error) {
     console.error('Erro inesperado ao buscar alunos:', error)
@@ -365,6 +367,7 @@ function limparFormulario() {
   horaSaida.value = ''
   multaFalta.value = ''
   multaFormatada.value = ''
+  acessoVideos.value = false
   
   modoEdicao.value = false
   alunoEditando.value = null
@@ -415,6 +418,7 @@ function editarAluno(aluno: any, event?: Event) {
   horaEntrada.value = aluno.horaEntrada || ''
   horaSaida.value = aluno.horaSaida || ''
   multaFalta.value = aluno.multaFalta || ''
+  acessoVideos.value = aluno.acessoVideos || false
   
   // Formatar multa
   if (aluno.multaFalta) {
@@ -454,7 +458,8 @@ async function salvarAluno() {
     local_aulas: localAulas.value,
     hora_entrada: horaEntrada.value || null,
     hora_saida: horaSaida.value || null,
-    multa_falta: multaFalta.value
+    multa_falta: multaFalta.value,
+    acesso_videos: acessoVideos.value
   }
   
   try {
@@ -1266,6 +1271,14 @@ async function registrarPagamento() {
                   >
                     Ativo
                   </span>
+                  <span
+                    v-if="aluno.acessoVideos"
+                    class="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 text-xs rounded-full font-medium flex items-center space-x-1"
+                    title="Tem acesso à área de vídeos"
+                  >
+                    <Icon icon="video" class-name="w-3 h-3" fallback="🎥" />
+                    <span>Vídeos</span>
+                  </span>
                 </div>
                 
                 <div class="flex items-center space-x-4 text-sm text-muted-foreground">
@@ -1713,6 +1726,32 @@ async function registrarPagamento() {
               </div>
             </div>
           </div>
+
+          <!-- Seção: Recursos Adicionais -->
+          <div class="space-y-4">
+            <div class="flex items-center space-x-2 pb-2 border-b border-border">
+              <Icon icon="video" class-name="w-5 h-5 text-primary" fallback="" />
+              <h4 class="text-base font-semibold text-foreground">Recursos Adicionais</h4>
+            </div>
+
+            <!-- Acesso a Vídeos -->
+            <div class="flex items-start space-x-3 p-4 bg-muted/30 rounded-lg border border-border">
+              <input
+                id="acessoVideos"
+                v-model="acessoVideos"
+                type="checkbox"
+                class="mt-1 rounded border-border text-primary focus:ring-primary focus:ring-offset-0 w-5 h-5 cursor-pointer"
+              />
+              <div class="flex-1">
+                <label for="acessoVideos" class="block text-sm font-medium text-foreground cursor-pointer">
+                  Permitir Acesso à Área de Vídeos
+                </label>
+                <p class="text-xs text-muted-foreground mt-1">
+                  Ao ativar, o aluno verá uma aba "Vídeos" no menu com aulas gravadas
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Botões -->
@@ -1933,6 +1972,37 @@ async function registrarPagamento() {
               <div class="p-3 rounded-lg bg-muted/20 md:col-span-2">
                 <label class="text-xs font-medium text-muted-foreground uppercase">Multa por Falta</label>
                 <p class="text-sm text-foreground font-medium mt-1">{{ alunoVisualizacao.multaFalta || 'Não informado' }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recursos Adicionais -->
+          <div>
+            <h4 class="text-sm font-semibold text-foreground mb-3 flex items-center space-x-2">
+              <Icon icon="video" class-name="w-4 h-4" fallback="" />
+              <span>Recursos Adicionais</span>
+            </h4>
+            <div class="p-4 rounded-lg border border-border" :class="alunoVisualizacao.acessoVideos ? 'bg-purple-50 dark:bg-purple-900/10 border-purple-200 dark:border-purple-800/30' : 'bg-muted/20'">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center" :class="alunoVisualizacao.acessoVideos ? 'bg-purple-100 dark:bg-purple-900/30' : 'bg-muted'">
+                  <Icon icon="video" class-name="w-5 h-5" :class-name="alunoVisualizacao.acessoVideos ? 'text-purple-600 dark:text-purple-400' : 'text-muted-foreground'" fallback="🎥" />
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm font-medium" :class="alunoVisualizacao.acessoVideos ? 'text-purple-900 dark:text-purple-100' : 'text-foreground'">
+                    Acesso à Área de Vídeos
+                  </p>
+                  <p class="text-xs" :class="alunoVisualizacao.acessoVideos ? 'text-purple-700 dark:text-purple-300' : 'text-muted-foreground'">
+                    {{ alunoVisualizacao.acessoVideos ? 'Aluno tem permissão para acessar vídeos' : 'Aluno não tem acesso a vídeos' }}
+                  </p>
+                </div>
+                <span 
+                  class="px-3 py-1 rounded-full text-xs font-medium"
+                  :class="alunoVisualizacao.acessoVideos 
+                    ? 'bg-purple-600 dark:bg-purple-500 text-white' 
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'"
+                >
+                  {{ alunoVisualizacao.acessoVideos ? 'Ativo' : 'Inativo' }}
+                </span>
               </div>
             </div>
           </div>

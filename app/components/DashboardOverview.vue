@@ -122,44 +122,43 @@ async function fetchTotalAlunos() {
 }
 
 
-// Buscar quantidade de tickets de hoje na tabela relatorios
+// Buscar quantidade de alunos cadastrados hoje
 async function fetchAlunosHoje() {
   if (!process.client) return
   const supabase = useSupabaseClient()
-  // Data de hoje no formato DD/MM/YYYY
   const hoje = new Date()
-  const dia = String(hoje.getDate()).padStart(2, '0')
-  const mes = String(hoje.getMonth() + 1).padStart(2, '0')
-  const ano = hoje.getFullYear()
-  const dataHoje = `${dia}/${mes}/${ano}`
+  hoje.setHours(0, 0, 0, 0)
+  const amanha = new Date(hoje)
+  amanha.setDate(amanha.getDate() + 1)
+  
   const { count, error } = await supabase
-    .from('relatorios')
+    .from('alunos')
     .select('id', { count: 'exact', head: true })
-    .eq('data_abertura_chamado', dataHoje)
+    .gte('created_at', hoje.toISOString())
+    .lt('created_at', amanha.toISOString())
   if (!error && typeof count === 'number') {
     metrics.value.alunosHoje = count
   }
 }
 
-// Buscar quantidade de tickets da semana na tabela relatorios
+// Buscar quantidade de alunos da semana
 async function fetchAlunosSemana() {
   if (!process.client) return
   const supabase = useSupabaseClient()
-  // Alunos na Semana (últimos 7 dias, incluindo hoje) usando created_at
   const startDate = new Date();
   startDate.setHours(0, 0, 0, 0);
   startDate.setDate(startDate.getDate() - 6); // 6 dias atrás + hoje = 7 dias
   const endDate = new Date();
   endDate.setHours(23, 59, 59, 999);
   const { data: alunosSemana, error: errorSemana } = await supabase
-    .from('relatorios')
+    .from('alunos')
     .select('id')
     .gte('created_at', startDate.toISOString())
     .lte('created_at', endDate.toISOString());
   metrics.value.alunosNovos = alunosSemana?.length || 0;
 }
 
-// Buscar quantidade de tickets do mês atual na tabela relatorios
+// Buscar quantidade de alunos do mês atual
 async function fetchAlunosMes() {
   if (!process.client) return
   const supabase = useSupabaseClient()
@@ -169,7 +168,7 @@ async function fetchAlunosMes() {
   firstDay.setHours(0, 0, 0, 0)
   lastDay.setHours(23, 59, 59, 999)
   const { data: alunosMes, error: errorMes } = await supabase
-    .from('relatorios')
+    .from('alunos')
     .select('id')
     .gte('created_at', firstDay.toISOString())
     .lte('created_at', lastDay.toISOString())
@@ -213,7 +212,7 @@ async function createLineChart() {
   // Buscar total de alunos por mês
   for (const m of months) {
     const { count, error } = await supabase
-      .from('relatorios')
+      .from('alunos')
       .select('id', { count: 'exact', head: true })
       .gte('created_at', m.firstDay.toISOString())
       .lte('created_at', m.lastDay.toISOString())

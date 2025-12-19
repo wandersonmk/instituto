@@ -76,8 +76,14 @@ const pageTitle = computed(() => {
       return 'Cardápio'
     case '/alunos':
       return 'Alunos'
+    case '/cursos':
+      return 'Cursos'
+    case '/indicacoes':
+      return 'Indicações Recebidas'
     case '/relatorios':
       return 'Relatórios de alunos'
+    case '/relatorio-faltas':
+      return 'Relatório de Faltas'
     case '/configuracoes':
       return 'Configurações'
     case '/ajuda':
@@ -101,8 +107,14 @@ const pageDescription = computed(() => {
       return 'Gerencie itens e categorias do cardápio'
     case '/alunos':
       return 'Gerencie todos os seus alunos'
+    case '/cursos':
+      return 'Gerencie todos os cursos disponíveis'
+    case '/indicacoes':
+      return 'Visualize todas as indicações recebidas'
     case '/relatorios':
       return 'Gerencie todos os relatórios de chamados'
+    case '/relatorio-faltas':
+      return 'Visualização completa de todas as faltas registradas'
     case '/configuracoes':
       return 'Configure e gerencie as configurações do sistema'
     case '/ajuda':

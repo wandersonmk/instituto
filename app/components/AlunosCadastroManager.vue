@@ -18,6 +18,28 @@ const paginaAtualVisualizacao = ref(1) // Paginação do modal de visualização
 // Controle do modal de confirmação de exclusão
 const alunoParaExcluir = ref<any>(null)
 
+// Controle do modal de edição de multa
+const mostrarModalMulta = ref(false)
+const alunoEditandoMulta = ref<any>(null)
+const novaMulta = ref('')
+const novaMultaFormatada = ref('')
+
+// Controle do modal de registro de falta
+const mostrarModalFalta = ref(false)
+const alunoRegistrandoFalta = ref<any>(null)
+const dataFalta = ref('')
+const motivoFalta = ref('')
+const observacoesFalta = ref('')
+const cursoIdFalta = ref('')
+const cursosDoAluno = ref<any[]>([])
+
+// Controle do modal de pagamento de multas
+const mostrarModalPagamento = ref(false)
+const alunoPagandoMulta = ref<any>(null)
+const observacoesPagamento = ref('')
+const valorPagamento = ref('')
+const valorPagamentoFormatado = ref('')
+
 // Filtros
 const filtroNome = ref('')
 const filtroTelefone = ref('')
@@ -108,7 +130,8 @@ async function buscarAlunos() {
       localAulas: aluno.local_aulas || '',
       horaEntrada: aluno.hora_entrada || '',
       horaSaida: aluno.hora_saida || '',
-      multaFalta: aluno.multa_falta || ''
+      multaFalta: aluno.multa_falta || '',
+      debitoFaltas: aluno.debito_faltas || '0'
     }))
   } catch (error) {
     console.error('Erro inesperado ao buscar alunos:', error)
@@ -431,13 +454,12 @@ async function salvarAluno() {
     local_aulas: localAulas.value,
     hora_entrada: horaEntrada.value || null,
     hora_saida: horaSaida.value || null,
-    multa_falta: multaFalta.value,
-    user_id: user.value?.id
+    multa_falta: multaFalta.value
   }
   
   try {
     if (modoEdicao.value && alunoEditando.value) {
-      // Atualizar aluno existente
+      // Atualizar aluno existente (NÃO atualizar user_id)
       const { error } = await supabase
         .from('alunos')
         .update(alunoData)
@@ -741,6 +763,367 @@ function fecharModalVisualizacao() {
   alunoVisualizacao.value = null
   paginaAtualVisualizacao.value = 1
 }
+
+// Abrir modal de edição de multa padrão (agora também registra falta)
+async function abrirModalMulta(aluno: any, event?: Event) {
+  if (event) event.stopPropagation()
+  alunoEditandoMulta.value = aluno
+  // Inicia com o valor padrão da multa do aluno
+  novaMulta.value = aluno.multaFalta || '0'
+  novaMultaFormatada.value = aluno.multaFalta ? formatarMoeda(parseFloat(aluno.multaFalta)) : '0,00'
+  // Preenche com data de hoje por padrão
+  dataFalta.value = new Date().toISOString().split('T')[0]
+  motivoFalta.value = ''
+  observacoesFalta.value = ''
+  cursoIdFalta.value = ''
+  
+  // Buscar cursos do aluno
+  await buscarCursosDoAluno(aluno.id)
+  
+  mostrarModalMulta.value = true
+}
+
+// Fechar modal de edição de multa
+function fecharModalMulta() {
+  mostrarModalMulta.value = false
+  alunoEditandoMulta.value = null
+  novaMulta.value = ''
+  novaMultaFormatada.value = ''
+  dataFalta.value = ''
+  motivoFalta.value = ''
+  observacoesFalta.value = ''
+  cursoIdFalta.value = ''
+  cursosDoAluno.value = []
+}
+
+// Manipular input da nova multa
+function handleNovaMultaInput(event: Event) {
+  const input = event.target as HTMLInputElement
+  const valor = input.value.replace(/\D/g, '')
+  
+  if (!valor) {
+    novaMultaFormatada.value = '0,00'
+    novaMulta.value = '0'
+    return
+  }
+  
+  const valorEmReais = parseInt(valor) / 100
+  novaMultaFormatada.value = formatarMoeda(valorEmReais)
+  novaMulta.value = valorEmReais.toString()
+}
+
+// Handler para formatar o valor do pagamento
+function handleValorPagamentoInput(event: Event) {
+  const input = event.target as HTMLInputElement
+  const valor = input.value.replace(/\D/g, '')
+  
+  if (!valor) {
+    valorPagamentoFormatado.value = '0,00'
+    valorPagamento.value = '0'
+    return
+  }
+  
+  const valorEmReais = parseInt(valor) / 100
+  valorPagamentoFormatado.value = formatarMoeda(valorEmReais)
+  valorPagamento.value = valorEmReais.toString()
+}
+
+// Salvar multa e registrar falta
+async function salvarMulta() {
+  if (!process.client || !alunoEditandoMulta.value || !dataFalta.value || !cursoIdFalta.value) return
+  
+  const supabase = useSupabaseClient()
+  const toast = await useToastSafe()
+  
+  try {
+    const valorMulta = parseFloat(novaMulta.value) || 0
+    
+    // Registrar a falta com o valor da multa
+    const { error: erroFalta } = await supabase
+      .from('faltas')
+      .insert({
+        aluno_id: alunoEditandoMulta.value.id,
+        curso_id: cursoIdFalta.value,
+        data_falta: dataFalta.value,
+        valor_multa: valorMulta,
+        motivo: motivoFalta.value || null,
+        observacoes: observacoesFalta.value || null
+      })
+    
+    if (erroFalta) {
+      console.error('Erro ao registrar falta:', erroFalta)
+      toast?.error('Erro ao registrar falta')
+      return
+    }
+    
+    // Atualizar o débito do aluno (somar a nova multa)
+    const debitoAtual = parseFloat(alunoEditandoMulta.value.debitoFaltas) || 0
+    const novoDebito = debitoAtual + valorMulta
+    
+    const { error: erroDebito } = await supabase
+      .from('alunos')
+      .update({ debito_faltas: novoDebito })
+      .eq('id', alunoEditandoMulta.value.id)
+    
+    if (erroDebito) {
+      console.error('Erro ao atualizar débito:', erroDebito)
+      // Não bloqueia o fluxo, pois a falta já foi registrada
+    }
+    
+    toast?.success('Falta registrada com sucesso!')
+    fecharModalMulta()
+    
+    // Recarregar lista de alunos
+    await buscarAlunos()
+  } catch (error) {
+    console.error('Erro inesperado ao registrar falta:', error)
+    toast?.error('Erro inesperado ao registrar falta')
+  }
+}
+
+// Atualizar valor padrão da multa (sem registrar falta)
+async function atualizarMultaPadrao() {
+  if (!process.client || !alunoEditandoMulta.value) return
+  
+  const supabase = useSupabaseClient()
+  const toast = await useToastSafe()
+  
+  try {
+    const { error } = await supabase
+      .from('alunos')
+      .update({ multa_falta: novaMulta.value })
+      .eq('id', alunoEditandoMulta.value.id)
+    
+    if (error) {
+      console.error('Erro ao atualizar multa padrão:', error)
+      toast?.error('Erro ao atualizar multa padrão')
+      return
+    }
+    
+    // Atualizar localmente
+    alunoEditandoMulta.value.multaFalta = novaMulta.value
+    
+    toast?.success('Valor padrão da multa atualizado!')
+    fecharModalMulta()
+    
+    // Recarregar lista de alunos
+    await buscarAlunos()
+  } catch (error) {
+    console.error('Erro inesperado ao atualizar multa:', error)
+    toast?.error('Erro inesperado ao atualizar multa')
+  }
+}
+
+// Buscar todos os cursos de um aluno
+async function buscarCursosDoAluno(alunoId: string) {
+  if (!process.client || !alunoId) return
+  
+  const supabase = useSupabaseClient()
+  
+  try {
+    // Buscar histórico de cursos do aluno
+    const { data, error } = await supabase
+      .from('alunos')
+      .select(`
+        id,
+        curso_id,
+        cursos (
+          id,
+          nome
+        )
+      `)
+      .eq('id', alunoId)
+      .single()
+    
+    if (error) {
+      console.error('Erro ao buscar cursos do aluno:', error)
+      cursosDoAluno.value = []
+      return
+    }
+    
+    // Se o aluno tem curso vinculado, adicionar à lista
+    if (data?.cursos) {
+      cursosDoAluno.value = [{
+        id: data.cursos.id,
+        nome: data.cursos.nome
+      }]
+      // Pre-selecionar o curso atual
+      cursoIdFalta.value = data.curso_id
+    } else {
+      cursosDoAluno.value = []
+    }
+  } catch (error) {
+    console.error('Erro inesperado ao buscar cursos do aluno:', error)
+    cursosDoAluno.value = []
+  }
+}
+
+// Abrir modal de registro de falta
+function abrirModalFalta(aluno: any, event?: Event) {
+  if (event) event.stopPropagation()
+  alunoRegistrandoFalta.value = aluno
+  dataFalta.value = new Date().toISOString().split('T')[0] // Data de hoje
+  motivoFalta.value = ''
+  observacoesFalta.value = ''
+  mostrarModalFalta.value = true
+}
+
+// Fechar modal de falta
+function fecharModalFalta() {
+  mostrarModalFalta.value = false
+  alunoRegistrandoFalta.value = null
+  dataFalta.value = ''
+  motivoFalta.value = ''
+  observacoesFalta.value = ''
+}
+
+// Registrar falta
+async function registrarFalta() {
+  if (!process.client || !alunoRegistrandoFalta.value || !dataFalta.value) return
+  
+  const supabase = useSupabaseClient()
+  const toast = await useToastSafe()
+  
+  try {
+    const valorMulta = alunoRegistrandoFalta.value.multaFalta ? parseFloat(alunoRegistrandoFalta.value.multaFalta) : 0
+    
+    const { error } = await supabase
+      .from('faltas')
+      .insert({
+        aluno_id: alunoRegistrandoFalta.value.id,
+        data_falta: dataFalta.value,
+        valor_multa: valorMulta,
+        motivo: motivoFalta.value || null,
+        observacoes: observacoesFalta.value || null
+      })
+    
+    if (error) {
+      console.error('Erro ao registrar falta:', error)
+      toast?.error('Erro ao registrar falta')
+      return
+    }
+    
+    toast?.success('Falta registrada com sucesso!')
+    fecharModalFalta()
+  } catch (error) {
+    console.error('Erro inesperado ao registrar falta:', error)
+    toast?.error('Erro inesperado ao registrar falta')
+  }
+}
+
+// Abrir modal de pagamento de multas
+function abrirModalPagamento(aluno: any, event?: Event) {
+  if (event) event.stopPropagation()
+  alunoPagandoMulta.value = aluno
+  observacoesPagamento.value = ''
+  
+  // Inicializar valor do pagamento com o débito total
+  const debitoTotal = parseFloat(aluno.debitoFaltas) || 0
+  valorPagamento.value = debitoTotal.toString()
+  valorPagamentoFormatado.value = formatarMoeda(debitoTotal)
+  
+  mostrarModalPagamento.value = true
+}
+
+// Fechar modal de pagamento
+function fecharModalPagamento() {
+  mostrarModalPagamento.value = false
+  alunoPagandoMulta.value = null
+  observacoesPagamento.value = ''
+  valorPagamento.value = ''
+  valorPagamentoFormatado.value = ''
+}
+
+// Registrar pagamento e zerar débito
+async function registrarPagamento() {
+  if (!process.client || !alunoPagandoMulta.value) return
+  
+  const supabase = useSupabaseClient()
+  const toast = await useToastSafe()
+  
+  try {
+    const valorPagoNum = parseFloat(valorPagamento.value) || 0
+    const debitoAtual = parseFloat(alunoPagandoMulta.value.debitoFaltas) || 0
+    
+    // Validações
+    if (valorPagoNum <= 0) {
+      toast?.error('Informe um valor de pagamento válido')
+      return
+    }
+    
+    if (valorPagoNum > debitoAtual) {
+      toast?.error('O valor do pagamento não pode ser maior que o débito')
+      return
+    }
+    
+    if (debitoAtual <= 0) {
+      toast?.error('Não há débito para pagar')
+      return
+    }
+    
+    // Calcular novo débito
+    const novoDebito = debitoAtual - valorPagoNum
+    
+    // Buscar empresa_id do aluno
+    const { data: alunoData, error: erroAluno } = await supabase
+      .from('alunos')
+      .select('empresa_id')
+      .eq('id', alunoPagandoMulta.value.id)
+      .single()
+    
+    if (erroAluno || !alunoData) {
+      console.error('Erro ao buscar dados do aluno:', erroAluno)
+      toast?.error('Erro ao buscar dados do aluno')
+      return
+    }
+    
+    // Registrar o pagamento
+    const { error: erroPagamento } = await supabase
+      .from('pagamentos_multas')
+      .insert({
+        aluno_id: alunoPagandoMulta.value.id,
+        empresa_id: alunoData.empresa_id,
+        valor_pago: valorPagoNum,
+        observacoes: observacoesPagamento.value || null
+      })
+    
+    if (erroPagamento) {
+      console.error('Erro ao registrar pagamento:', erroPagamento)
+      toast?.error('Erro ao registrar pagamento')
+      return
+    }
+    
+    // Atualizar o débito do aluno
+    const { error: erroUpdate } = await supabase
+      .from('alunos')
+      .update({ debito_faltas: novoDebito })
+      .eq('id', alunoPagandoMulta.value.id)
+    
+    if (erroUpdate) {
+      console.error('Erro ao atualizar débito:', erroUpdate)
+      toast?.error('Erro ao atualizar débito')
+      return
+    }
+    
+    // Atualizar localmente
+    alunoPagandoMulta.value.debitoFaltas = novoDebito.toString()
+    
+    // Mensagem de sucesso diferente para pagamento parcial ou total
+    if (novoDebito === 0) {
+      toast?.success('Débito quitado com sucesso!')
+    } else {
+      toast?.success(`Pagamento registrado! Saldo devedor: R$ ${novoDebito.toFixed(2).replace('.', ',')}`)
+    }
+    
+    fecharModalPagamento()
+    
+    // Recarregar lista de alunos
+    await buscarAlunos()
+  } catch (error) {
+    console.error('Erro inesperado ao registrar pagamento:', error)
+    toast?.error('Erro inesperado ao registrar pagamento')
+  }
+}
 </script>
 
 <template>
@@ -885,15 +1268,42 @@ function fecharModalVisualizacao() {
                   </span>
                 </div>
                 
-                <div class="flex items-center space-x-2 text-sm text-muted-foreground">
-                  <Icon icon="phone" class-name="w-4 h-4" fallback="" />
-                  <span>{{ aluno.telefone || 'Sem telefone' }}</span>
+                <div class="flex items-center space-x-4 text-sm text-muted-foreground">
+                  <div class="flex items-center space-x-2">
+                    <Icon icon="phone" class-name="w-4 h-4" fallback="" />
+                    <span>{{ aluno.telefone || 'Sem telefone' }}</span>
+                  </div>
+                  
+                  <div 
+                    v-if="parseFloat(aluno.debitoFaltas) > 0"
+                    class="flex items-center space-x-2 text-red-600 dark:text-red-400 font-semibold"
+                  >
+                    <Icon icon="dollar-sign" class-name="w-4 h-4" fallback="💰" />
+                    <span>Débito: R$ {{ parseFloat(aluno.debitoFaltas).toFixed(2).replace('.', ',') }}</span>
+                  </div>
                 </div>
               </div>
             </div>
 
             <!-- Botões rápidos -->
             <div class="flex items-center space-x-2 ml-4" @click.stop>
+              <button
+                v-if="parseFloat(aluno.debitoFaltas) > 0"
+                @click="abrirModalPagamento(aluno, $event)"
+                class="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                title="Marcar como Pago"
+              >
+                <Icon icon="check-circle" class-name="w-5 h-5" fallback="✅" />
+              </button>
+              
+              <button
+                @click="abrirModalMulta(aluno, $event)"
+                class="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                title="Registrar Falta"
+              >
+                <Icon icon="calendar-times" class-name="w-5 h-5" fallback="📅" />
+              </button>
+              
               <button
                 @click="editarAluno(aluno, $event)"
                 class="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
@@ -1647,6 +2057,380 @@ function fecharModalVisualizacao() {
                 class="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-red-500/50"
               >
                 Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </div>
+  </Transition>
+
+  <!-- Modal de Registro de Falta com Multa -->
+  <Transition name="fade">
+    <div
+      v-if="mostrarModalMulta"
+      class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
+      @click="fecharModalMulta"
+    >
+      <Transition name="scale">
+        <div
+          v-if="mostrarModalMulta"
+          class="bg-card border border-border rounded-xl max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto"
+          @click.stop
+        >
+          <div class="p-6">
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-6">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
+                  <Icon icon="calendar-times" class-name="w-5 h-5 text-red-600 dark:text-red-400" fallback="📅" />
+                </div>
+                <div>
+                  <h3 class="text-lg font-semibold text-foreground">
+                    Registrar Falta
+                  </h3>
+                  <p class="text-sm text-muted-foreground">
+                    {{ alunoEditandoMulta?.nome }}
+                  </p>
+                </div>
+              </div>
+              <button
+                @click="fecharModalMulta"
+                class="p-2 hover:bg-muted rounded-lg transition-colors"
+              >
+                <Icon icon="times" class-name="w-5 h-5 text-muted-foreground" fallback="✕" />
+              </button>
+            </div>
+
+            <!-- Formulário -->
+            <div class="space-y-4 mb-6">
+              <!-- Curso -->
+              <div>
+                <label for="cursoFalta" class="block text-sm font-medium text-foreground mb-2">
+                  Curso <span class="text-red-500">*</span>
+                </label>
+                <select
+                  id="cursoFalta"
+                  v-model="cursoIdFalta"
+                  required
+                  class="w-full px-3 py-2 border-2 border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
+                >
+                  <option value="" disabled>Selecione o curso</option>
+                  <option
+                    v-for="curso in cursosDoAluno"
+                    :key="curso.id"
+                    :value="curso.id"
+                  >
+                    {{ curso.nome }}
+                  </option>
+                </select>
+                <p v-if="cursosDoAluno.length === 0" class="text-xs text-red-500 mt-1">
+                  ⚠️ Aluno não possui curso vinculado
+                </p>
+              </div>
+
+              <!-- Data da Falta -->
+              <div>
+                <label for="dataFaltaMulta" class="block text-sm font-medium text-foreground mb-2">
+                  Data da Falta <span class="text-red-500">*</span>
+                </label>
+                <input
+                  id="dataFaltaMulta"
+                  v-model="dataFalta"
+                  type="date"
+                  required
+                  class="w-full px-3 py-2 border-2 border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
+                />
+              </div>
+
+              <!-- Valor da Multa -->
+              <div>
+                <label for="novaMulta" class="block text-sm font-medium text-foreground mb-2">
+                  Valor da Multa <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                  <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-foreground font-medium">
+                    R$
+                  </span>
+                  <input
+                    id="novaMulta"
+                    :value="novaMultaFormatada"
+                    @input="handleNovaMultaInput"
+                    type="text"
+                    placeholder="0,00"
+                    class="w-full pl-12 pr-3 py-2.5 border-2 border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all text-lg font-semibold"
+                  />
+                </div>
+                <p class="text-xs text-muted-foreground mt-1">
+                  Valor padrão: R$ {{ alunoEditandoMulta?.multaFalta ? parseFloat(alunoEditandoMulta.multaFalta).toFixed(2).replace('.', ',') : '0,00' }}
+                </p>
+              </div>
+
+              <!-- Motivo -->
+              <div>
+                <label for="motivoFaltaMulta" class="block text-sm font-medium text-foreground mb-2">
+                  Motivo (opcional)
+                </label>
+                <input
+                  id="motivoFaltaMulta"
+                  v-model="motivoFalta"
+                  type="text"
+                  placeholder="Ex: Não compareceu, Falta injustificada"
+                  class="w-full px-3 py-2 border-2 border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
+                />
+              </div>
+
+              <!-- Observações -->
+              <div>
+                <label for="observacoesFaltaMulta" class="block text-sm font-medium text-foreground mb-2">
+                  Observações (opcional)
+                </label>
+                <textarea
+                  id="observacoesFaltaMulta"
+                  v-model="observacoesFalta"
+                  rows="2"
+                  placeholder="Informações adicionais sobre a falta..."
+                  class="w-full px-3 py-2 border-2 border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all resize-none"
+                ></textarea>
+              </div>
+            </div>
+            
+            <!-- Botões -->
+            <div class="flex space-x-3">
+              <button
+                @click="fecharModalMulta"
+                class="flex-1 px-4 py-2.5 border-2 border-border rounded-lg text-foreground font-medium hover:bg-muted transition-all duration-200"
+              >
+                Cancelar
+              </button>
+              <button
+                @click="salvarMulta"
+                :disabled="!dataFalta || !cursoIdFalta"
+                class="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-red-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Registrar
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </div>
+  </Transition>
+
+  <!-- Modal de Registro de Falta -->
+  <Transition name="fade">
+    <div
+      v-if="mostrarModalFalta"
+      class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
+      @click="fecharModalFalta"
+    >
+      <Transition name="scale">
+        <div
+          v-if="mostrarModalFalta"
+          class="bg-card border border-border rounded-xl max-w-md w-full shadow-2xl"
+          @click.stop
+        >
+          <div class="p-6">
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-6">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
+                  <Icon icon="calendar-times" class-name="w-5 h-5 text-red-600 dark:text-red-400" fallback="📅" />
+                </div>
+                <div>
+                  <h3 class="text-lg font-semibold text-foreground">
+                    Registrar Falta
+                  </h3>
+                  <p class="text-sm text-muted-foreground">
+                    {{ alunoRegistrandoFalta?.nome }}
+                  </p>
+                </div>
+              </div>
+              <button
+                @click="fecharModalFalta"
+                class="p-2 hover:bg-muted rounded-lg transition-colors"
+              >
+                <Icon icon="times" class-name="w-5 h-5 text-muted-foreground" fallback="✕" />
+              </button>
+            </div>
+
+            <!-- Formulário -->
+            <div class="space-y-4 mb-6">
+              <!-- Data da Falta -->
+              <div>
+                <label for="dataFalta" class="block text-sm font-medium text-foreground mb-2">
+                  Data da Falta <span class="text-red-500">*</span>
+                </label>
+                <input
+                  id="dataFalta"
+                  v-model="dataFalta"
+                  type="date"
+                  required
+                  class="w-full px-3 py-2 border-2 border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
+                />
+              </div>
+
+              <!-- Motivo -->
+              <div>
+                <label for="motivoFalta" class="block text-sm font-medium text-foreground mb-2">
+                  Motivo (opcional)
+                </label>
+                <input
+                  id="motivoFalta"
+                  v-model="motivoFalta"
+                  type="text"
+                  placeholder="Ex: Não compareceu"
+                  class="w-full px-3 py-2 border-2 border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
+                />
+              </div>
+
+              <!-- Observações -->
+              <div>
+                <label for="observacoesFalta" class="block text-sm font-medium text-foreground mb-2">
+                  Observações (opcional)
+                </label>
+                <textarea
+                  id="observacoesFalta"
+                  v-model="observacoesFalta"
+                  rows="3"
+                  placeholder="Informações adicionais..."
+                  class="w-full px-3 py-2 border-2 border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all resize-none"
+                ></textarea>
+              </div>
+
+              <!-- Info Multa -->
+              <div class="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-lg p-3">
+                <div class="flex items-center space-x-2 text-sm">
+                  <Icon icon="info-circle" class-name="w-4 h-4 text-amber-600 dark:text-amber-400" fallback="ℹ️" />
+                  <span class="text-amber-800 dark:text-amber-200">
+                    Multa que será aplicada: <strong>R$ {{ alunoRegistrandoFalta?.multaFalta ? parseFloat(alunoRegistrandoFalta.multaFalta).toFixed(2).replace('.', ',') : '0,00' }}</strong>
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Botões -->
+            <div class="flex space-x-3">
+              <button
+                @click="fecharModalFalta"
+                class="flex-1 px-4 py-2.5 border-2 border-border rounded-lg text-foreground font-medium hover:bg-muted transition-all duration-200"
+              >
+                Cancelar
+              </button>
+              <button
+                @click="registrarFalta"
+                :disabled="!dataFalta"
+                class="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-red-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Registrar
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </div>
+  </Transition>
+
+  <!-- Modal de Pagamento de Multas -->
+  <Transition name="fade">
+    <div
+      v-if="mostrarModalPagamento"
+      class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
+      @click="fecharModalPagamento"
+    >
+      <Transition name="scale">
+        <div
+          v-if="mostrarModalPagamento"
+          class="bg-card border border-border rounded-xl max-w-md w-full shadow-2xl"
+          @click.stop
+        >
+          <div class="p-6">
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-6">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                  <Icon icon="check-circle" class-name="w-5 h-5 text-green-600 dark:text-green-400" fallback="✅" />
+                </div>
+                <div>
+                  <h3 class="text-lg font-semibold text-foreground">
+                    Registrar Pagamento
+                  </h3>
+                  <p class="text-sm text-muted-foreground">
+                    {{ alunoPagandoMulta?.nome }}
+                  </p>
+                </div>
+              </div>
+              <button
+                @click="fecharModalPagamento"
+                class="p-2 hover:bg-muted rounded-lg transition-colors"
+              >
+                <Icon icon="times" class-name="w-5 h-5 text-muted-foreground" fallback="✕" />
+              </button>
+            </div>
+
+            <!-- Valor do Débito -->
+            <div class="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+              <p class="text-sm text-red-800 dark:text-red-200 mb-1">Débito Atual:</p>
+              <p class="text-3xl font-bold text-red-600 dark:text-red-400">
+                R$ {{ alunoPagandoMulta?.debitoFaltas ? parseFloat(alunoPagandoMulta.debitoFaltas).toFixed(2).replace('.', ',') : '0,00' }}
+              </p>
+            </div>
+
+            <!-- Valor do Pagamento -->
+            <div class="mb-6">
+              <label for="valorPagamento" class="block text-sm font-medium text-foreground mb-2">
+                Valor a pagar <span class="text-red-500">*</span>
+              </label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-foreground font-medium">R$</span>
+                <input
+                  id="valorPagamento"
+                  type="text"
+                  :value="valorPagamentoFormatado"
+                  @input="handleValorPagamentoInput"
+                  placeholder="0,00"
+                  class="w-full pl-10 pr-4 py-2.5 border-2 border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all font-medium"
+                />
+              </div>
+              <p class="text-xs text-muted-foreground mt-1.5">
+                Informe o valor que está sendo pago. Pode ser parcial ou total.
+              </p>
+            </div>
+
+            <!-- Observações -->
+            <div class="mb-6">
+              <label for="observacoesPagamento" class="block text-sm font-medium text-foreground mb-2">
+                Observações (opcional)
+              </label>
+              <textarea
+                id="observacoesPagamento"
+                v-model="observacoesPagamento"
+                rows="3"
+                placeholder="Ex: Pago em dinheiro, PIX, etc..."
+                class="w-full px-3 py-2 border-2 border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all resize-none"
+              ></textarea>
+            </div>
+
+            <!-- Aviso -->
+            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-6">
+              <p class="text-xs text-blue-800 dark:text-blue-200">
+                ℹ️ O pagamento será registrado no histórico. Se o valor for parcial, o débito restante ficará pendente. As faltas permanecerão registradas.
+              </p>
+            </div>
+            
+            <!-- Botões -->
+            <div class="flex space-x-3">
+              <button
+                @click="fecharModalPagamento"
+                class="flex-1 px-4 py-2.5 border-2 border-border rounded-lg text-foreground font-medium hover:bg-muted transition-all duration-200"
+              >
+                Cancelar
+              </button>
+              <button
+                @click="registrarPagamento"
+                class="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-green-500/50"
+              >
+                Confirmar Pagamento
               </button>
             </div>
           </div>

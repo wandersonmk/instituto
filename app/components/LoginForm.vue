@@ -65,9 +65,20 @@ async function handleLogin() {
       console.log('LoginForm: Email salvo no localStorage:', user.value.email)
     }
 
+    // Verificar role do usuário e redirecionar para área correta
+    const userRole = user.value?.user_metadata?.role
+    console.log('LoginForm: User role:', userRole)
+    
     toast?.success('Login realizado com sucesso!')
-    await navigateTo('/')
-    console.log('LoginForm: NavigateTo executado')
+    
+    // Redirecionar baseado no role
+    if (userRole === 'aluno') {
+      await navigateTo('/aluno')
+      console.log('LoginForm: Aluno redirecionado para /aluno')
+    } else {
+      await navigateTo('/alunos')
+      console.log('LoginForm: Admin redirecionado para /alunos')
+    }
   } catch (error) {
     console.error('LoginForm: Erro inesperado no login:', error)
     toast?.error('Erro inesperado ao efetuar login.')

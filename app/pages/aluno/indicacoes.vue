@@ -18,7 +18,10 @@ const telefoneIndicado = ref('')
 
 // Buscar indicações do aluno
 async function buscarIndicacoes() {
-  if (!user.value) return
+  if (!user.value) {
+    isLoading.value = false
+    return
+  }
   
   isLoading.value = true
   

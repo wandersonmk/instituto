@@ -46,7 +46,14 @@ import {
   faGraduationCap,
   faClock,
   faDollarSign,
-  faSearch
+  faSearch,
+  faCalendarTimes,
+  faCalendarCheck,
+  faComment,
+  faCalendar,
+  faArrowRight,
+  faCalculator,
+  faMoneyBillWave
 } from '@fortawesome/free-solid-svg-icons'
 
 // This is important, we are going to let Nuxt worry about the CSS
@@ -100,7 +107,14 @@ library.add(
   faGraduationCap,
   faClock,
   faDollarSign,
-  faSearch
+  faSearch,
+  faCalendarTimes,
+  faCalendarCheck,
+  faComment,
+  faCalendar,
+  faArrowRight,
+  faCalculator,
+  faMoneyBillWave
 )
 
 export default defineNuxtPlugin({

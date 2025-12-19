@@ -63,6 +63,23 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       return navigateTo('/login')
     }
     
+    // Verificar role do usuário e redirecionar para área correta
+    const userRole = user.value.user_metadata?.role
+    console.log('[Auth Middleware] User role:', userRole)
+    
+    // Se é aluno tentando acessar área admin, redireciona para área do aluno
+    if (userRole === 'aluno' && !to.path.startsWith('/aluno/') && to.path !== '/aluno') {
+      console.log('[Auth Middleware] Aluno tentando acessar área admin, redirecionando para /aluno')
+      return navigateTo('/aluno')
+    }
+    
+    // Se é admin tentando acessar área do aluno, redireciona para dashboard
+    // Verifica se o path é exatamente /aluno ou começa com /aluno/ (mas não /alunos)
+    if (userRole !== 'aluno' && (to.path === '/aluno' || to.path.startsWith('/aluno/'))) {
+      console.log('[Auth Middleware] Admin tentando acessar área do aluno, redirecionando para /alunos')
+      return navigateTo('/alunos')
+    }
+    
     console.log('[Auth Middleware] Usuário autenticado, permitindo acesso')
   } catch (error) {
     // Se houver erro na inicialização, redireciona para login

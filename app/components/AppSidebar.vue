@@ -84,6 +84,18 @@
             </NuxtLink>
           </li>
 
+          <!-- Relatório de Faltas -->
+          <li>
+            <NuxtLink 
+              to="/relatorio-faltas"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted group relative"
+              :class="$route.path === '/relatorio-faltas' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
+            >
+              <Icon icon="calendar-times" class-name="w-5 h-5 mr-3" fallback="📅" />
+              <span>Relatório de Faltas</span>
+            </NuxtLink>
+          </li>
+
           <!-- Configurações -->
           <li>
             <NuxtLink 
@@ -237,6 +249,19 @@
             >
               <Icon icon="chart-bar" class-name="w-5 h-5 mr-3" fallback="📊" />
               <span>Relatórios</span>
+            </NuxtLink>
+          </li>
+
+          <!-- Relatório de Faltas -->
+          <li>
+            <NuxtLink 
+              to="/relatorio-faltas"
+              @click="$emit('close-mobile')"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted group relative"
+              :class="$route.path === '/relatorio-faltas' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
+            >
+              <Icon icon="calendar-times" class-name="w-5 h-5 mr-3" fallback="📅" />
+              <span>Relatório de Faltas</span>
             </NuxtLink>
           </li>
 

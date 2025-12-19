@@ -10,10 +10,16 @@ const supabase = useSupabaseClient()
 // Estado
 const isLoading = ref(true)
 const aluno = ref<any>(null)
+const mostrarModalConfirmacao = ref(false)
+const aceitouTermos = ref(false)
+const jaRegistrouHoje = ref(false)
 
 // Buscar dados do aluno
 async function buscarDadosAluno() {
-  if (!user.value) return
+  if (!user.value) {
+    isLoading.value = false
+    return
+  }
   
   try {
     const { data, error } = await supabase
@@ -25,6 +31,11 @@ async function buscarDadosAluno() {
     if (error) throw error
     
     aluno.value = data
+    
+    // Verificar se já registrou presença hoje
+    if (data?.id) {
+      await verificarPresencaHoje(data.id)
+    }
   } catch (error) {
     console.error('Erro ao buscar dados:', error)
   } finally {
@@ -32,21 +43,103 @@ async function buscarDadosAluno() {
   }
 }
 
+// Verificar se já registrou presença hoje
+async function verificarPresencaHoje(alunoId: string) {
+  const hoje = new Date().toISOString().split('T')[0] // Formato YYYY-MM-DD
+  
+  const { data, error } = await supabase
+    .from('presencas')
+    .select('id')
+    .eq('aluno_id', alunoId)
+    .eq('data_presenca', hoje)
+    .maybeSingle()
+  
+  if (!error && data) {
+    jaRegistrouHoje.value = true
+  }
+}
+
+// Verificar se hoje é dia de aula
+const ehDiaDeAula = computed(() => {
+  if (!aluno.value?.dias_semana || aluno.value.dias_semana.length === 0) {
+    return false
+  }
+  
+  const hoje = new Date()
+  const diaSemana = hoje.getDay() // 0 = Domingo, 1 = Segunda, etc.
+  
+  const mapaDias: Record<number, string> = {
+    0: 'domingo',
+    1: 'segunda',
+    2: 'terca',
+    3: 'quarta',
+    4: 'quinta',
+    5: 'sexta',
+    6: 'sabado'
+  }
+  
+  const diaHoje = mapaDias[diaSemana]
+  return aluno.value.dias_semana.includes(diaHoje)
+})
+
+// Abrir modal de confirmação
+function abrirModalConfirmacao() {
+  if (jaRegistrouHoje.value) {
+    useToastSafe().then(toast => {
+      toast?.info('Você já confirmou sua presença hoje!')
+    })
+    return
+  }
+  
+  if (!ehDiaDeAula.value) {
+    useToastSafe().then(toast => {
+      toast?.warning('Hoje não é dia de aula!')
+    })
+    return
+  }
+  
+  if (aulasRestantes.value === 0) {
+    useToastSafe().then(toast => {
+      toast?.warning('Você já completou todas as aulas do curso!')
+    })
+    return
+  }
+  
+  aceitouTermos.value = false
+  mostrarModalConfirmacao.value = true
+}
+
+// Fechar modal
+function fecharModal() {
+  mostrarModalConfirmacao.value = false
+  aceitouTermos.value = false
+}
+
 // Registrar presença
 async function registrarPresenca() {
-  if (!aluno.value) return
+  if (!aluno.value || !aceitouTermos.value) return
   
   const toast = await useToastSafe()
   
   try {
-    // Incrementar aulas_concluidas
-    const novoTotal = (aluno.value.aulas_concluidas || 0) + 1
+    const hoje = new Date().toISOString().split('T')[0]
     
-    // Verificar se não ultrapassa o total
-    if (novoTotal > aluno.value.quantidade_aulas) {
-      toast?.warning('Você já completou todas as aulas do curso!')
+    // Registrar presença na tabela de presenças
+    const { error: erroPresenca } = await supabase
+      .from('presencas')
+      .insert({
+        aluno_id: aluno.value.id,
+        data_presenca: hoje
+      })
+    
+    if (erroPresenca) {
+      console.error('Erro ao registrar presença:', erroPresenca)
+      toast?.error('Erro ao registrar presença')
       return
     }
+    
+    // Incrementar aulas_concluidas
+    const novoTotal = (aluno.value.aulas_concluidas || 0) + 1
     
     const { error } = await supabase
       .from('alunos')
@@ -59,6 +152,10 @@ async function registrarPresenca() {
     
     // Atualizar dados locais
     aluno.value.aulas_concluidas = novoTotal
+    jaRegistrouHoje.value = true
+    
+    // Fechar modal
+    fecharModal()
   } catch (error) {
     console.error('Erro ao registrar presença:', error)
     toast?.error('Erro ao registrar presença')
@@ -144,16 +241,24 @@ onMounted(() => {
           </p>
           
           <button
-            @click="registrarPresenca"
-            :disabled="aulasRestantes === 0"
-            class="w-full py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            @click="abrirModalConfirmacao"
+            :disabled="jaRegistrouHoje || !ehDiaDeAula || aulasRestantes === 0"
+            class="w-full py-3 sm:py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-bold text-base sm:text-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Icon icon="check-circle" class-name="w-6 h-6 inline mr-2" fallback="✓" />
-            {{ aulasRestantes > 0 ? 'Confirmar Presença' : 'Curso Concluído!' }}
+            <Icon icon="check-circle" class-name="w-5 h-5 sm:w-6 sm:h-6 inline mr-2" fallback="✓" />
+            {{ jaRegistrouHoje ? 'Presença Confirmada Hoje!' : aulasRestantes === 0 ? 'Curso Concluído!' : ehDiaDeAula ? 'Confirmar Presença' : 'Hoje não é dia de aula' }}
           </button>
           
-          <p v-if="aulasRestantes === 0" class="text-sm text-green-600 dark:text-green-400 mt-4">
+          <p v-if="jaRegistrouHoje" class="text-xs sm:text-sm text-green-600 dark:text-green-400 mt-4">
+            ✅ Você já registrou sua presença hoje!
+          </p>
+          
+          <p v-else-if="aulasRestantes === 0" class="text-xs sm:text-sm text-green-600 dark:text-green-400 mt-4">
             🎉 Parabéns! Você completou todas as aulas do curso!
+          </p>
+          
+          <p v-else-if="!ehDiaDeAula" class="text-xs sm:text-sm text-amber-600 dark:text-amber-400 mt-4">
+            ⚠️ A confirmação de presença só está disponível nos dias de aula
           </p>
         </div>
       </div>
@@ -220,4 +325,107 @@ onMounted(() => {
       </div>
     </div>
   </div>
+
+  <!-- Modal de Confirmação -->
+  <Transition name="fade">
+    <div
+      v-if="mostrarModalConfirmacao"
+      class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      @click="fecharModal"
+    >
+      <Transition name="scale">
+        <div
+          v-if="mostrarModalConfirmacao"
+          class="bg-card border border-border rounded-xl max-w-md w-full shadow-2xl"
+          @click.stop
+        >
+          <div class="p-6">
+            <!-- Header -->
+            <div class="text-center mb-6">
+              <div class="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Icon icon="check-circle" class-name="w-8 h-8 text-green-600 dark:text-green-400" fallback="✓" />
+              </div>
+              <h3 class="text-xl font-bold text-foreground mb-2">
+                Confirmar Presença
+              </h3>
+              <p class="text-sm text-muted-foreground">
+                Você está prestes a registrar sua presença na aula de hoje
+              </p>
+            </div>
+
+            <!-- Informações -->
+            <div class="bg-muted/50 rounded-lg p-4 mb-6 space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-muted-foreground">Data:</span>
+                <span class="font-medium text-foreground">{{ new Date().toLocaleDateString('pt-BR') }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-muted-foreground">Horário:</span>
+                <span class="font-medium text-foreground">{{ aluno?.hora_entrada || '--:--' }} - {{ aluno?.hora_saida || '--:--' }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-muted-foreground">Aula:</span>
+                <span class="font-medium text-foreground">{{ (aluno?.aulas_concluidas || 0) + 1 }} de {{ aluno?.quantidade_aulas || 0 }}</span>
+              </div>
+            </div>
+
+            <!-- Termos -->
+            <div class="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-lg p-4 mb-6">
+              <label class="flex items-start space-x-3 cursor-pointer group">
+                <input
+                  v-model="aceitouTermos"
+                  type="checkbox"
+                  class="mt-1 w-5 h-5 rounded border-2 border-amber-400 text-amber-600 focus:ring-2 focus:ring-amber-500 cursor-pointer"
+                />
+                <span class="text-sm text-amber-800 dark:text-amber-200 leading-relaxed">
+                  Declaro que estou presente na aula e confirmo a veracidade desta informação. 
+                  Estou ciente de que declarações falsas podem resultar em penalidades.
+                </span>
+              </label>
+            </div>
+            
+            <!-- Botões -->
+            <div class="flex space-x-3">
+              <button
+                @click="fecharModal"
+                class="flex-1 px-4 py-3 border-2 border-border rounded-lg text-foreground font-medium hover:bg-muted transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                @click="registrarPresenca"
+                :disabled="!aceitouTermos"
+                class="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </div>
+  </Transition>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.scale-enter-active,
+.scale-leave-active {
+  transition: all 0.3s ease;
+}
+
+.scale-enter-from,
+.scale-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
+}
+</style>

@@ -81,6 +81,7 @@ const mostrarModalNovoCurso = ref(false)
 // NOVO: Lista de cursos adicionados ao aluno
 const cursosAdicionados = ref<any[]>([])
 const cursoParaRemover = ref<any>(null)
+const cursoEditandoIndex = ref<number | null>(null) // Índice do curso sendo editado
 
 // Dias da semana disponíveis (0=Domingo, 1=Segunda, etc.)
 const diasDisponiveis = [
@@ -432,15 +433,19 @@ function adicionarCursoALista() {
   
   console.log('🔵 Adicionando curso com dias:', diasSemana.value)
   
-  // Adicionar à lista
+  // Adicionar à lista com estrutura normalizada
   cursosAdicionados.value.push({
     curso_id: cursoId.value,
-    curso: cursoSelecionado,
+    curso_nome: cursoSelecionado.nome,
+    carga_horaria: cursoSelecionado.carga_horaria,
+    quantidade_aulas: cursoSelecionado.quantidade_aulas,
     dias_semana: [...diasSemana.value], // Cria cópia do array
     local_aulas: localAulas.value,
     hora_entrada: horaEntrada.value,
     hora_saida: horaSaida.value,
     aulas_concluidas: 0,
+    percentual_conclusao: 0,
+    aulas_restantes: cursoSelecionado.quantidade_aulas || 0,
     status: 'ativo'
   })
 
@@ -479,6 +484,67 @@ function fecharListaCursos() {
 function removerCursoDaLista(index: number) {
   cursosAdicionados.value.splice(index, 1)
   useToastSafe().then(toast => toast?.info('Curso removido da lista'))
+}
+
+// Iniciar edição de um curso
+function editarCursoDaLista(index: number) {
+  const curso = cursosAdicionados.value[index]
+  
+  // Preencher formulário com dados do curso
+  cursoId.value = curso.curso_id
+  buscaCurso.value = curso.curso_nome // Usar curso_nome da view
+  diasSemana.value = [...curso.dias_semana]
+  localAulas.value = curso.local_aulas
+  horaEntrada.value = curso.hora_entrada
+  horaSaida.value = curso.hora_saida
+  
+  // Marcar que está editando
+  cursoEditandoIndex.value = index
+  
+  useToastSafe().then(toast => toast?.info('✏️ Editando curso. Modifique os campos e clique em "Salvar Alterações"'))
+}
+
+// Salvar alterações do curso editado
+function salvarEdicaoCurso() {
+  if (cursoEditandoIndex.value === null) return
+  
+  if (!diasSemana.value || diasSemana.value.length === 0) {
+    useToastSafe().then(toast => toast?.error('Selecione ao menos um dia da semana'))
+    return
+  }
+  
+  if (!localAulas.value) {
+    useToastSafe().then(toast => toast?.error('Informe o local das aulas'))
+    return
+  }
+  
+  if (!horaEntrada.value || !horaSaida.value) {
+    useToastSafe().then(toast => toast?.error('Informe os horários de entrada e saída'))
+    return
+  }
+  
+  // Atualizar o curso na lista
+  const index = cursoEditandoIndex.value
+  cursosAdicionados.value[index] = {
+    ...cursosAdicionados.value[index],
+    dias_semana: [...diasSemana.value],
+    local_aulas: localAulas.value,
+    hora_entrada: horaEntrada.value,
+    hora_saida: horaSaida.value
+  }
+  
+  // Limpar formulário e sair do modo edição
+  cursoEditandoIndex.value = null
+  limparCamposCurso()
+  
+  useToastSafe().then(toast => toast?.success('✓ Alterações salvas!'))
+}
+
+// Cancelar edição
+function cancelarEdicaoCurso() {
+  cursoEditandoIndex.value = null
+  limparCamposCurso()
+  useToastSafe().then(toast => toast?.info('Edição cancelada'))
 }
 
 // Função para formatar dias da semana
@@ -567,15 +633,20 @@ async function editarAluno(aluno: any, event?: Event) {
   
   console.log('📚 Cursos carregados do banco:', cursosDoAlunoData)
   
+  // Normalizar estrutura para ser compatível com cursos novos
   cursosAdicionados.value = cursosDoAlunoData.map((ac: any) => ({
     id: ac.id, // ID do registro alunos_cursos
     curso_id: ac.curso_id,
-    curso: ac.curso,
+    curso_nome: ac.curso_nome,
+    carga_horaria: ac.carga_horaria,
+    quantidade_aulas: ac.quantidade_aulas,
     dias_semana: ac.dias_semana || [],
     local_aulas: ac.local_aulas || '',
     hora_entrada: ac.hora_entrada || '',
     hora_saida: ac.hora_saida || '',
     aulas_concluidas: ac.aulas_concluidas || 0,
+    percentual_conclusao: ac.percentual_conclusao || 0,
+    aulas_restantes: ac.aulas_restantes || 0,
     status: ac.status || 'ativo'
   }))
   
@@ -1824,7 +1895,7 @@ async function registrarPagamento() {
                   <div class="flex-1 space-y-2">
                     <div class="flex items-center space-x-2">
                       <Icon icon="book" class-name="w-4 h-4 text-primary" fallback="📚" />
-                      <h5 class="font-semibold text-foreground">{{ curso.curso.nome }}</h5>
+                      <h5 class="font-semibold text-foreground">{{ curso.curso_nome }}</h5>
                     </div>
                     
                     <div class="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
@@ -1843,14 +1914,26 @@ async function registrarPagamento() {
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    @click="removerCursoDaLista(index)"
-                    class="ml-3 p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                    title="Remover curso"
-                  >
-                    <Icon icon="trash" class-name="w-4 h-4" fallback="🗑️" />
-                  </button>
+                  <div class="flex items-center space-x-1">
+                    <button
+                      type="button"
+                      @click="editarCursoDaLista(index)"
+                      class="p-1.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                      title="Editar curso"
+                      :disabled="cursoEditandoIndex !== null"
+                    >
+                      <span class="text-base">✏️</span>
+                    </button>
+                    <button
+                      type="button"
+                      @click="removerCursoDaLista(index)"
+                      class="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                      title="Remover curso"
+                      :disabled="cursoEditandoIndex !== null"
+                    >
+                      <Icon icon="trash" class-name="w-4 h-4" fallback="🗑️" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2047,15 +2130,33 @@ async function registrarPagamento() {
             </div>
           </div>
 
-          <!-- Botão Adicionar Curso -->
-          <div class="flex justify-center pt-2">
+          <!-- Botões Adicionar/Salvar e Cancelar -->
+          <div class="flex justify-center gap-3 pt-2">
+            <!-- Botão Cancelar (apenas quando editando) -->
+            <button
+              v-if="cursoEditandoIndex !== null"
+              type="button"
+              @click="cancelarEdicaoCurso"
+              class="px-6 py-3 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-all font-medium flex items-center justify-center space-x-2"
+            >
+              <span>❌</span>
+              <span>Cancelar</span>
+            </button>
+            
+            <!-- Botão Adicionar/Salvar -->
             <button
               type="button"
-              @click="adicionarCursoALista"
-              class="w-full md:w-auto px-8 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all font-medium flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
+              @click="cursoEditandoIndex !== null ? salvarEdicaoCurso() : adicionarCursoALista()"
+              class="px-8 py-3 rounded-lg transition-all font-medium flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
+              :class="cursoEditandoIndex !== null 
+                ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                : 'bg-primary text-primary-foreground hover:bg-primary/90'"
             >
-              <Icon icon="plus" class-name="w-5 h-5" fallback="+" />
-              <span class="text-base">{{ cursosAdicionados.length > 0 ? 'Adicionar Mais Um Curso' : 'Adicionar à Lista' }}</span>
+              <span v-if="cursoEditandoIndex !== null">💾</span>
+              <Icon v-else icon="plus" class-name="w-5 h-5" fallback="+" />
+              <span class="text-base">
+                {{ cursoEditandoIndex !== null ? 'Salvar Alterações' : (cursosAdicionados.length > 0 ? 'Adicionar Mais Um Curso' : 'Adicionar à Lista') }}
+              </span>
             </button>
           </div>
           </div>

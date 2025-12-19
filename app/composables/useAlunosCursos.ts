@@ -1,14 +1,11 @@
 export const useAlunosCursos = () => {
   const supabase = useSupabaseClient()
 
-  // Buscar cursos de um aluno
+  // Buscar cursos de um aluno com progresso calculado
   async function buscarCursosDoAluno(alunoId: string) {
     const { data, error } = await supabase
-      .from('alunos_cursos')
-      .select(`
-        *,
-        curso:cursos(*)
-      `)
+      .from('view_alunos_cursos_completo')
+      .select('*')
       .eq('aluno_id', alunoId)
       .order('created_at', { ascending: false })
 
@@ -16,6 +13,13 @@ export const useAlunosCursos = () => {
       console.error('Erro ao buscar cursos do aluno:', error)
       return []
     }
+
+    console.log('📊 Cursos carregados com progresso:', data?.map(c => ({
+      curso: c.curso_nome,
+      aulas_concluidas: c.aulas_concluidas,
+      quantidade_aulas: c.quantidade_aulas,
+      percentual: c.percentual_conclusao
+    })))
 
     return data || []
   }
@@ -148,19 +152,37 @@ export const useAlunosCursos = () => {
 
     if (presencaError) throw presencaError
 
+    console.log('✅ Presença registrada, agora incrementando aulas_concluidas...')
+
     // Incrementar aulas_concluidas na matrícula
-    const { data: matricula } = await supabase
+    const { data: matricula, error: matriculaError } = await supabase
       .from('alunos_cursos')
       .select('id, aulas_concluidas')
       .eq('aluno_id', alunoId)
       .eq('curso_id', cursoId)
       .single()
 
+    if (matriculaError) {
+      console.error('❌ Erro ao buscar matrícula:', matriculaError)
+      throw matriculaError
+    }
+
+    console.log('📋 Matrícula encontrada:', { id: matricula.id, aulas_concluidas_atual: matricula.aulas_concluidas })
+
     if (matricula) {
-      await supabase
+      const novoValor = (matricula.aulas_concluidas || 0) + 1
+      
+      const { error: updateError } = await supabase
         .from('alunos_cursos')
-        .update({ aulas_concluidas: (matricula.aulas_concluidas || 0) + 1 })
+        .update({ aulas_concluidas: novoValor })
         .eq('id', matricula.id)
+      
+      if (updateError) {
+        console.error('❌ Erro ao atualizar aulas_concluidas:', updateError)
+        throw updateError
+      }
+      
+      console.log(`✅ Aulas concluídas atualizada: ${matricula.aulas_concluidas} → ${novoValor}`)
     }
   }
 

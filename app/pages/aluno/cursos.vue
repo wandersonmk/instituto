@@ -39,7 +39,16 @@ async function buscarDadosAluno() {
     // Buscar cursos do aluno
     if (alunoData?.id) {
       const cursosData = await buscarCursosDoAluno(alunoData.id)
-      cursos.value = cursosData.filter((c: any) => c.status === 'ativo')
+      
+      console.log('🔄 Cursos carregados:', cursosData.map(c => ({
+        nome: c.curso_nome,
+        aulas_concluidas: c.aulas_concluidas,
+        total: c.quantidade_aulas,
+        progresso: c.percentual_conclusao + '%'
+      })))
+      
+      // Forçar reatividade criando novo array
+      cursos.value = [...cursosData]
       
       // Verificar presenças de hoje
       await verificarPresencasHoje(alunoData.id)
@@ -141,16 +150,14 @@ function getDiaAtual() {
   return nomesDias[new Date().getDay()]
 }
 
-// Calcular progresso de um curso
+// Calcular progresso de um curso (já vem calculado da view)
 function calcularProgresso(curso: any) {
-  if (!curso.curso?.quantidade_aulas) return 0
-  return Math.round((curso.aulas_concluidas / curso.curso.quantidade_aulas) * 100)
+  return Math.round(curso.percentual_conclusao || 0)
 }
 
-// Calcular aulas restantes
+// Calcular aulas restantes (já vem calculado da view)
 function calcularAulasRestantes(curso: any) {
-  if (!curso.curso?.quantidade_aulas) return 0
-  return Math.max(0, curso.curso.quantidade_aulas - curso.aulas_concluidas)
+  return curso.aulas_restantes || 0
 }
 
 // Abrir modal de confirmação de presença
@@ -203,13 +210,23 @@ async function registrarPresenca() {
     // Atualizar o curso localmente para feedback imediato
     const cursoIndex = cursos.value.findIndex(c => c.id === cursoSelecionado.value.id)
     if (cursoIndex !== -1) {
-      const curso = cursos.value[cursoIndex]
-      curso.aulas_concluidas = (curso.aulas_concluidas || 0) + 1
+      const aulasConcluidasAtual = cursos.value[cursoIndex].aulas_concluidas || 0
+      const novasAulasConcluidas = aulasConcluidasAtual + 1
+      const quantidadeAulas = cursos.value[cursoIndex].quantidade_aulas || 1
+      const novoProgresso = Math.round((novasAulasConcluidas / quantidadeAulas) * 100)
       
-      // Calcular novo progresso
-      const novoProgresso = Math.round((curso.aulas_concluidas / (curso.curso.quantidade_aulas || 1)) * 100)
+      // Criar novo objeto para forçar reatividade
+      const cursoAtualizado = {
+        ...cursos.value[cursoIndex],
+        aulas_concluidas: novasAulasConcluidas,
+        percentual_conclusao: novoProgresso,
+        aulas_restantes: quantidadeAulas - novasAulasConcluidas
+      }
       
-      console.log(`📚 Aula concluída! Progresso: ${novoProgresso}% (${curso.aulas_concluidas}/${curso.curso.quantidade_aulas} aulas)`)
+      // Substituir no array
+      cursos.value[cursoIndex] = cursoAtualizado
+      
+      console.log(`📚 Aula concluída! Progresso: ${novoProgresso}% (${novasAulasConcluidas}/${quantidadeAulas} aulas)`)
     }
     
     toast?.success(`✓ Presença confirmada! Aula concluída com sucesso.`)
@@ -271,10 +288,10 @@ onMounted(() => {
           <div class="flex items-start justify-between mb-4">
             <div class="flex-1">
               <h3 class="text-base sm:text-xl font-bold text-foreground mb-1">
-                {{ curso.curso.nome }}
+                {{ curso.curso_nome }}
               </h3>
               <p class="text-xs sm:text-sm text-muted-foreground">
-                {{ curso.curso.carga_horaria }}h
+                {{ curso.carga_horaria }}h
               </p>
             </div>
             <div class="text-right">
@@ -304,7 +321,7 @@ onMounted(() => {
               <p class="text-xs text-muted-foreground">Restantes</p>
             </div>
             <div class="text-center">
-              <p class="text-lg sm:text-xl font-bold text-foreground">{{ curso.curso.quantidade_aulas || 0 }}</p>
+              <p class="text-lg sm:text-xl font-bold text-foreground">{{ curso.quantidade_aulas || 0 }}</p>
               <p class="text-xs text-muted-foreground">Total</p>
             </div>
           </div>
@@ -395,7 +412,7 @@ onMounted(() => {
                 Confirmar Presença
               </h3>
               <p class="text-sm text-muted-foreground">
-                {{ cursoSelecionado.curso.nome }}
+                {{ cursoSelecionado.curso_nome }}
               </p>
             </div>
 
@@ -414,7 +431,7 @@ onMounted(() => {
               <div class="flex justify-between">
                 <span class="text-muted-foreground">Aula:</span>
                 <span class="font-medium text-foreground">
-                  {{ (cursoSelecionado.aulas_concluidas || 0) + 1 }} de {{ cursoSelecionado.curso.quantidade_aulas || 0 }}
+                  {{ (cursoSelecionado.aulas_concluidas || 0) + 1 }} de {{ cursoSelecionado.quantidade_aulas || 0 }}
                 </span>
               </div>
               <div class="flex justify-between">

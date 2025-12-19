@@ -7,10 +7,15 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: false },
   modules: ['@nuxtjs/tailwindcss'],
+  ssr: true,
   tailwindcss: {
     cssPath: resolvePath(__dirname, 'assets/css/tailwind.css')
   },
   css: ['@fortawesome/fontawesome-svg-core/styles.css'],
+  routeRules: {
+    '/aluno/**': { ssr: false },
+    '/login': { ssr: false },
+  },
   runtimeConfig: {
     // Chaves privadas (apenas servidor)
     supabaseServiceKey: process.env.NUXT_SUPABASE_SERVICE_ROLE_KEY,

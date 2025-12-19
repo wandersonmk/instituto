@@ -58,6 +58,17 @@ const progresso = computed(() => {
   return Math.round((concluidas / total) * 100)
 })
 
+// Pegar apenas o primeiro nome
+const primeiroNome = computed(() => {
+  try {
+    const nomeCompleto = aluno.value?.nome_completo || user.value?.user_metadata?.nome || 'Aluno'
+    return nomeCompleto.split(' ')[0] || 'Aluno'
+  } catch (error) {
+    console.error('Erro ao extrair primeiro nome:', error)
+    return 'Aluno'
+  }
+})
+
 // Buscar dados ao montar
 onMounted(() => {
   buscarDadosAluno()
@@ -76,7 +87,7 @@ onMounted(() => {
       <!-- Boas-vindas -->
       <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-4 sm:p-6 text-white">
         <h2 class="text-lg sm:text-2xl font-bold mb-1 sm:mb-2">
-          Olá, {{ user?.user_metadata?.nome || 'Aluno' }}! 👋
+          Olá, {{ primeiroNome }}! 👋
         </h2>
         <p class="text-sm sm:text-base text-blue-100">
           Bem-vindo à sua área exclusiva. Aqui você pode acompanhar seu progresso e gerenciar suas indicações.
@@ -92,11 +103,11 @@ onMounted(() => {
               <Icon icon="graduation-cap" class-name="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" fallback="🎓" />
             </div>
             <div class="min-w-0">
-              <h3 class="text-xs sm:text-sm font-medium text-muted-foreground">Curso Atual</h3>
-              <p class="text-sm sm:text-lg font-bold text-foreground truncate">{{ aluno?.curso_contratado || 'Não informado' }}</p>
+              <h3 class="text-xs sm:text-sm font-medium text-muted-foreground dark:text-gray-300">Curso Atual</h3>
+              <p class="text-sm sm:text-lg font-bold text-foreground dark:text-gray-100 truncate">{{ aluno?.curso_contratado || 'Não informado' }}</p>
             </div>
           </div>
-          <div v-if="curso" class="text-xs sm:text-sm text-muted-foreground space-y-0.5 sm:space-y-1">
+          <div v-if="curso" class="text-xs sm:text-sm text-muted-foreground dark:text-gray-300 space-y-0.5 sm:space-y-1">
             <p><strong>Carga Horária:</strong> {{ curso.carga_horaria }}h</p>
             <p><strong>Total de Aulas:</strong> {{ curso.quantidade_aulas }}</p>
           </div>
@@ -109,8 +120,8 @@ onMounted(() => {
               <Icon icon="check-circle" class-name="w-5 h-5 sm:w-6 sm:h-6 text-green-600 dark:text-green-400" fallback="✓" />
             </div>
             <div class="min-w-0">
-              <h3 class="text-xs sm:text-sm font-medium text-muted-foreground">Progresso</h3>
-              <p class="text-sm sm:text-lg font-bold text-foreground">{{ progresso }}%</p>
+              <h3 class="text-xs sm:text-sm font-medium text-muted-foreground dark:text-gray-300">Progresso</h3>
+              <p class="text-sm sm:text-lg font-bold text-foreground dark:text-gray-100">{{ progresso }}%</p>
             </div>
           </div>
           <div class="space-y-1.5 sm:space-y-2">
@@ -120,7 +131,7 @@ onMounted(() => {
                 :style="{ width: `${progresso}%` }"
               ></div>
             </div>
-            <p class="text-xs sm:text-sm text-muted-foreground">
+            <p class="text-xs sm:text-sm text-muted-foreground dark:text-gray-300">
               {{ aluno?.aulas_concluidas || 0 }} de {{ aluno?.quantidade_aulas || 0 }} aulas concluídas
             </p>
           </div>
@@ -133,13 +144,13 @@ onMounted(() => {
               <Icon icon="clock" class-name="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 dark:text-purple-400" fallback="🕐" />
             </div>
             <div class="min-w-0">
-              <h3 class="text-xs sm:text-sm font-medium text-muted-foreground">Horário das Aulas</h3>
-              <p class="text-sm sm:text-lg font-bold text-foreground">
+              <h3 class="text-xs sm:text-sm font-medium text-muted-foreground dark:text-gray-300">Horário das Aulas</h3>
+              <p class="text-sm sm:text-lg font-bold text-foreground dark:text-gray-100">
                 {{ aluno?.hora_entrada || '--:--' }} - {{ aluno?.hora_saida || '--:--' }}
               </p>
             </div>
           </div>
-          <p class="text-xs sm:text-sm text-muted-foreground">
+          <p class="text-xs sm:text-sm text-muted-foreground dark:text-gray-300">
             <strong>Local:</strong> {{ aluno?.local_aulas || 'Não informado' }}
           </p>
         </div>
@@ -174,14 +185,14 @@ onMounted(() => {
       
       <!-- Informações do Curso -->
       <div class="bg-card border border-border rounded-lg p-4 sm:p-6">
-        <h3 class="text-base sm:text-lg font-semibold text-foreground mb-3 sm:mb-4 flex items-center">
+        <h3 class="text-base sm:text-lg font-semibold text-foreground dark:text-gray-100 mb-3 sm:mb-4 flex items-center">
           <Icon icon="book-open" class-name="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-primary" fallback="📖" />
           Informações do Curso
         </h3>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           <div>
-            <h4 class="text-xs sm:text-sm font-medium text-muted-foreground mb-2">Dias da Semana</h4>
+            <h4 class="text-xs sm:text-sm font-medium text-muted-foreground dark:text-gray-300 mb-2">Dias da Semana</h4>
             <div class="flex flex-wrap gap-1.5 sm:gap-2">
               <span 
                 v-for="dia in aluno?.dias_semana || []"
@@ -202,8 +213,8 @@ onMounted(() => {
           </div>
           
           <div v-if="aluno?.multa_falta">
-            <h4 class="text-xs sm:text-sm font-medium text-muted-foreground mb-2">Multa por Falta</h4>
-            <p class="text-lg sm:text-2xl font-bold text-foreground">
+            <h4 class="text-xs sm:text-sm font-medium text-muted-foreground dark:text-gray-300 mb-2">Multa por Falta</h4>
+            <p class="text-lg sm:text-2xl font-bold text-foreground dark:text-gray-100">
               R$ {{ parseFloat(aluno.multa_falta).toFixed(2).replace('.', ',') }}
             </p>
           </div>

@@ -397,7 +397,7 @@ function colapsarTodas() {
     <div class="flex items-center justify-end gap-3 mb-6">
       <button
         @click="abrirModalCategorias"
-        class="px-4 py-2 bg-card border border-border text-foreground hover:bg-muted rounded-lg transition-colors font-medium flex items-center space-x-2"
+        class="px-4 py-2 bg-card border border-border text-foreground hover:bg-muted rounded-lg transition-colors flex items-center space-x-2"
       >
         <Icon icon="filter" class-name="w-4 h-4" fallback="📁" />
         <span>Gerenciar Categorias</span>
@@ -405,7 +405,7 @@ function colapsarTodas() {
       
       <button
         @click="abrirModalNovo"
-        class="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors font-medium flex items-center space-x-2"
+        class="px-4 py-2 golden-gradient text-primary-foreground rounded-lg transition-colors flex items-center space-x-2"
       >
         <Icon icon="plus" class-name="w-4 h-4" fallback="" />
         <span>Nova Aula em Vídeo</span>
@@ -440,7 +440,7 @@ function colapsarTodas() {
         <div class="flex items-end">
           <button
             @click="limparFiltros"
-            class="w-full px-4 py-2 border border-border text-foreground hover:bg-muted rounded-lg transition-colors font-medium"
+            class="w-full px-4 py-2 border border-border text-foreground hover:bg-muted rounded-lg transition-colors"
           >
             Limpar Filtros
           </button>
@@ -877,13 +877,13 @@ function colapsarTodas() {
           <button
             type="button"
             @click="fecharModal"
-            class="px-6 py-2 border border-border text-foreground hover:bg-muted rounded-lg transition-colors font-medium"
+            class="px-6 py-2 border border-border text-foreground hover:bg-muted rounded-lg transition-colors"
           >
             Cancelar
           </button>
           <button
             type="submit"
-            class="px-6 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors font-medium"
+            class="px-6 py-2 golden-gradient text-primary-foreground rounded-lg transition-colors"
           >
             {{ modoEdicao ? 'Atualizar' : 'Cadastrar' }}
           </button>
@@ -1062,7 +1062,7 @@ function colapsarTodas() {
         <!-- Botão Nova Categoria -->
         <button
           @click="novaCategoria"
-          class="w-full px-4 py-3 mb-4 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2"
+          class="w-full px-4 py-3 mb-4 golden-gradient text-primary-foreground rounded-lg transition-colors flex items-center justify-center space-x-2"
         >
           <Icon icon="plus" class-name="w-4 h-4" fallback="+" />
           <span>Nova Categoria</span>
@@ -1178,13 +1178,13 @@ function colapsarTodas() {
       <div class="flex justify-end space-x-3 p-4 border-t border-border">
         <button
           @click="fecharModalCategoria"
-          class="px-4 py-2 border border-border text-foreground hover:bg-muted rounded-lg transition-colors font-medium"
+          class="px-4 py-2 border border-border text-foreground hover:bg-muted rounded-lg transition-colors"
         >
           Cancelar
         </button>
         <button
           @click="salvarCategoria"
-          class="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors font-medium"
+          class="px-4 py-2 golden-gradient text-primary-foreground rounded-lg transition-colors"
         >
           {{ categoriaEditando ? 'Salvar Alterações' : 'Criar Categoria' }}
         </button>
@@ -1229,7 +1229,7 @@ function colapsarTodas() {
       <div class="flex justify-end space-x-3 p-4 border-t border-border">
         <button
           @click="fecharModalExcluirCategoria"
-          class="px-4 py-2 border border-border text-foreground hover:bg-muted rounded-lg transition-colors font-medium"
+          class="px-4 py-2 border border-border text-foreground hover:bg-muted rounded-lg transition-colors"
         >
           Cancelar
         </button>
@@ -1245,3 +1245,16 @@ function colapsarTodas() {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Gradiente dourado para botões primários */
+.golden-gradient {
+  background: radial-gradient(circle at top left, #ffd700 0%, #f0c000 50%, #daa520 100%) !important;
+  box-shadow: 0 2px 4px rgba(255, 215, 0, 0.3);
+}
+
+.golden-gradient:hover {
+  background: radial-gradient(circle at top left, #ffe44d 0%, #ffd700 45%, #f0c000 100%) !important;
+  box-shadow: 0 3px 6px rgba(255, 215, 0, 0.4);
+}
+</style>

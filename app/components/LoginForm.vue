@@ -18,12 +18,13 @@ const { signInWithEmailAndPassword, isLoading, errorMessage } = process.client ?
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const isEmailValid = computed(() => {
-  if (!email.value) return true // Não mostra erro se estiver vazio
+  if (!email.value) return false // Vazio = inválido para habilitar botão
   return emailRegex.test(email.value)
 })
 
 const emailError = computed(() => {
-  if (!email.value || isEmailValid.value) return ''
+  if (!email.value) return '' // Não mostra erro se estiver vazio
+  if (isEmailValid.value) return ''
   return 'Email inválido'
 })
 
@@ -133,7 +134,8 @@ async function handleLogin() {
       <AppButton 
         type="submit" 
         block 
-        :disabled="isLoading || !email || !password || !isEmailValid"
+        :disabled="isLoading"
+        :loading="isLoading"
       >
         <span v-if="isLoading">Entrando...</span>
         <span v-else>Entrar</span>

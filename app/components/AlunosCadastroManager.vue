@@ -26,6 +26,10 @@ const alunoEditandoMulta = ref<any>(null)
 const novaMulta = ref('')
 const novaMultaFormatada = ref('')
 
+// Controle do modal de confirmação de exclusão de curso
+const mostrarModalConfirmacaoExclusao = ref(false)
+const cursoParaExcluir = ref<number | null>(null)
+
 // Controle do modal de registro de falta
 const mostrarModalFalta = ref(false)
 const alunoRegistrandoFalta = ref<any>(null)
@@ -480,10 +484,28 @@ function fecharListaCursos() {
   }, 200)
 }
 
-// NOVO: Remover curso da lista
-function removerCursoDaLista(index: number) {
-  cursosAdicionados.value.splice(index, 1)
-  useToastSafe().then(toast => toast?.info('Curso removido da lista'))
+// NOVO: Confirmar exclusão de curso
+function confirmarExclusaoCurso(index: number) {
+  cursoParaExcluir.value = index
+  mostrarModalConfirmacaoExclusao.value = true
+}
+
+// NOVO: Remover curso da lista após confirmação
+function removerCursoDaLista() {
+  if (cursoParaExcluir.value === null) return
+  
+  cursosAdicionados.value.splice(cursoParaExcluir.value, 1)
+  useToastSafe().then(toast => toast?.success('✓ Curso removido da lista'))
+  
+  // Fechar modal e resetar
+  mostrarModalConfirmacaoExclusao.value = false
+  cursoParaExcluir.value = null
+}
+
+// NOVO: Cancelar exclusão
+function cancelarExclusaoCurso() {
+  mostrarModalConfirmacaoExclusao.value = false
+  cursoParaExcluir.value = null
 }
 
 // Iniciar edição de um curso
@@ -1926,7 +1948,7 @@ async function registrarPagamento() {
                     </button>
                     <button
                       type="button"
-                      @click="removerCursoDaLista(index)"
+                      @click="confirmarExclusaoCurso(index)"
                       class="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                       title="Remover curso"
                       :disabled="cursoEditandoIndex !== null"
@@ -2362,10 +2384,10 @@ async function registrarPagamento() {
                   <div class="flex items-center space-x-3 flex-1 text-left">
                     <span class="text-2xl">📖</span>
                     <div class="flex-1">
-                      <p class="font-semibold text-foreground">{{ curso.curso?.nome }}</p>
+                      <p class="font-semibold text-foreground">{{ curso.curso_nome }}</p>
                       <div class="flex items-center space-x-4 mt-1">
                         <span class="text-xs text-muted-foreground">
-                          {{ curso.aulas_concluidas || 0 }}/{{ curso.curso?.quantidade_aulas || 0 }} aulas
+                          {{ curso.aulas_concluidas || 0 }}/{{ curso.quantidade_aulas || 0 }} aulas
                         </span>
                         <span class="text-xs px-2 py-0.5 rounded-full" :class="curso.status === 'ativo' ? 'bg-green-100 dark:bg-green-900/20 text-green-600' : 'bg-gray-100 text-gray-600'">
                           {{ curso.status }}
@@ -2390,11 +2412,11 @@ async function registrarPagamento() {
                       <div class="w-32 bg-muted rounded-full h-2">
                         <div 
                           class="h-2 rounded-full transition-all bg-primary"
-                          :style="{ width: `${Math.min(100, ((curso.aulas_concluidas || 0) / (curso.curso?.quantidade_aulas || 1)) * 100)}%` }"
+                          :style="{ width: `${Math.min(100, ((curso.aulas_concluidas || 0) / (curso.quantidade_aulas || 1)) * 100)}%` }"
                         ></div>
                       </div>
                       <span class="text-xs font-medium text-muted-foreground">
-                        {{ Math.round(((curso.aulas_concluidas || 0) / (curso.curso?.quantidade_aulas || 1)) * 100) }}%
+                        {{ Math.round(((curso.aulas_concluidas || 0) / (curso.quantidade_aulas || 1)) * 100) }}%
                       </span>
                     </div>
                   </div>
@@ -2425,7 +2447,7 @@ async function registrarPagamento() {
                     <div>
                       <label class="text-xs font-medium text-muted-foreground uppercase">Carga Horária</label>
                       <p class="text-sm text-foreground font-medium mt-1">
-                        {{ curso.curso?.carga_horaria || 0 }}h
+                        {{ curso.carga_horaria || 0 }}h
                       </p>
                     </div>
                   </div>
@@ -2965,6 +2987,75 @@ async function registrarPagamento() {
                 class="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-green-500/50"
               >
                 Confirmar Pagamento
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </div>
+  </Transition>
+
+  <!-- Modal de Confirmação de Exclusão de Curso -->
+  <Transition name="modal">
+    <div
+      v-if="mostrarModalConfirmacaoExclusao"
+      class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      @click="cancelarExclusaoCurso"
+    >
+      <Transition name="modal-content">
+        <div
+          v-if="mostrarModalConfirmacaoExclusao"
+          class="bg-card border border-border rounded-xl max-w-md w-full shadow-2xl"
+          @click.stop
+        >
+          <div class="p-6">
+            <!-- Header -->
+            <div class="text-center mb-6">
+              <div class="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Icon icon="exclamation-triangle" class-name="w-8 h-8 text-red-600 dark:text-red-400" fallback="⚠️" />
+              </div>
+              <h3 class="text-xl font-bold text-foreground mb-2">
+                Confirmar Exclusão
+              </h3>
+              <p class="text-sm text-muted-foreground">
+                Tem certeza que deseja remover este curso?
+              </p>
+            </div>
+
+            <!-- Informações do curso -->
+            <div v-if="cursoParaExcluir !== null" class="bg-muted/50 rounded-lg p-4 mb-6">
+              <div class="flex items-center space-x-3">
+                <Icon icon="book" class-name="w-5 h-5 text-primary" fallback="📚" />
+                <div>
+                  <p class="font-semibold text-foreground">{{ cursosAdicionados[cursoParaExcluir]?.curso_nome }}</p>
+                  <p class="text-xs text-muted-foreground mt-1">
+                    {{ formatarDias(cursosAdicionados[cursoParaExcluir]?.dias_semana) }} • 
+                    {{ cursosAdicionados[cursoParaExcluir]?.hora_entrada }} - {{ cursosAdicionados[cursoParaExcluir]?.hora_saida }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Aviso -->
+            <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-6">
+              <p class="text-xs text-amber-800 dark:text-amber-200">
+                ⚠️ O curso será removido da lista. Para confirmar a exclusão no sistema, você precisará clicar em <strong>"Atualizar"</strong> no final do formulário.
+              </p>
+            </div>
+
+            <!-- Botões -->
+            <div class="flex space-x-3">
+              <button
+                @click="cancelarExclusaoCurso"
+                class="flex-1 px-4 py-2.5 border-2 border-border rounded-lg text-foreground font-medium hover:bg-muted transition-all duration-200"
+              >
+                Cancelar
+              </button>
+              <button
+                @click="removerCursoDaLista"
+                class="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-red-500/50"
+              >
+                Sim, Remover
               </button>
             </div>
           </div>

@@ -1,5 +1,42 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+
+// Estado de carregamento e toast
+const isLoadingVideos = ref(false)
+let toast: any
+
+// Composable para gerenciar vídeos (com tratamento de erro)
+let criarVideo: any
+let atualizarVideo: any
+let excluirVideoDb: any
+let listarVideos: any
+let criarCategoria: any
+let atualizarCategoria: any
+let excluirCategoriaDb: any
+let listarCategorias: any
+
+onMounted(async () => {
+  try {
+    // Inicializar composable apenas no cliente
+    if (process.client) {
+      const videosAdmin = useVideosAdmin()
+      criarVideo = videosAdmin.criarVideo
+      atualizarVideo = videosAdmin.atualizarVideo
+      excluirVideoDb = videosAdmin.excluirVideo
+      listarVideos = videosAdmin.listarVideos
+      criarCategoria = videosAdmin.criarCategoria
+      atualizarCategoria = videosAdmin.atualizarCategoria
+      excluirCategoriaDb = videosAdmin.excluirCategoria
+      listarCategorias = videosAdmin.listarCategorias
+    }
+    
+    toast = await useToastSafe()
+    await carregarCategorias()
+    await carregarVideos()
+  } catch (error) {
+    console.error('Erro ao inicializar AulasVideosManager:', error)
+  }
+})
 
 // Controle do modal de cadastro/edição
 const mostrarModal = ref(false)
@@ -38,44 +75,49 @@ const categoriaId = ref('')
 const ativo = ref(true)
 const thumbnail = ref('')
 
-// Lista de vídeos (mockado para visualização)
-const videos = ref<any[]>([
-  {
-    id: '1',
-    titulo: 'Introdução ao Curso',
-    descricao: 'Apresentação geral do curso e objetivos',
-    url_youtube: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-    duracao: '15:30',
-    categoria: 'Módulo 1',
-    categoria_id: '1',
-    ordem: 1,
-    ativo: true,
-    thumbnail: 'https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg',
-    visualizacoes: 45,
-    alunos_com_acesso: 12
-  },
-  {
-    id: '2',
-    titulo: 'Fundamentos Básicos',
-    descricao: 'Conceitos essenciais para começar',
-    url_youtube: 'https://www.youtube.com/watch?v=example2',
-    duracao: '22:15',
-    categoria: 'Módulo 1',
-    categoria_id: '1',
-    ordem: 2,
-    ativo: true,
-    thumbnail: 'https://img.youtube.com/vi/example2/mqdefault.jpg',
-    visualizacoes: 38,
-    alunos_com_acesso: 12
-  }
-])
+// Lista de vídeos (carregada do banco)
+const videos = ref<any[]>([])
 
-// Lista de categorias (mockado)
-const categorias = ref([
-  { id: '1', nome: 'Módulo 1', cor: 'purple' },
-  { id: '2', nome: 'Módulo 2', cor: 'blue' },
-  { id: '3', nome: 'Avançado', cor: 'green' }
-])
+// Lista de categorias (carregada do banco)
+const categorias = ref<any[]>([])
+
+// Carregar vídeos do banco
+async function carregarVideos() {
+  if (!listarVideos) {
+    console.warn('listarVideos não está disponível')
+    return
+  }
+  try {
+    const resultado = await listarVideos()
+    if (resultado?.success) {
+      videos.value = resultado.data.map((video: any) => ({
+        ...video,
+        categoria: video.categoria?.nome || 'Sem categoria',
+        url_youtube: video.url_video,
+        visualizacoes: 0, // TODO: implementar contagem real
+        alunos_com_acesso: 0 // TODO: implementar contagem real
+      }))
+    }
+  } catch (error) {
+    console.error('Erro ao carregar vídeos:', error)
+  }
+}
+
+// Carregar categorias do banco
+async function carregarCategorias() {
+  if (!listarCategorias) {
+    console.warn('listarCategorias não está disponível')
+    return
+  }
+  try {
+    const resultado = await listarCategorias()
+    if (resultado?.success) {
+      categorias.value = resultado.data
+    }
+  } catch (error) {
+    console.error('Erro ao carregar categorias:', error)
+  }
+}
 
 // Cores disponíveis para categorias
 const coresDisponiveis = [
@@ -160,22 +202,67 @@ function editarVideo(video: any, event?: Event) {
   mostrarModal.value = true
 }
 
-// Salvar vídeo (aqui você implementará a lógica de banco de dados)
+// Salvar vídeo
 async function salvarVideo() {
-  console.log('Salvando vídeo:', {
+  // Validações
+  if (!titulo.value || !urlYoutube.value || !categoriaId.value) {
+    toast?.warning('Preencha todos os campos obrigatórios')
+    return
+  }
+
+  // Extrair duração em segundos (formato MM:SS ou HH:MM:SS)
+  let duracaoSegundos = 0
+  if (duracao.value) {
+    const partes = duracao.value.split(':').map(Number)
+    if (partes.length === 2) {
+      duracaoSegundos = partes[0] * 60 + partes[1] // MM:SS
+    } else if (partes.length === 3) {
+      duracaoSegundos = partes[0] * 3600 + partes[1] * 60 + partes[2] // HH:MM:SS
+    }
+  }
+
+  // Extrair thumbnail do YouTube se não foi fornecida
+  let thumbFinal = thumbnail.value
+  if (!thumbFinal && urlYoutube.value.includes('youtube.com') || urlYoutube.value.includes('youtu.be')) {
+    const videoId = extrairVideoIdYoutube(urlYoutube.value)
+    if (videoId) {
+      thumbFinal = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+    }
+  }
+
+  const dadosVideo = {
     titulo: titulo.value,
     descricao: descricao.value,
-    url_youtube: urlYoutube.value,
-    duracao: duracao.value,
-    ordem: ordem.value,
+    url_video: urlYoutube.value,
+    thumbnail: thumbFinal,
+    duracao: duracaoSegundos,
     categoria_id: categoriaId.value,
+    ordem: ordem.value ? parseInt(ordem.value) : undefined,
     ativo: ativo.value,
-    thumbnail: thumbnail.value
-  })
-  
-  // TODO: Implementar salvamento no banco de dados
-  
-  fecharModal()
+    tags: [] // TODO: adicionar campo de tags no formulário
+  }
+
+  let resultado
+  if (modoEdicao.value && videoEditando.value) {
+    resultado = await atualizarVideo(videoEditando.value.id, dadosVideo)
+  } else {
+    resultado = await criarVideo(dadosVideo)
+  }
+
+  if (resultado.success) {
+    toast?.success(modoEdicao.value ? 'Vídeo atualizado com sucesso!' : 'Vídeo criado com sucesso!')
+    await carregarVideos()
+    fecharModal()
+  } else {
+    toast?.error(resultado.error || 'Erro ao salvar vídeo')
+  }
+}
+
+// Extrair ID do vídeo do YouTube
+function extrairVideoIdYoutube(url: string): string | null {
+  const regexYoutube = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/
+  const match = url.match(regexYoutube)
+  return match ? match[1] : null
 }
 
 // Fechar modal
@@ -209,16 +296,33 @@ function cancelarExclusao() {
 
 // Excluir vídeo
 async function excluirVideo() {
-  console.log('Excluindo vídeo:', videoParaExcluir.value.id)
-  // TODO: Implementar exclusão no banco de dados
+  if (!videoParaExcluir.value) return
+
+  const resultado = await excluirVideoDb(videoParaExcluir.value.id)
+  
+  if (resultado.success) {
+    toast?.success('Vídeo excluído com sucesso!')
+    await carregarVideos()
+  } else {
+    toast?.error(resultado.error || 'Erro ao excluir vídeo')
+  }
+  
   videoParaExcluir.value = null
 }
 
 // Toggle ativo/inativo
 async function toggleAtivo(video: any, event?: Event) {
   if (event) event.stopPropagation()
-  console.log('Alterando status do vídeo:', video.id)
-  // TODO: Implementar toggle no banco de dados
+  
+  const novoStatus = !video.ativo
+  const resultado = await atualizarVideo(video.id, { ativo: novoStatus })
+  
+  if (resultado.success) {
+    toast?.success(`Vídeo ${novoStatus ? 'ativado' : 'desativado'} com sucesso!`)
+    await carregarVideos()
+  } else {
+    toast?.error(resultado.error || 'Erro ao alterar status do vídeo')
+  }
 }
 
 // Gerenciar permissões
@@ -269,32 +373,32 @@ function editarCategoria(categoria: any) {
 }
 
 // Salvar categoria (criar ou editar)
-function salvarCategoria() {
+async function salvarCategoria() {
   if (!nomeCategoria.value.trim()) {
-    alert('Digite um nome para a categoria')
+    toast?.warning('Digite um nome para a categoria')
     return
   }
 
-  if (categoriaEditando.value) {
-    // Editar categoria existente
-    const index = categorias.value.findIndex(c => c.id === categoriaEditando.value.id)
-    if (index !== -1) {
-      categorias.value[index].nome = nomeCategoria.value.trim()
-      categorias.value[index].cor = corCategoria.value
-    }
-    console.log('Categoria atualizada:', categoriaEditando.value.id)
-  } else {
-    // Criar nova categoria
-    const novaId = String(Math.max(...categorias.value.map(c => Number(c.id)), 0) + 1)
-    categorias.value.push({
-      id: novaId,
-      nome: nomeCategoria.value.trim(),
-      cor: corCategoria.value
-    })
-    console.log('Nova categoria criada:', novaId)
+  const dadosCategoria = {
+    nome: nomeCategoria.value.trim(),
+    icone: '', // TODO: adicionar seleção de ícone
+    ordem: categorias.value.length + 1
   }
 
-  fecharModalCategoria()
+  let resultado
+  if (categoriaEditando.value) {
+    resultado = await atualizarCategoria(categoriaEditando.value.id, dadosCategoria)
+  } else {
+    resultado = await criarCategoria(dadosCategoria)
+  }
+
+  if (resultado.success) {
+    toast?.success(categoriaEditando.value ? 'Categoria atualizada!' : 'Categoria criada!')
+    await carregarCategorias()
+    fecharModalCategoria()
+  } else {
+    toast?.error(resultado.error || 'Erro ao salvar categoria')
+  }
 }
 
 // Fechar modal de criar/editar
@@ -312,25 +416,27 @@ function confirmarExcluirCategoria(categoria: any) {
 }
 
 // Excluir categoria
-function excluirCategoria() {
+async function excluirCategoria() {
   if (!categoriaEditando.value) return
 
   // Verificar se há vídeos usando esta categoria
   const videosVinculados = videos.value.filter(v => v.categoria_id === categoriaEditando.value.id)
   
   if (videosVinculados.length > 0) {
-    alert(`Não é possível excluir esta categoria pois há ${videosVinculados.length} vídeo(s) vinculado(s) a ela.`)
+    toast?.error(`Não é possível excluir esta categoria pois há ${videosVinculados.length} vídeo(s) vinculado(s) a ela.`)
     fecharModalExcluirCategoria()
     return
   }
 
-  // Excluir categoria
-  const index = categorias.value.findIndex(c => c.id === categoriaEditando.value.id)
-  if (index !== -1) {
-    categorias.value.splice(index, 1)
+  const resultado = await excluirCategoriaDb(categoriaEditando.value.id)
+  
+  if (resultado.success) {
+    toast?.success('Categoria excluída com sucesso!')
+    await carregarCategorias()
+  } else {
+    toast?.error(resultado.error || 'Erro ao excluir categoria')
   }
 
-  console.log('Categoria excluída:', categoriaEditando.value.id)
   fecharModalExcluirCategoria()
 }
 
@@ -407,7 +513,7 @@ function colapsarTodas() {
         @click="abrirModalNovo"
         class="px-4 py-2 golden-gradient text-primary-foreground rounded-lg transition-colors flex items-center space-x-2"
       >
-        <Icon icon="plus" class-name="w-4 h-4" fallback="" />
+        <Icon icon="plus" class-name="w-4 h-4" fallback="➕" />
         <span>Nova Aula em Vídeo</span>
       </button>
     </div>
@@ -562,7 +668,7 @@ function colapsarTodas() {
                     :class="video.ativo ? 'text-yellow-600' : 'text-green-600'"
                     :title="video.ativo ? 'Desativar' : 'Ativar'"
                   >
-                    <Icon :icon="video.ativo ? 'eye-slash' : 'eye'" class-name="w-5 h-5" fallback="" />
+                    <Icon :icon="video.ativo ? 'eye-slash' : 'eye'" class-name="w-5 h-5" :fallback="video.ativo ? '👁️' : '🚫'" />
                   </button>
                   
                   <button
@@ -708,7 +814,7 @@ function colapsarTodas() {
                           :class="video.ativo ? 'text-yellow-600' : 'text-green-600'"
                           :title="video.ativo ? 'Desativar' : 'Ativar'"
                         >
-                          <Icon :icon="video.ativo ? 'eye-slash' : 'eye'" class-name="w-5 h-5" fallback="" />
+                          <Icon :icon="video.ativo ? 'eye-slash' : 'eye'" class-name="w-5 h-5" :fallback="video.ativo ? '👁️' : '🚫'" />
                         </button>
                         
                         <button

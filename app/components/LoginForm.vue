@@ -3,9 +3,12 @@ import { ref, computed } from 'vue'
 
 const email = ref('')
 const password = ref('')
+const isMounted = ref(false)
+
 let toast: any
 onMounted(async () => {
   toast = await useToastSafe()
+  isMounted.value = true
 })
 
 const { signInWithEmailAndPassword, isLoading, errorMessage } = process.client ? useAuth() : {
@@ -29,7 +32,17 @@ const emailError = computed(() => {
 })
 
 async function handleLogin() {
+  console.log('=== INÍCIO DO LOGIN ===')
+  console.log('LoginForm: isMounted:', isMounted.value)
+  console.log('LoginForm: isLoading antes:', isLoading.value)
+  
+  if (!isMounted.value) {
+    console.log('LoginForm: Componente não montado ainda')
+    return
+  }
+  
   if (!email.value || !password.value) {
+    console.log('LoginForm: Campos vazios')
     toast?.warning('Preencha todos os campos')
     return
   }
@@ -37,14 +50,16 @@ async function handleLogin() {
   // Validação de email
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(email.value)) {
+    console.log('LoginForm: Email inválido')
     toast?.error('Digite um email válido')
     return
   }
   
   try {
-    console.log('LoginForm: Iniciando login...', { isLoading: isLoading.value })
+    console.log('LoginForm: Chamando signInWithEmailAndPassword...')
     const result = await signInWithEmailAndPassword(email.value, password.value)
-    console.log('LoginForm: Login finalizado', { isLoading: isLoading.value, result })
+    console.log('LoginForm: Resultado do signIn:', result)
+    console.log('LoginForm: isLoading depois:', isLoading.value)
     
     // Se login falhou, mostra erro
     if (result === false) {
@@ -54,6 +69,7 @@ async function handleLogin() {
     }
 
     // Aguardar um pouco para garantir que o estado foi atualizado
+    console.log('LoginForm: Aguardando atualização de estado...')
     await new Promise(resolve => setTimeout(resolve, 300))
 
     // Se login OK, mostra sucesso
@@ -82,6 +98,8 @@ async function handleLogin() {
       console.log('LoginForm: Redirecionando admin para /alunos')
       await navigateTo('/alunos', { replace: true })
     }
+    
+    console.log('=== FIM DO LOGIN ===')
   } catch (error) {
     console.error('LoginForm: Erro inesperado no login:', error)
     toast?.error('Erro inesperado ao efetuar login.')

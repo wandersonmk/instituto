@@ -6,11 +6,12 @@ definePageMeta({
 
 const { user } = useAuth()
 const supabase = useSupabaseClient()
+const { buscarCursosDoAluno } = useAlunosCursos()
 
 // Estado
 const isLoading = ref(true)
 const aluno = ref<any>(null)
-const curso = ref<any>(null)
+const cursos = ref<any[]>([])
 
 // Buscar dados do aluno
 async function buscarDadosAluno() {
@@ -31,17 +32,10 @@ async function buscarDadosAluno() {
     
     aluno.value = alunoData
     
-    // Buscar dados do curso se tiver curso_id
-    if (alunoData?.curso_id) {
-      const { data: cursoData, error: cursoError } = await supabase
-        .from('cursos')
-        .select('*')
-        .eq('id', alunoData.curso_id)
-        .single()
-      
-      if (!cursoError) {
-        curso.value = cursoData
-      }
+    // Buscar todos os cursos do aluno
+    if (alunoData?.id) {
+      const cursosData = await buscarCursosDoAluno(alunoData.id)
+      cursos.value = cursosData || []
     }
   } catch (error) {
     console.error('Erro ao buscar dados:', error)
@@ -50,12 +44,28 @@ async function buscarDadosAluno() {
   }
 }
 
-// Progresso do curso
-const progresso = computed(() => {
-  if (!aluno.value?.quantidade_aulas) return 0
-  const total = parseInt(aluno.value.quantidade_aulas)
-  const concluidas = parseInt(aluno.value.aulas_concluidas || 0)
-  return Math.round((concluidas / total) * 100)
+// Estatísticas dos cursos
+const totalCursos = computed(() => cursos.value.length)
+
+const totalAulasConcluidas = computed(() => 
+  cursos.value.reduce((total, curso) => total + (curso.aulas_concluidas || 0), 0)
+)
+
+const totalAulas = computed(() => 
+  cursos.value.reduce((total, curso) => total + (curso.quantidade_aulas || 0), 0)
+)
+
+const progressoGeral = computed(() => {
+  if (totalAulas.value === 0) return 0
+  return Math.round((totalAulasConcluidas.value / totalAulas.value) * 100)
+})
+
+const cursoProximo = computed(() => {
+  // Encontrar o curso do dia atual
+  const hoje = new Date().getDay()
+  return cursos.value.find(curso => 
+    curso.dias_semana && curso.dias_semana.includes(hoje)
+  ) || cursos.value[0]
 })
 
 // Pegar apenas o primeiro nome
@@ -96,62 +106,65 @@ onMounted(() => {
       
       <!-- Cards de informação -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-6">
-        <!-- Card Curso -->
-        <div class="bg-card border border-border rounded-lg p-3 sm:p-6">
+        <!-- Card Total de Cursos -->
+        <div class="bg-gradient-to-br from-amber-50/90 via-yellow-50/70 to-orange-50/80 dark:from-amber-900/25 dark:via-yellow-900/15 dark:to-orange-900/20 backdrop-blur-sm border border-amber-200/60 dark:border-amber-700/40 rounded-lg p-3 sm:p-6 shadow-md hover:shadow-lg transition-all">
           <div class="flex items-center space-x-2 mb-2 sm:mb-4">
-            <div class="w-8 h-8 sm:w-12 sm:h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Icon icon="graduation-cap" class-name="w-4 h-4 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" fallback="🎓" />
+            <div class="w-8 h-8 sm:w-12 sm:h-12 bg-gradient-to-br from-amber-100/70 to-yellow-100/50 dark:from-amber-800/40 dark:to-yellow-800/30 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Icon icon="graduation-cap" class-name="w-4 h-4 sm:w-6 sm:h-6 text-amber-700 dark:text-amber-400" fallback="🎓" />
             </div>
             <div class="min-w-0">
-              <h3 class="text-xs font-medium text-muted-foreground dark:text-gray-300">Curso Atual</h3>
-              <p class="text-sm sm:text-lg font-bold text-foreground dark:text-gray-100 truncate">{{ aluno?.curso_contratado || 'Não informado' }}</p>
+              <h3 class="text-xs font-medium text-blue-600 dark:text-blue-400">Cursos Ativos</h3>
+              <p class="text-sm sm:text-lg font-bold text-blue-900 dark:text-blue-100">{{ totalCursos }}</p>
             </div>
           </div>
-          <div v-if="curso" class="text-xs text-muted-foreground dark:text-gray-300 space-y-0.5">
-            <p><strong>Carga Horária:</strong> {{ curso.carga_horaria }}h</p>
-            <p><strong>Total de Aulas:</strong> {{ curso.quantidade_aulas }}</p>
+          <div class="text-xs text-blue-700 dark:text-blue-300">
+            <p v-if="totalCursos === 0">Nenhum curso matriculado</p>
+            <p v-else-if="totalCursos === 1">{{ cursos[0].curso_nome }}</p>
+            <p v-else>{{ totalCursos }} cursos em andamento</p>
           </div>
         </div>
         
-        <!-- Card Progresso -->
-        <div class="bg-card border border-border rounded-lg p-3 sm:p-6">
+        <!-- Card Progresso Geral -->
+        <div class="bg-gradient-to-br from-emerald-50/90 via-teal-50/70 to-cyan-50/80 dark:from-emerald-900/25 dark:via-teal-900/15 dark:to-cyan-900/20 backdrop-blur-sm border border-emerald-200/60 dark:border-emerald-700/40 rounded-lg p-3 sm:p-6 shadow-md hover:shadow-lg transition-all">
           <div class="flex items-center space-x-2 mb-2 sm:mb-4">
-            <div class="w-8 h-8 sm:w-12 sm:h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Icon icon="check-circle" class-name="w-4 h-4 sm:w-6 sm:h-6 text-green-600 dark:text-green-400" fallback="✓" />
+            <div class="w-8 h-8 sm:w-12 sm:h-12 bg-gradient-to-br from-emerald-100/70 to-teal-100/50 dark:from-emerald-800/40 dark:to-teal-800/30 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Icon icon="check-circle" class-name="w-4 h-4 sm:w-6 sm:h-6 text-emerald-700 dark:text-emerald-400" fallback="✓" />
             </div>
             <div class="min-w-0">
-              <h3 class="text-xs font-medium text-muted-foreground dark:text-gray-300">Progresso</h3>
-              <p class="text-sm sm:text-lg font-bold text-foreground dark:text-gray-100">{{ progresso }}%</p>
+              <h3 class="text-xs font-medium text-green-600 dark:text-green-400">Progresso Geral</h3>
+              <p class="text-sm sm:text-lg font-bold text-green-900 dark:text-green-100">{{ progressoGeral }}%</p>
             </div>
           </div>
           <div class="space-y-1 sm:space-y-2">
-            <div class="w-full bg-muted rounded-full h-1.5 sm:h-2">
+            <div class="w-full bg-green-200/40 dark:bg-green-800/20 rounded-full h-1.5 sm:h-2">
               <div 
-                class="bg-green-600 h-1.5 sm:h-2 rounded-full transition-all duration-500"
-                :style="{ width: `${progresso}%` }"
+                class="bg-gradient-to-r from-green-500 to-green-600 h-1.5 sm:h-2 rounded-full transition-all duration-500"
+                :style="{ width: `${progressoGeral}%` }"
               ></div>
             </div>
-            <p class="text-xs text-muted-foreground dark:text-gray-300">
-              {{ aluno?.aulas_concluidas || 0 }} de {{ aluno?.quantidade_aulas || 0 }} aulas concluídas
+            <p class="text-xs text-green-700 dark:text-green-300">
+              {{ totalAulasConcluidas }} de {{ totalAulas }} aulas concluídas
             </p>
           </div>
         </div>
         
-        <!-- Card Horário -->
-        <div class="bg-card border border-border rounded-lg p-3 sm:p-6">
+        <!-- Card Próxima Aula -->
+        <div class="bg-gradient-to-br from-violet-50/90 via-fuchsia-50/70 to-pink-50/80 dark:from-violet-900/25 dark:via-fuchsia-900/15 dark:to-pink-900/20 backdrop-blur-sm border border-violet-200/60 dark:border-violet-700/40 rounded-lg p-3 sm:p-6 shadow-md hover:shadow-lg transition-all">
           <div class="flex items-center space-x-2 mb-2 sm:mb-4">
-            <div class="w-8 h-8 sm:w-12 sm:h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Icon icon="clock" class-name="w-4 h-4 sm:w-6 sm:h-6 text-purple-600 dark:text-purple-400" fallback="🕐" />
+            <div class="w-8 h-8 sm:w-12 sm:h-12 bg-gradient-to-br from-violet-100/70 to-fuchsia-100/50 dark:from-violet-800/40 dark:to-fuchsia-800/30 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Icon icon="clock" class-name="w-4 h-4 sm:w-6 sm:h-6 text-violet-700 dark:text-violet-400" fallback="🕐" />
             </div>
             <div class="min-w-0">
-              <h3 class="text-xs font-medium text-muted-foreground dark:text-gray-300">Horário das Aulas</h3>
-              <p class="text-sm sm:text-lg font-bold text-foreground dark:text-gray-100">
-                {{ aluno?.hora_entrada || '--:--' }} - {{ aluno?.hora_saida || '--:--' }}
+              <h3 class="text-xs font-medium text-purple-600 dark:text-purple-400">Próxima Aula</h3>
+              <p v-if="cursoProximo" class="text-sm sm:text-base font-bold text-purple-900 dark:text-purple-100 truncate">
+                {{ cursoProximo.curso_nome }}
               </p>
+              <p v-else class="text-sm text-purple-600 dark:text-purple-400">Sem aulas</p>
             </div>
           </div>
-          <p class="text-xs text-muted-foreground dark:text-gray-300">
-            <strong>Local:</strong> {{ aluno?.local_aulas || 'Não informado' }}
+          <p v-if="cursoProximo" class="text-xs text-purple-700 dark:text-purple-300">
+            <strong>Horário:</strong> {{ cursoProximo.hora_entrada || '--:--' }} - {{ cursoProximo.hora_saida || '--:--' }}<br>
+            <strong>Local:</strong> {{ cursoProximo.local_aulas || 'Não informado' }}
           </p>
         </div>
       </div>
@@ -183,40 +196,50 @@ onMounted(() => {
         </div>
       </div>
       
-      <!-- Informações do Curso -->
-      <div class="bg-card border border-border rounded-lg p-3 sm:p-6">
+      <!-- Lista de Cursos -->
+      <div v-if="cursos.length > 0" class="bg-card border border-border rounded-lg p-3 sm:p-6">
         <h3 class="text-sm sm:text-lg font-semibold text-foreground dark:text-gray-100 mb-2 sm:mb-4 flex items-center">
           <Icon icon="book-open" class-name="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 text-primary" fallback="📖" />
-          Informações do Curso
+          Meus Cursos ({{ totalCursos }})
         </h3>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
-          <div>
-            <h4 class="text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1.5">Dias da Semana</h4>
-            <div class="flex flex-wrap gap-1 sm:gap-2">
-              <span 
-                v-for="dia in aluno?.dias_semana || []"
-                :key="dia"
-                class="px-2 py-0.5 sm:px-3 sm:py-1 bg-primary/15 text-primary border border-primary/30 dark:bg-primary/10 dark:text-primary dark:border-primary/20 text-xs rounded-full font-medium"
-              >
-                {{ {
-                  'segunda': 'Segunda-feira',
-                  'terca': 'Terça-feira',
-                  'quarta': 'Quarta-feira',
-                  'quinta': 'Quinta-feira',
-                  'sexta': 'Sexta-feira',
-                  'sabado': 'Sábado',
-                  'domingo': 'Domingo'
-                }[dia] || dia }}
-              </span>
+        <div class="space-y-3">
+          <div
+            v-for="curso in cursos"
+            :key="curso.id"
+            class="p-3 sm:p-4 bg-gradient-to-br from-white via-slate-50/80 to-gray-100/90 dark:from-slate-900/90 dark:via-gray-900/95 dark:to-black/90 rounded-lg border border-slate-200/70 dark:border-slate-700/40 hover:border-primary/50 transition-colors shadow-sm hover:shadow-md dark:shadow-none dark:hover:shadow-slate-900/50"
+          >
+            <div class="flex items-start justify-between mb-2">
+              <div class="flex-1">
+                <h4 class="font-bold text-sm sm:text-base text-foreground">{{ curso.curso_nome }}</h4>
+                <p class="text-xs text-muted-foreground">{{ curso.carga_horaria }}h • {{ curso.quantidade_aulas }} aulas</p>
+              </div>
+              <div class="text-right ml-2">
+                <div class="text-lg sm:text-2xl font-bold text-primary">{{ Math.round(curso.percentual_conclusao || 0) }}%</div>
+                <p class="text-xs text-muted-foreground">Progresso</p>
+              </div>
             </div>
-          </div>
-          
-          <div v-if="aluno?.multa_falta">
-            <h4 class="text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1.5">Multa por Falta</h4>
-            <p class="text-base sm:text-2xl font-bold text-foreground dark:text-gray-100">
-              R$ {{ parseFloat(aluno.multa_falta).toFixed(2).replace('.', ',') }}
-            </p>
+            
+            <!-- Barra de Progresso -->
+            <div class="w-full bg-muted rounded-full h-1.5 mb-2">
+              <div 
+                class="bg-primary h-1.5 rounded-full transition-all duration-500"
+                :style="{ width: `${Math.round(curso.percentual_conclusao || 0)}%` }"
+              ></div>
+            </div>
+            
+            <!-- Informações Adicionais -->
+            <div class="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+              <div>
+                <strong>Concluídas:</strong> {{ curso.aulas_concluidas || 0 }} de {{ curso.quantidade_aulas }}
+              </div>
+              <div>
+                <strong>Horário:</strong> {{ curso.hora_entrada || '--:--' }} - {{ curso.hora_saida || '--:--' }}
+              </div>
+              <div class="col-span-2">
+                <strong>Local:</strong> {{ curso.local_aulas || 'Não informado' }}
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -22,24 +22,38 @@ export function useAuth() {
   // Funções básicas
   const signInWithEmailAndPassword = async (email: string, password: string) => {
     const supabase = getSupabase()
-    if (!supabase) return false
+    if (!supabase) {
+      console.error('useAuth: Supabase não disponível')
+      return false
+    }
     
-    isLoading.value = true
-    errorMessage.value = null
     try {
+      isLoading.value = true
+      errorMessage.value = null
+      
+      console.log('useAuth: Tentando login para:', email)
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       })
-      if (error) throw error
+      
+      if (error) {
+        console.error('useAuth: Erro do Supabase:', error)
+        throw error
+      }
+      
+      console.log('useAuth: Login bem-sucedido:', data.user?.email)
       user.value = data.user
       session.value = data.session
       return data.user
     } catch (err: any) {
+      console.error('useAuth: Exceção durante login:', err)
       errorMessage.value = String(err?.message || err)
       return false
     } finally {
       isLoading.value = false
+      console.log('useAuth: isLoading definido como false')
     }
   }
   const signUp = async ({ name, companyName, email, password }: { name: string, companyName: string, email: string, password: string }) => {
@@ -77,7 +91,7 @@ export function useAuth() {
     user: readonly(user),
     session: readonly(session),
     isAuthenticated: readonly(isAuthenticated),
-    isLoading: readonly(isLoading),
+    isLoading, // NÃO readonly para permitir atualização
     errorMessage: readonly(errorMessage),
     signInWithEmailAndPassword,
     signUp,

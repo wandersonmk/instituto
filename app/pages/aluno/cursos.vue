@@ -282,7 +282,7 @@ onMounted(() => {
         <div
           v-for="curso in cursos"
           :key="curso.id"
-          class="bg-card border border-border rounded-lg p-4 sm:p-6"
+          class="bg-gradient-to-br from-white via-gray-50/50 to-slate-50/80 dark:from-slate-900/90 dark:via-gray-900/95 dark:to-black/90 border border-gray-200/60 dark:border-slate-700/40 rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md dark:shadow-none dark:hover:shadow-slate-900/50 transition-all"
         >
           <!-- Header do Curso -->
           <div class="flex items-start justify-between mb-4">

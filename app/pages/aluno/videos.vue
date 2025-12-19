@@ -18,11 +18,41 @@ const {
 const estatisticas = ref<any>(null)
 const videosCategoria = ref<Record<string, VideoComCategoria[]>>({})
 const videoSelecionado = ref<VideoComCategoria | null>(null)
+const categoriasExpandidas = ref<Set<string>>(new Set())
 
 // Carregar dados ao montar
 onMounted(async () => {
   await carregarDados()
+  // Expandir todas as categorias por padrão
+  if (categorias.value && categorias.value.length > 0) {
+    categorias.value.forEach(cat => categoriasExpandidas.value.add(cat.id))
+  }
 })
+
+// Toggle expansão de categoria
+const toggleCategoria = (categoriaId: string) => {
+  if (categoriasExpandidas.value.has(categoriaId)) {
+    categoriasExpandidas.value.delete(categoriaId)
+  } else {
+    categoriasExpandidas.value.add(categoriaId)
+  }
+}
+
+// Verificar se categoria está expandida
+const isCategoriaExpandida = (categoriaId: string) => {
+  return categoriasExpandidas.value.has(categoriaId)
+}
+
+// Expandir/colapsar todas
+const expandirTodas = () => {
+  if (categorias.value) {
+    categorias.value.forEach(cat => categoriasExpandidas.value.add(cat.id))
+  }
+}
+
+const colapsarTodas = () => {
+  categoriasExpandidas.value.clear()
+}
 
 const carregarDados = async () => {
   try {
@@ -145,26 +175,64 @@ const marcarComoConcluido = async () => {
       </div>
 
       <!-- Categorias e Vídeos -->
-      <div v-if="categorias && categorias.length > 0" class="space-y-6">
-        <div v-for="categoria in categorias" :key="categoria.id" class="space-y-4">
-          <div class="flex items-center gap-3">
-            <div v-if="categoria.icone" class="text-2xl sm:text-3xl">{{ categoria.icone }}</div>
-            <div>
-              <h2 class="text-xl sm:text-2xl font-bold dark:text-white">{{ categoria.nome }}</h2>
-              <p v-if="categoria.descricao" class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                {{ categoria.descricao }}
-              </p>
-            </div>
-          </div>
-
-          <!-- Lista de vídeos da categoria -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div
-              v-for="video in videosCategoria[categoria.id] || []"
-              :key="video.id"
-              class="bg-gradient-to-br from-white via-slate-50/80 to-gray-100/90 dark:from-slate-900/90 dark:via-gray-900/95 dark:to-black/90 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-              @click="abrirVideo(video)"
+      <div v-if="categorias && categorias.length > 0" class="space-y-4">
+        <!-- Controles de expandir/colapsar todos -->
+        <div class="flex items-center justify-between px-2">
+          <h3 class="text-lg font-semibold dark:text-white">Categorias</h3>
+          <div class="flex gap-2">
+            <button
+              @click="expandirTodas"
+              class="text-xs px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
             >
+              Expandir Todas
+            </button>
+            <button
+              @click="colapsarTodas"
+              class="text-xs px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            >
+              Colapsar Todas
+            </button>
+          </div>
+        </div>
+
+        <!-- Acordeão de categorias -->
+        <div v-for="categoria in categorias" :key="categoria.id" class="bg-card border border-border rounded-lg overflow-hidden">
+          <!-- Header da categoria (clicável) -->
+          <button
+            @click="toggleCategoria(categoria.id)"
+            class="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+          >
+            <div class="flex items-center gap-3">
+              <div v-if="categoria.icone" class="text-2xl sm:text-3xl">{{ categoria.icone }}</div>
+              <div class="text-left">
+                <h2 class="text-lg sm:text-xl font-bold dark:text-white">{{ categoria.nome }}</h2>
+                <p v-if="categoria.descricao" class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                  {{ categoria.descricao }}
+                </p>
+                <p class="text-xs text-muted-foreground mt-1">
+                  {{ (videosCategoria[categoria.id] || []).length }} vídeo(s)
+                </p>
+              </div>
+            </div>
+            
+            <!-- Ícone de expandir/colapsar -->
+            <Icon 
+              :icon="isCategoriaExpandida(categoria.id) ? 'chevron-down' : 'chevron-right'" 
+              class-name="w-5 h-5 text-muted-foreground transition-transform"
+              :fallback="isCategoriaExpandida(categoria.id) ? '▼' : '▶'"
+            />
+          </button>
+
+          <!-- Conteúdo expansível -->
+          <div v-show="isCategoriaExpandida(categoria.id)" class="p-4 pt-0 border-t border-border">
+            <!-- Lista de vídeos da categoria -->
+            <div v-if="(videosCategoria[categoria.id] || []).length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div
+                v-for="video in videosCategoria[categoria.id] || []"
+                :key="video.id"
+                class="bg-gradient-to-br from-white via-slate-50/80 to-gray-100/90 dark:from-slate-900/90 dark:via-gray-900/95 dark:to-black/90 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                @click="abrirVideo(video)"
+              >
               <!-- Thumbnail -->
               <div class="relative aspect-video bg-gray-200 dark:bg-gray-800">
                 <img
@@ -232,11 +300,18 @@ const marcarComoConcluido = async () => {
                 </div>
               </div>
             </div>
+            </div>
+            
+            <!-- Mensagem quando categoria não tem vídeos -->
+            <div v-else class="text-center py-8 text-muted-foreground">
+              <Icon icon="video" class-name="w-12 h-12 mx-auto mb-2 opacity-50" fallback="🎥" />
+              <p class="text-sm">Nenhum vídeo nesta categoria ainda</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Estado vazio -->
+      <!-- Estado vazio (quando não há categorias) -->
       <div v-else class="bg-card border border-border rounded-lg p-12 text-center">
         <div class="max-w-md mx-auto">
           <div class="w-20 h-20 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">

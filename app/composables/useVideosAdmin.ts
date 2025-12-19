@@ -47,8 +47,7 @@ export const useVideosAdmin = () => {
         return empresaIdMetadata
       }
 
-      // Fallback: buscar primeira empresa ativa do banco
-      console.warn('empresa_id não encontrado para o usuário, usando empresa padrão')
+      // Fallback silencioso: buscar primeira empresa ativa do banco
       const { data: empresaPadrao } = await supabase
         .from('empresas')
         .select('id')

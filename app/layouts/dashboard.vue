@@ -78,6 +78,8 @@ const pageTitle = computed(() => {
       return 'Alunos'
     case '/cursos':
       return 'Cursos'
+    case '/aulas-videos':
+      return 'Aulas em Vídeo'
     case '/indicacoes':
       return 'Indicações Recebidas'
     case '/relatorios':
@@ -109,6 +111,8 @@ const pageDescription = computed(() => {
       return 'Gerencie todos os seus alunos'
     case '/cursos':
       return 'Gerencie todos os cursos disponíveis'
+    case '/aulas-videos':
+      return 'Gerencie as videoaulas disponíveis para os alunos'
     case '/indicacoes':
       return 'Visualize todas as indicações recebidas'
     case '/relatorios':

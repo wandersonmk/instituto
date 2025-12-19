@@ -53,7 +53,8 @@ import {
   faCalendar,
   faArrowRight,
   faCalculator,
-  faMoneyBillWave
+  faMoneyBillWave,
+  faVideo
 } from '@fortawesome/free-solid-svg-icons'
 
 // This is important, we are going to let Nuxt worry about the CSS
@@ -114,7 +115,8 @@ library.add(
   faCalendar,
   faArrowRight,
   faCalculator,
-  faMoneyBillWave
+  faMoneyBillWave,
+  faVideo
 )
 
 export default defineNuxtPlugin({

@@ -60,6 +60,18 @@
             </NuxtLink>
           </li>
 
+          <!-- Aulas em Vídeo -->
+          <li>
+            <NuxtLink 
+              to="/aulas-videos"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-sm transition-colors hover:bg-muted group relative"
+              :class="$route.path === '/aulas-videos' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
+            >
+              <Icon icon="video" class-name="w-5 h-5 mr-3" fallback="🎥" />
+              <span>Aulas em Vídeo</span>
+            </NuxtLink>
+          </li>
+
           <!-- Indicações Recebidas -->
           <li>
             <NuxtLink 
@@ -211,6 +223,19 @@
             >
               <Icon icon="book-open" class-name="w-5 h-5 mr-3" fallback="📚" />
               <span>Cursos</span>
+            </NuxtLink>
+          </li>
+
+          <!-- Aulas em Vídeo -->
+          <li>
+            <NuxtLink 
+              to="/aulas-videos"
+              @click="$emit('close-mobile')"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-sm transition-colors hover:bg-muted group relative"
+              :class="$route.path === '/aulas-videos' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
+            >
+              <Icon icon="video" class-name="w-5 h-5 mr-3" fallback="🎥" />
+              <span>Aulas em Vídeo</span>
             </NuxtLink>
           </li>
 

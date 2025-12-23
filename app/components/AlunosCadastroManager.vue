@@ -1256,19 +1256,18 @@ async function buscarCursosDoAluno(alunoId: string) {
   const supabase = useSupabaseClient()
   
   try {
-    // Buscar histórico de cursos do aluno
+    // Buscar cursos do aluno na tabela de relacionamento alunos_cursos
     const { data, error } = await supabase
-      .from('alunos')
+      .from('alunos_cursos')
       .select(`
-        id,
         curso_id,
         cursos (
           id,
           nome
         )
       `)
-      .eq('id', alunoId)
-      .single()
+      .eq('aluno_id', alunoId)
+      .eq('status', 'ativo')
     
     if (error) {
       console.error('Erro ao buscar cursos do aluno:', error)
@@ -1276,16 +1275,24 @@ async function buscarCursosDoAluno(alunoId: string) {
       return
     }
     
-    // Se o aluno tem curso vinculado, adicionar à lista
-    if (data?.cursos) {
-      cursosDoAluno.value = [{
-        id: data.cursos.id,
-        nome: data.cursos.nome
-      }]
-      // Pre-selecionar o curso atual
-      cursoIdFalta.value = data.curso_id
+    // Mapear os cursos encontrados
+    if (data && data.length > 0) {
+      cursosDoAluno.value = data
+        .filter(item => item.cursos) // Garantir que o curso existe
+        .map(item => ({
+          id: item.cursos.id,
+          nome: item.cursos.nome
+        }))
+      
+      // Pre-selecionar o primeiro curso se houver
+      if (cursosDoAluno.value.length > 0) {
+        cursoIdFalta.value = cursosDoAluno.value[0].id
+      }
+      
+      console.log('✅ Cursos encontrados para o aluno:', cursosDoAluno.value.length)
     } else {
       cursosDoAluno.value = []
+      console.log('⚠️ Nenhum curso ativo encontrado para o aluno')
     }
   } catch (error) {
     console.error('Erro inesperado ao buscar cursos do aluno:', error)
@@ -1294,12 +1301,17 @@ async function buscarCursosDoAluno(alunoId: string) {
 }
 
 // Abrir modal de registro de falta
-function abrirModalFalta(aluno: any, event?: Event) {
+async function abrirModalFalta(aluno: any, event?: Event) {
   if (event) event.stopPropagation()
   alunoRegistrandoFalta.value = aluno
   dataFalta.value = new Date().toISOString().split('T')[0] // Data de hoje
   motivoFalta.value = ''
   observacoesFalta.value = ''
+  cursoIdFalta.value = '' // Resetar seleção
+  
+  // Buscar cursos do aluno
+  await buscarCursosDoAluno(aluno.id)
+  
   mostrarModalFalta.value = true
 }
 
@@ -1310,11 +1322,20 @@ function fecharModalFalta() {
   dataFalta.value = ''
   motivoFalta.value = ''
   observacoesFalta.value = ''
+  cursoIdFalta.value = ''
+  cursosDoAluno.value = []
 }
 
 // Registrar falta
 async function registrarFalta() {
   if (!process.client || !alunoRegistrandoFalta.value || !dataFalta.value) return
+  
+  // Validar se o curso foi selecionado
+  if (!cursoIdFalta.value) {
+    const toast = await useToastSafe()
+    toast?.error('Por favor, selecione um curso')
+    return
+  }
   
   const supabase = useSupabaseClient()
   const toast = await useToastSafe()
@@ -1326,6 +1347,7 @@ async function registrarFalta() {
       .from('faltas')
       .insert({
         aluno_id: alunoRegistrandoFalta.value.id,
+        curso_id: cursoIdFalta.value, // Incluir o curso_id
         data_falta: dataFalta.value,
         valor_multa: valorMulta,
         motivo: motivoFalta.value || null,
@@ -2812,6 +2834,31 @@ async function registrarPagamento() {
 
             <!-- Formulário -->
             <div class="space-y-4 mb-6">
+              <!-- Curso -->
+              <div>
+                <label for="cursoFaltaSimples" class="block text-sm font-medium text-foreground mb-2">
+                  Curso <span class="text-red-500">*</span>
+                </label>
+                <select
+                  id="cursoFaltaSimples"
+                  v-model="cursoIdFalta"
+                  required
+                  class="w-full px-3 py-2 border-2 border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
+                >
+                  <option value="" disabled>Selecione o curso</option>
+                  <option
+                    v-for="curso in cursosDoAluno"
+                    :key="curso.id"
+                    :value="curso.id"
+                  >
+                    {{ curso.nome }}
+                  </option>
+                </select>
+                <p v-if="cursosDoAluno.length === 0" class="text-xs text-red-500 mt-1">
+                  ⚠️ Aluno não possui curso vinculado
+                </p>
+              </div>
+              
               <!-- Data da Falta -->
               <div>
                 <label for="dataFalta" class="block text-sm font-medium text-foreground mb-2">
@@ -2875,7 +2922,7 @@ async function registrarPagamento() {
               </button>
               <button
                 @click="registrarFalta"
-                :disabled="!dataFalta"
+                :disabled="!dataFalta || !cursoIdFalta"
                 class="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-red-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Registrar

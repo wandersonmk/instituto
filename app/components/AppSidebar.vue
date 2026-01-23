@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div v-if="isLoggedIn">
     <!-- Overlay para mobile (só aparece quando menu mobile está aberto) -->
     <div 
       v-if="isMobileOpen"
@@ -354,13 +354,39 @@ const userEmail = ref<string | null>(null)
 const userName = ref<string | null>(null)
 const isLoggedIn = ref(false)
 
+// Verificar autenticação usando o composable useAuth
+const { isAuthenticated, user } = process.client ? useAuth() : { isAuthenticated: ref(false), user: ref(null) }
+
 // Toast e montagem SIMPLES
 const toast = ref<any>(null)
 if (process.client) {
+  // Verificar autenticação antes de montar
+  if (isAuthenticated && isAuthenticated.value) {
+    isLoggedIn.value = true
+  }
+  
   onMounted(async () => {
     toast.value = await useToastSafe()
-    checkUserSession()
+    // Se ainda não conseguiu determinar, faz a verificação manual
+    if (!isLoggedIn.value) {
+      checkUserSession()
+    } else {
+      // Atualizar email do usuário
+      if (user?.value?.email) {
+        userEmail.value = user.value.email
+      }
+    }
   })
+  
+  // Watcher para mudanças de autenticação
+  if (isAuthenticated) {
+    watch(isAuthenticated, (newVal) => {
+      isLoggedIn.value = newVal
+      if (newVal && user?.value?.email) {
+        userEmail.value = user.value.email
+      }
+    })
+  }
 }
 
 // Atualizar dados quando página ficar visível - SIMPLES

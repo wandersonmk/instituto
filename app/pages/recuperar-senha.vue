@@ -81,10 +81,10 @@ const handleSubmit = async () => {
   if (!isEmailValid.value) return
   isLoading.value = true
   try {
-    const res = await fetch('https://tqjswnrdjhonnqbgwikp.supabase.co/auth/v1/recover', {
+    const res = await fetch('https://rkfmtjhdtlzgbiorxlfj.supabase.co/auth/v1/recover', {
       method: 'POST',
       headers: {
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxanN3bnJkamhvbm5xYmd3aWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwMTA3NTYsImV4cCI6MjA4MTU4Njc1Nn0.bbfSot1wnMVgE3dElOof0-Higo7_acQlAv87ineAuqI',
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrZm10amhkdGx6Z2Jpb3J4bGZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NzMyOTQsImV4cCI6MjEwMjU0OTI5NH0.pbKt5nMLtP3QPHMvYB9Qa3L4OIjRjbMKy_ZKW5-VTPs',
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ email: email.value })

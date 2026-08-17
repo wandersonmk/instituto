@@ -1,10 +1,18 @@
 {
+  "inputs": [
+    {
+      "id": "supabase-access-token",
+      "type": "promptString",
+      "description": "Supabase Personal Access Token (gere um novo em supabase.com/dashboard/account/tokens)",
+      "password": true
+    }
+  ],
   "servers": {
     "supabase": {
       "command": "cmd",
-      "args": ["/c", "npx", "-y", "@supabase/mcp-server-supabase@latest", "--project-ref=tqjswnrdjhonnqbgwikp"],
+      "args": ["/c", "npx", "-y", "@supabase/mcp-server-supabase@latest", "--project-ref=rkfmtjhdtlzgbiorxlfj"],
       "env": {
-        "SUPABASE_ACCESS_TOKEN": "sbp_35a0ac934bd8688359158a02791010825996ab2e"
+        "SUPABASE_ACCESS_TOKEN": "${input:supabase-access-token}"
       }
     }
   }

@@ -116,75 +116,8 @@ export const useAlunosCursos = () => {
     }
   }
 
-  // Registrar presença em um curso específico
-  async function registrarPresenca(alunoId: string, cursoId: string) {
-    const hoje = new Date().toISOString().split('T')[0]
-
-    // Buscar empresa_id do aluno
-    const { data: alunoData } = await supabase
-      .from('alunos')
-      .select('empresa_id')
-      .eq('id', alunoId)
-      .single()
-
-    // Verificar se já registrou hoje neste curso
-    const { data: presencaExistente } = await supabase
-      .from('presencas')
-      .select('id')
-      .eq('aluno_id', alunoId)
-      .eq('curso_id', cursoId)
-      .eq('data_presenca', hoje)
-      .maybeSingle()
-
-    if (presencaExistente) {
-      throw new Error('Presença já registrada hoje para este curso')
-    }
-
-    // Registrar presença
-    const { error: presencaError } = await supabase
-      .from('presencas')
-      .insert({
-        aluno_id: alunoId,
-        curso_id: cursoId,
-        empresa_id: alunoData?.empresa_id,
-        data_presenca: hoje
-      })
-
-    if (presencaError) throw presencaError
-
-    console.log('✅ Presença registrada, agora incrementando aulas_concluidas...')
-
-    // Incrementar aulas_concluidas na matrícula
-    const { data: matricula, error: matriculaError } = await supabase
-      .from('alunos_cursos')
-      .select('id, aulas_concluidas')
-      .eq('aluno_id', alunoId)
-      .eq('curso_id', cursoId)
-      .single()
-
-    if (matriculaError) {
-      console.error('❌ Erro ao buscar matrícula:', matriculaError)
-      throw matriculaError
-    }
-
-    console.log('📋 Matrícula encontrada:', { id: matricula.id, aulas_concluidas_atual: matricula.aulas_concluidas })
-
-    if (matricula) {
-      const novoValor = (matricula.aulas_concluidas || 0) + 1
-      
-      const { error: updateError } = await supabase
-        .from('alunos_cursos')
-        .update({ aulas_concluidas: novoValor })
-        .eq('id', matricula.id)
-      
-      if (updateError) {
-        console.error('❌ Erro ao atualizar aulas_concluidas:', updateError)
-        throw updateError
-      }
-      
-      console.log(`✅ Aulas concluídas atualizada: ${matricula.aulas_concluidas} → ${novoValor}`)
-    }
-  }
+  // A presença agora nasce do check-in e só é concluída no check-out:
+  // ver useAulas() (fazerCheckin / fazerCheckout), que passa pelas funções do banco.
 
   // Buscar view completa (aluno + curso + progresso)
   async function buscarViewCompleta(alunoId?: string) {
@@ -212,7 +145,6 @@ export const useAlunosCursos = () => {
     adicionarCurso,
     atualizarCurso,
     removerCurso,
-    registrarPresenca,
     buscarViewCompleta
   }
 }

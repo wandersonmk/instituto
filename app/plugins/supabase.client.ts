@@ -18,13 +18,22 @@ export default defineNuxtPlugin(() => {
     return
   }
 
+  // Chave por projeto: evita reaproveitar sessão de um projeto Supabase em outro
+  const storageKey = getAuthStorageKey(url)
+
+  // Limpa sessão antiga de chave fixa (de antes da migração de projeto),
+  // que hoje só geraria 401 por ter sido emitida por outro projeto
+  if (storageKey !== LEGACY_AUTH_STORAGE_KEY) {
+    window.localStorage.removeItem(LEGACY_AUTH_STORAGE_KEY)
+  }
+
   console.log('[Supabase Plugin] Criando cliente...')
   const supabase = createClient(url, anonKey, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
       storage: window.localStorage,
-      storageKey: 'agzap-auth-token'
+      storageKey
     }
   })
 

@@ -146,8 +146,8 @@ const handleLogout = async () => {
     // Limpar localStorage completamente
     if (process.client) {
       localStorage.removeItem('user_email')
-      localStorage.removeItem('agzap-auth-token')
-      localStorage.removeItem('sb-wynjuzsrydsvkmyhjfhu-auth-token')
+      localStorage.removeItem(getAuthStorageKey(useRuntimeConfig().public?.supabaseUrl as string | undefined))
+      localStorage.removeItem(LEGACY_AUTH_STORAGE_KEY)
       // Limpar todos os itens relacionados ao auth
       Object.keys(localStorage).forEach(key => {
         if (key.includes('auth') || key.includes('supabase') || key.includes('sb-')) {

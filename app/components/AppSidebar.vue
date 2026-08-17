@@ -421,7 +421,8 @@ const checkUserSession = () => {
       }
       
       // Tentar pegar do localStorage do Supabase
-      const authData = localStorage.getItem('agzap-auth-token')
+      const supabaseUrl = useRuntimeConfig().public?.supabaseUrl as string | undefined
+      const authData = localStorage.getItem(getAuthStorageKey(supabaseUrl))
       if (authData) {
         const parsed = JSON.parse(authData)
         if (parsed.user && parsed.user.email) {

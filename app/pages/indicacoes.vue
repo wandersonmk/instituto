@@ -93,6 +93,24 @@ onMounted(() => {
   // visível normalmente aqui na página).
   marcarIndicacoesVistas()
 })
+
+// Tempo real: indicação nova (ou status mudando) enquanto a página está
+// aberta — recarrega a lista sozinha, sem precisar de F5.
+let canalIndicacoes: ReturnType<typeof supabase.channel> | null = null
+
+onMounted(() => {
+  canalIndicacoes = supabase
+    .channel('indicacoes-pagina')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'indicacoes' }, () => buscarIndicacoes())
+    .subscribe()
+})
+
+onUnmounted(() => {
+  if (canalIndicacoes) {
+    supabase.removeChannel(canalIndicacoes)
+    canalIndicacoes = null
+  }
+})
 </script>
 
 <template>

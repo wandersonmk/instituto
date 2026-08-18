@@ -344,6 +344,26 @@ onMounted(async () => {
   // Se quem estiver logado não for admin, a RPC recusa e isso só loga o erro.
   await marcarAvaliacoesVistas()
 })
+
+// Tempo real: chegou avaliação nova (ou alguém mexeu numa existente) enquanto
+// a página está aberta — recarrega a lista sozinha, sem precisar de F5. O
+// sino do menu (useNotificacoesAdmin) já assina isso globalmente pro badge;
+// esta assinatura é só da página, pra atualizar a lista em si.
+let canalAvaliacoes: ReturnType<ReturnType<typeof useSupabaseClient>['channel']> | null = null
+
+onMounted(() => {
+  canalAvaliacoes = useSupabaseClient()
+    .channel('avaliacoes-pagina')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'avaliacoes_aulas' }, () => carregar())
+    .subscribe()
+})
+
+onUnmounted(() => {
+  if (canalAvaliacoes) {
+    useSupabaseClient().removeChannel(canalAvaliacoes)
+    canalAvaliacoes = null
+  }
+})
 </script>
 
 <template>

@@ -11,14 +11,9 @@
     <div 
       class="hidden lg:flex fixed left-0 top-0 h-screen w-64 bg-background text-foreground z-50 shadow-2xl flex-col border-r border-border"
     >
-      <!-- Header com nome da empresa -->
-      <div class="flex items-center p-4 border-b border-border">
-        <div class="flex-1 min-w-0">
-          <h1 class="text-lg font-bold truncate">
-            Instituto Fios de Ouro
-          </h1>
-          <p class="text-xs text-muted-foreground">Sistema de Relatório</p>
-        </div>
+      <!-- Header com a logo da empresa — fundo transparente de verdade. -->
+      <div class="flex items-center justify-center p-5 border-b border-border">
+        <img src="/logo-instituto.png" alt="Instituto Fios de Ouro" class="w-full max-w-[190px] h-auto object-contain" />
       </div>
 
       <!-- Menu de navegação -->
@@ -219,17 +214,14 @@
       :class="isMobileOpen ? 'translate-x-0' : '-translate-x-full'"
       class="lg:hidden fixed left-0 top-0 h-screen w-64 bg-background text-foreground z-50 shadow-2xl flex-col border-r border-border transition-transform duration-300 ease-in-out flex"
     >
-      <!-- Header com nome da empresa e botão fechar -->
-      <div class="flex items-center justify-between p-4 border-b border-border">
-        <div class="flex-1 min-w-0">
-          <h1 class="text-lg font-bold truncate">
-            Instituto Fios de Ouro
-          </h1>
-          <p class="text-xs text-muted-foreground">Sistema de Relatório</p>
+      <!-- Header com a logo da empresa e botão fechar -->
+      <div class="flex items-center justify-between gap-2 p-4 border-b border-border">
+        <div class="h-10 min-w-0 flex-1">
+          <img src="/logo-instituto.png" alt="Instituto Fios de Ouro" class="h-full w-auto max-w-full object-contain" />
         </div>
-        
+
         <!-- Botão fechar -->
-        <button 
+        <button
           @click="$emit('close-mobile')"
           class="p-2 rounded-lg text-foreground/80 hover:text-foreground hover:bg-muted transition-colors"
         >

@@ -52,8 +52,34 @@ const mensagemTeste = ref('Olá! Esta é uma mensagem de teste do Instituto Fios
 const enviandoTeste = ref(false)
 const resultadoTeste = ref<{ ok: boolean; texto: string } | null>(null)
 
+/**
+ * Máscara de telefone BR — só dígitos, no máximo 11 (DDD + celular/fixo),
+ * que é exatamente o que a Agzap aceita: normalizar_telefone_whatsapp() e
+ * a rota /api/whatsapp/testar tiram tudo que não é dígito e, se sobrar até
+ * 11, prefixam "55" (código do Brasil) por conta própria — então nem faz
+ * sentido deixar digitar "+55" ou qualquer outra coisa aqui na frente.
+ */
+function formatarTelefone(valor: string): string {
+  const digitos = valor.replace(/\D/g, '').slice(0, 11)
+  if (digitos.length <= 2) return digitos ? `(${digitos}` : ''
+  if (digitos.length <= 6) return `(${digitos.slice(0, 2)}) ${digitos.slice(2)}`
+  if (digitos.length <= 10) return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 6)}-${digitos.slice(6)}`
+  return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 7)}-${digitos.slice(7)}`
+}
+
+function handleNumeroTesteInput(event: Event) {
+  numeroTeste.value = formatarTelefone((event.target as HTMLInputElement).value)
+}
+
+// DDD (2) + fixo (8) ou celular (9) = 10 ou 11 dígitos — mesma regra que o
+// backend usa pra decidir se o número já está completo.
+const numeroTesteValido = computed(() => {
+  const digitos = numeroTeste.value.replace(/\D/g, '')
+  return digitos.length === 10 || digitos.length === 11
+})
+
 async function testar() {
-  if (!numeroTeste.value.trim() || !mensagemTeste.value.trim()) return
+  if (!numeroTesteValido.value || !mensagemTeste.value.trim()) return
   enviandoTeste.value = true
   resultadoTeste.value = null
 
@@ -188,11 +214,19 @@ onMounted(carregar)
                   <div>
                     <label class="block text-[11px] text-muted-foreground mb-1">Número (com DDD)</label>
                     <input
-                      v-model="numeroTeste"
-                      type="text"
-                      placeholder="11999999999"
+                      :value="numeroTeste"
+                      @input="handleNumeroTesteInput"
+                      type="tel"
+                      inputmode="numeric"
+                      autocomplete="off"
+                      maxlength="15"
+                      placeholder="(11) 91234-5678"
                       class="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      :class="numeroTeste && !numeroTesteValido ? 'border-red-300 dark:border-red-800/60 focus:ring-red-400/40' : ''"
                     />
+                    <p v-if="numeroTeste && !numeroTesteValido" class="text-[11px] text-red-600 dark:text-red-400 mt-1">
+                      Informe DDD + número (10 ou 11 dígitos).
+                    </p>
                   </div>
                   <div>
                     <label class="block text-[11px] text-muted-foreground mb-1">Mensagem</label>
@@ -206,7 +240,7 @@ onMounted(carregar)
 
                   <button
                     @click="testar"
-                    :disabled="!conectado || enviandoTeste || !numeroTeste.trim() || !mensagemTeste.trim()"
+                    :disabled="!conectado || enviandoTeste || !numeroTesteValido || !mensagemTeste.trim()"
                     class="w-full py-2.5 rounded-xl font-semibold text-sm text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm shadow-emerald-600/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] flex items-center justify-center gap-2"
                   >
                     <Icon icon="paper-plane" class-name="w-4 h-4" fallback="📤" />

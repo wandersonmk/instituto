@@ -527,6 +527,26 @@ function gerarPDF() {
 onMounted(() => {
   buscarDados()
 })
+
+// Tempo real: falta nova (professor finalizou aula com ausência), justificativa
+// mudando de tipo, análise do admin, ou pagamento registrado — recarrega o
+// relatório sozinho enquanto a página está aberta, sem precisar de F5.
+let canalRelatorio: ReturnType<typeof supabase.channel> | null = null
+
+onMounted(() => {
+  canalRelatorio = supabase
+    .channel('relatorio-faltas-pagina')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'faltas' }, () => buscarDados())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'pagamentos_multas' }, () => buscarDados())
+    .subscribe()
+})
+
+onUnmounted(() => {
+  if (canalRelatorio) {
+    supabase.removeChannel(canalRelatorio)
+    canalRelatorio = null
+  }
+})
 </script>
 
 <template>

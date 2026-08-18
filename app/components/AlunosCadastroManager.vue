@@ -2789,7 +2789,7 @@ async function registrarPagamento() {
                 :disabled="excluindoDefinitivamente"
                 class="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-red-500/50 disabled:opacity-50 disabled:pointer-events-none disabled:hover:scale-100"
               >
-                {{ excluindoDefinitivamente ? 'Excluindo...' : 'Sim, excluir definitivamente' }}
+                {{ excluindoDefinitivamente ? 'Excluindo...' : 'Excluir' }}
               </button>
             </div>
           </div>

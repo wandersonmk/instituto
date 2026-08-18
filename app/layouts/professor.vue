@@ -11,10 +11,13 @@
     <header class="bg-card border-b border-border sticky top-0 z-40">
       <div class="container mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between">
         <div class="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-          <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
-            <Icon icon="chalkboard-teacher" class-name="w-4 h-4 sm:w-6 sm:h-6 text-white" fallback="👩‍🏫" />
+          <!-- Logo com fundo transparente de verdade — o dourado tem
+               contraste bom tanto no claro quanto no escuro, não precisa de
+               versão separada por tema. -->
+          <div class="h-9 sm:h-12 flex-shrink-0">
+            <img src="/logo-instituto.png" alt="Instituto Fios de Ouro" class="h-full w-auto object-contain" />
           </div>
-          <div class="min-w-0 flex-1">
+          <div class="min-w-0 flex-1 pl-2 sm:pl-3 border-l border-border/60">
             <h1 class="text-sm sm:text-lg font-bold text-foreground dark:text-gray-100 truncate">Área do Professor</h1>
             <p class="text-xs text-muted-foreground dark:text-gray-300 truncate hidden sm:block">{{ userNome }}</p>
           </div>

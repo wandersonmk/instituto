@@ -1,83 +1,75 @@
 <template>
-  <div class="max-w-7xl mx-auto">
+  <div class="max-w-7xl mx-auto space-y-4">
     <!-- Cards de métricas -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <!-- Card Alunos Hoje -->
-        <div class="relative bg-gradient-to-br from-card via-blue-950/10 to-card text-card-foreground rounded-lg border border-blue-800/20 shadow-sm hover:shadow-md hover:shadow-blue-500/10 transition-all duration-300 p-6 group overflow-hidden">
-          <!-- Efeito de brilho sutil -->
-          <div class="absolute inset-0 bg-gradient-to-r from-transparent via-blue-500/8 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div class="relative z-10 flex items-center justify-between">
-            <div>
-              <p class="text-sm text-gray-400 mb-1">Alunos Hoje</p>
-              <p class="text-2xl font-bold text-foreground">{{ metrics.alunosHoje }}</p>
-              <p class="text-xs text-blue-600 mt-1">até agora</p>
-            </div>
-            <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
-              <Icon :icon="['fas', 'ticket']" class-name="text-white text-2xl drop-shadow-lg" fallback="" />
-            </div>
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <!-- Card Alunos Hoje -->
+      <div class="relative bg-gradient-to-br from-card via-blue-950/10 to-card text-card-foreground rounded-lg border border-blue-800/20 shadow-sm hover:shadow-md hover:shadow-blue-500/10 transition-all duration-300 p-3.5 group overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-blue-500/8 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <div class="relative z-10 flex items-center gap-3">
+          <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg flex-shrink-0">
+            <Icon :icon="['fas', 'ticket']" class-name="text-white text-base" fallback="" />
           </div>
-        </div>
-
-        <!-- Card Alunos na Semana -->
-        <div class="relative bg-gradient-to-br from-card via-emerald-950/10 to-card text-card-foreground rounded-lg border border-emerald-800/20 shadow-sm hover:shadow-md hover:shadow-emerald-500/10 transition-all duration-300 p-6 group overflow-hidden">
-          <!-- Efeito de brilho sutil -->
-          <div class="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-500/8 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div class="relative z-10 flex items-center justify-between">
-            <div>
-              <p class="text-sm text-gray-400 mb-1">Alunos na Semana</p>
-              <p class="text-2xl font-bold text-foreground">{{ metrics.alunosNovos }}</p>
-              <p class="text-xs text-emerald-600 mt-1">nos últimos 7 dias</p>
-            </div>
-            <div class="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-lg">
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <!-- Card Alunos esse mês -->
-        <div class="relative bg-gradient-to-br from-card via-amber-950/10 to-card text-card-foreground rounded-lg border border-amber-800/20 shadow-sm hover:shadow-md hover:shadow-amber-500/10 transition-all duration-300 p-6 group overflow-hidden">
-          <!-- Efeito de brilho sutil -->
-          <div class="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500/8 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div class="relative z-10 flex items-center justify-between">
-            <div>
-              <p class="text-sm text-gray-400 mb-1">Alunos esse mês</p>
-              <p class="text-2xl font-bold text-foreground">{{ metrics.alunosVencendo }}</p>
-              <p class="text-xs text-green-600 mt-1">este mês</p>
-            </div>
-            <div class="w-12 h-12 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center shadow-lg">
-              <Icon :icon="['fas', 'user-graduate']" class-name="text-white text-2xl" fallback="" />
-            </div>
-          </div>
-        </div>
-
-        <!-- Card Total de Alunos -->
-        <div class="relative bg-gradient-to-br from-card via-indigo-950/10 to-card text-card-foreground rounded-lg border border-indigo-800/20 shadow-sm hover:shadow-md hover:shadow-indigo-500/10 transition-all duration-300 p-6 group overflow-hidden">
-          <!-- Efeito de brilho sutil -->
-          <div class="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-500/8 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div class="relative z-10 flex items-center justify-between">
-            <div>
-              <p class="text-sm text-gray-400 mb-1">Total de Alunos</p>
-              <p class="text-2xl font-bold text-foreground">{{ metrics.alunosTotais.toLocaleString('pt-BR') }}</p>
-              <p class="text-xs text-indigo-600 mt-1">total de alunos</p>
-            </div>
-            <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg">
-              <Icon :icon="['fas', 'users']" class-name="text-white text-2xl" fallback="" />
-            </div>
+          <div class="min-w-0">
+            <p class="text-lg font-bold text-foreground leading-tight">{{ metrics.alunosHoje }}</p>
+            <p class="text-[11px] text-muted-foreground leading-tight truncate">Alunos Hoje</p>
           </div>
         </div>
       </div>
 
+      <!-- Card Alunos na Semana -->
+      <div class="relative bg-gradient-to-br from-card via-emerald-950/10 to-card text-card-foreground rounded-lg border border-emerald-800/20 shadow-sm hover:shadow-md hover:shadow-emerald-500/10 transition-all duration-300 p-3.5 group overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-500/8 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <div class="relative z-10 flex items-center gap-3">
+          <div class="w-9 h-9 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-lg flex-shrink-0">
+            <svg class="w-4.5 h-4.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+          </div>
+          <div class="min-w-0">
+            <p class="text-lg font-bold text-foreground leading-tight">{{ metrics.alunosNovos }}</p>
+            <p class="text-[11px] text-muted-foreground leading-tight truncate">Alunos na Semana</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card Alunos esse mês -->
+      <div class="relative bg-gradient-to-br from-card via-amber-950/10 to-card text-card-foreground rounded-lg border border-amber-800/20 shadow-sm hover:shadow-md hover:shadow-amber-500/10 transition-all duration-300 p-3.5 group overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500/8 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <div class="relative z-10 flex items-center gap-3">
+          <div class="w-9 h-9 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center shadow-lg flex-shrink-0">
+            <Icon :icon="['fas', 'user-graduate']" class-name="text-white text-base" fallback="" />
+          </div>
+          <div class="min-w-0">
+            <p class="text-lg font-bold text-foreground leading-tight">{{ metrics.alunosVencendo }}</p>
+            <p class="text-[11px] text-muted-foreground leading-tight truncate">Alunos esse mês</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card Total de Alunos -->
+      <div class="relative bg-gradient-to-br from-card via-indigo-950/10 to-card text-card-foreground rounded-lg border border-indigo-800/20 shadow-sm hover:shadow-md hover:shadow-indigo-500/10 transition-all duration-300 p-3.5 group overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-500/8 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <div class="relative z-10 flex items-center gap-3">
+          <div class="w-9 h-9 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg flex-shrink-0">
+            <Icon :icon="['fas', 'users']" class-name="text-white text-base" fallback="" />
+          </div>
+          <div class="min-w-0">
+            <p class="text-lg font-bold text-foreground leading-tight">{{ metrics.alunosTotais.toLocaleString('pt-BR') }}</p>
+            <p class="text-[11px] text-muted-foreground leading-tight truncate">Total de Alunos</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Gráficos -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-  <!-- Gráfico de Performance Circular -->
-  <CircularProgress :total="metrics.alunosTotais" />
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <!-- Gráfico de Performance Circular -->
+      <CircularProgress :total="metrics.alunosTotais" />
 
       <!-- Gráfico de Vendas Mensais -->
-      <div class="bg-card text-card-foreground rounded-lg border border-border shadow-sm p-6">
-  <h3 class="text-lg font-semibold text-foreground mb-4">Alunos dos Últimos Meses</h3>
-        <div class="relative h-64">
+      <div class="bg-card text-card-foreground rounded-lg border border-border shadow-sm p-4">
+        <h3 class="text-sm font-semibold text-foreground mb-3">Alunos dos Últimos Meses</h3>
+        <div class="relative h-56">
           <canvas ref="lineChartRef"></canvas>
         </div>
       </div>

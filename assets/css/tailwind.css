@@ -7,7 +7,15 @@
     height: 100%;
   }
 
-  /* Tema Escuro (padrão) */
+  /*
+   * Tema Escuro (padrão / fallback antes do JS aplicar a classe).
+   * IMPORTANTE: ".light" abaixo usa o seletor ":root.light" (especificidade
+   * maior que ":root" e ".dark" sozinhos) para NUNCA depender da ordem das
+   * regras no arquivo. Antes disso, ":root" e ".light" empatavam em
+   * especificidade e o resultado dependia de como o Tailwind reordenava o
+   * @layer base — o que fazia o tema voltar para claro/escuro sem motivo
+   * aparente.
+   */
   :root, .dark {
     --background: 20 21 24;
     --foreground: 255 255 255;
@@ -31,8 +39,8 @@
     --ring: 253 215 61;
   }
 
-  /* Tema Claro */
-  .light {
+  /* Tema Claro — especificidade maior que ":root"/".dark" de propósito */
+  :root.light {
     --background: 255 255 255;
     --foreground: 15 23 42;
     --primary: 253 215 61;

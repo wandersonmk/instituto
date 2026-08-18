@@ -19,7 +19,7 @@
         d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
       />
     </svg>
-    
+
     <!-- Ícone de lua (tema escuro) -->
     <svg
       v-else
@@ -39,44 +39,45 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 
-const isDark = ref(true) // Inicia com tema escuro (padrão atual)
+// Um script no <head> (nuxt.config.ts) já aplicou a classe correta no
+// <html> antes desta página pintar, lendo o localStorage da área certa. Por
+// isso basta ler o estado que já está no DOM aqui — não há necessidade de
+// assumir um valor "padrão" e corrigir depois no onMounted, o que
+// eliminava a janela de corrida entre esse componente e o plugin de tema.
+const isDark = ref(!(process.client && document.documentElement.classList.contains('light')))
 
-const toggleTheme = () => {
-  isDark.value = !isDark.value
-  
-  if (process.client) {
-    const html = document.documentElement
-    
-    if (isDark.value) {
-      html.classList.add('dark')
-      html.classList.remove('light')
-      localStorage.setItem('theme', 'dark')
-    } else {
-      html.classList.add('light')
-      html.classList.remove('dark')
-      localStorage.setItem('theme', 'light')
-    }
+// Cada área (admin/aluno/professor) guarda sua própria escolha de tema, na
+// mesma chave que o script do <head> usa — assim escolher escuro no painel
+// do aluno não muda o painel do professor nem o administrativo.
+const route = useRoute()
+const chaveTema = computed(() => {
+  const caminho = route.path
+  const area = caminho.startsWith('/aluno') ? 'aluno' : caminho.startsWith('/professor') ? 'professor' : 'admin'
+  return `theme-${area}`
+})
+
+// Única função que decide o tema: define a classe no <html> e persiste no
+// localStorage no mesmo lugar, evitando dois pontos do código escrevendo o
+// mesmo estado em momentos diferentes.
+function aplicarTema(dark: boolean) {
+  isDark.value = dark
+  if (!process.client) return
+
+  const html = document.documentElement
+  if (dark) {
+    html.classList.add('dark')
+    html.classList.remove('light')
+    localStorage.setItem(chaveTema.value, 'dark')
+  } else {
+    html.classList.add('light')
+    html.classList.remove('dark')
+    localStorage.setItem(chaveTema.value, 'light')
   }
 }
 
-onMounted(() => {
-  if (process.client) {
-    // Verifica o tema salvo no localStorage
-    const savedTheme = localStorage.getItem('theme')
-    const html = document.documentElement
-    
-    if (savedTheme === 'light') {
-      isDark.value = false
-      html.classList.add('light')
-      html.classList.remove('dark')
-    } else {
-      isDark.value = true
-      html.classList.add('dark')
-      html.classList.remove('light')
-    }
-  }
-})
+function toggleTheme() {
+  aplicarTema(!isDark.value)
+}
 </script>
-

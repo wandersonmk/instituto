@@ -48,6 +48,12 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       console.log('[Auth Middleware] Aluno tentando acessar área admin, redirecionando para /aluno')
       return navigateTo('/aluno')
     }
+
+    // Professor tem área própria e não deve cair no painel administrativo
+    if (userRole === 'professor' && !to.path.startsWith('/professor')) {
+      console.log('[Auth Middleware] Professor redirecionado para /professor')
+      return navigateTo('/professor')
+    }
     
     // Se é admin tentando acessar área do aluno, redireciona para dashboard
     // Verifica se o path é exatamente /aluno ou começa com /aluno/ (mas não /alunos)

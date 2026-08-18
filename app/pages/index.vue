@@ -11,14 +11,17 @@ const { isLoading: authLoading } = process.client ? useAuth() : { isLoading: ref
 
 // Aguarda a autenticação ser carregada e adiciona um delay mínimo para UX
 onMounted(async () => {
-  // Aguarda o auth loading terminar
-  while (authLoading.value) {
+  // Espera limitada (3s). Sem teto, qualquer falha ao restaurar a sessão deixa
+  // a tela presa para sempre em "Carregando Dashboard".
+  let tentativas = 0
+  while (authLoading.value && tentativas < 60) {
     await new Promise(resolve => setTimeout(resolve, 50))
+    tentativas++
   }
-  
+
   // Delay reduzido para carregamento mais rápido
   await new Promise(resolve => setTimeout(resolve, 300))
-  
+
   isLoading.value = false
 })
 </script>

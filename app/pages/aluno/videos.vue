@@ -22,17 +22,36 @@ const route = useRoute()
 const estatisticas = ref<any>(null)
 const videosCategoria = ref<Record<string, VideoComCategoria[]>>({})
 const videoSelecionado = ref<VideoComCategoria | null>(null)
-const categoriasExpandidas = ref<Set<string>>(new Set())
 const termoPesquisa = ref('')
 const videosFiltrados = ref<VideoComCategoria[]>([])
+
+// Navegação em 2 telas: lista de módulos (categorias) e, ao clicar em um
+// módulo, a lista de aulas daquele módulo — com botão de voltar.
+const categoriaSelecionada = ref<string | null>(null)
+
+const categoriaAtual = computed(() =>
+  (categorias.value || []).find((c: any) => c.id === categoriaSelecionada.value) || null
+)
+
+const videosDaCategoriaAtual = computed(() =>
+  categoriaSelecionada.value ? (videosCategoria.value[categoriaSelecionada.value] || []) : []
+)
+
+const progressoCategoriaAtual = computed(() =>
+  categoriaSelecionada.value ? calcularProgressoCategoria(categoriaSelecionada.value) : 0
+)
+
+function abrirCategoria(categoriaId: string) {
+  categoriaSelecionada.value = categoriaId
+}
+
+function voltarCategorias() {
+  categoriaSelecionada.value = null
+}
 
 // Carregar dados ao montar
 onMounted(async () => {
   await carregarDados()
-  // Expandir todas as categorias por padrão
-  if (categorias.value && categorias.value.length > 0) {
-    categorias.value.forEach(cat => categoriasExpandidas.value.add(cat.id))
-  }
 
   // Se veio da URL com videoId, abrir automaticamente (apenas do botão "Continuar Assistindo")
   const videoId = route.query.video as string
@@ -51,31 +70,6 @@ const abrirVideoPorId = async (videoId: string) => {
   } catch (error) {
     console.error('Erro ao abrir vídeo:', error)
   }
-}
-
-// Toggle expansão de categoria
-const toggleCategoria = (categoriaId: string) => {
-  if (categoriasExpandidas.value.has(categoriaId)) {
-    categoriasExpandidas.value.delete(categoriaId)
-  } else {
-    categoriasExpandidas.value.add(categoriaId)
-  }
-}
-
-// Verificar se categoria está expandida
-const isCategoriaExpandida = (categoriaId: string) => {
-  return categoriasExpandidas.value.has(categoriaId)
-}
-
-// Expandir/colapsar todas
-const expandirTodas = () => {
-  if (categorias.value) {
-    categorias.value.forEach(cat => categoriasExpandidas.value.add(cat.id))
-  }
-}
-
-const colapsarTodas = () => {
-  categoriasExpandidas.value.clear()
 }
 
 const carregarDados = async () => {
@@ -263,16 +257,16 @@ const calcularProgressoCategoria = (categoriaId: string): number => {
     
     <div v-else class="space-y-4 sm:space-y-6">
       <!-- Header -->
-      <div class="card-header-custom rounded-lg p-4 sm:p-6 shadow-lg border border-gray-200 dark:border-gray-800">
-        <div class="flex items-center space-x-3 mb-2">
-          <div class="w-12 h-12 bg-gray-100 dark:bg-gray-900 rounded-lg flex items-center justify-center">
-            <Icon icon="video" class-name="w-6 h-6 text-gray-800 dark:text-white" fallback="🎥" />
+      <div class="card-header-custom rounded-lg p-3 sm:p-4 shadow-sm border border-gray-200 dark:border-gray-800">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 bg-gray-100 dark:bg-gray-900 rounded-lg flex items-center justify-center flex-shrink-0">
+            <Icon icon="video" class-name="w-4 h-4 text-gray-800 dark:text-white" fallback="🎥" />
           </div>
           <div>
-            <h2 class="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
+            <h2 class="text-base sm:text-lg font-bold text-gray-900 dark:text-white leading-tight">
               Aulas em Vídeo
             </h2>
-            <p class="text-sm text-gray-600 dark:text-gray-300">
+            <p class="text-xs text-gray-600 dark:text-gray-300 leading-tight">
               Acesse conteúdos exclusivos em vídeo
             </p>
           </div>
@@ -280,32 +274,44 @@ const calcularProgressoCategoria = (categoriaId: string): number => {
       </div>
 
       <!-- Estatísticas -->
-      <div v-if="estatisticas" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div class="bg-gradient-to-br from-blue-50 via-indigo-50/70 to-purple-100/80 dark:from-blue-900/30 dark:via-indigo-900/40 dark:to-purple-900/30 p-4 rounded-lg border border-blue-100 dark:border-blue-800/30">
-          <div class="text-xs sm:text-sm font-medium text-blue-700 dark:text-blue-300">Total de Vídeos</div>
-          <div class="text-2xl sm:text-3xl font-bold text-blue-900 dark:text-blue-100 mt-2">
-            {{ estatisticas.total_videos }}
+      <div v-if="estatisticas" class="grid grid-cols-2 lg:grid-cols-4 gap-2">
+        <div class="flex items-center gap-2.5 bg-gradient-to-br from-blue-50 via-indigo-50/70 to-purple-100/80 dark:from-blue-900/30 dark:via-indigo-900/40 dark:to-purple-900/30 px-3 py-2.5 rounded-lg border border-blue-100 dark:border-blue-800/30">
+          <div class="w-8 h-8 bg-white/60 dark:bg-black/20 rounded-lg flex items-center justify-center flex-shrink-0">
+            <Icon icon="video" class-name="w-4 h-4 text-blue-700 dark:text-blue-300" fallback="🎥" />
+          </div>
+          <div class="min-w-0">
+            <div class="text-lg font-bold text-blue-900 dark:text-blue-100 leading-tight">{{ estatisticas.total_videos }}</div>
+            <div class="text-[11px] font-medium text-blue-700 dark:text-blue-300 leading-tight truncate">Total de Vídeos</div>
           </div>
         </div>
 
-        <div class="bg-gradient-to-br from-green-50 via-emerald-50/70 to-teal-100/80 dark:from-green-900/30 dark:via-emerald-900/40 dark:to-teal-900/30 p-4 rounded-lg border border-green-100 dark:border-green-800/30">
-          <div class="text-xs sm:text-sm font-medium text-green-700 dark:text-green-300">Concluídos</div>
-          <div class="text-2xl sm:text-3xl font-bold text-green-900 dark:text-green-100 mt-2">
-            {{ estatisticas.videos_concluidos }}
+        <div class="flex items-center gap-2.5 bg-gradient-to-br from-green-50 via-emerald-50/70 to-teal-100/80 dark:from-green-900/30 dark:via-emerald-900/40 dark:to-teal-900/30 px-3 py-2.5 rounded-lg border border-green-100 dark:border-green-800/30">
+          <div class="w-8 h-8 bg-white/60 dark:bg-black/20 rounded-lg flex items-center justify-center flex-shrink-0">
+            <Icon icon="check-circle" class-name="w-4 h-4 text-green-700 dark:text-green-300" fallback="✓" />
+          </div>
+          <div class="min-w-0">
+            <div class="text-lg font-bold text-green-900 dark:text-green-100 leading-tight">{{ estatisticas.videos_concluidos }}</div>
+            <div class="text-[11px] font-medium text-green-700 dark:text-green-300 leading-tight truncate">Concluídos</div>
           </div>
         </div>
 
-        <div class="bg-gradient-to-br from-purple-50 via-violet-50/70 to-fuchsia-100/80 dark:from-purple-900/30 dark:via-violet-900/40 dark:to-fuchsia-900/30 p-4 rounded-lg border border-purple-100 dark:border-purple-800/30">
-          <div class="text-xs sm:text-sm font-medium text-purple-700 dark:text-purple-300">Progresso</div>
-          <div class="text-2xl sm:text-3xl font-bold text-purple-900 dark:text-purple-100 mt-2">
-            {{ estatisticas.percentual_conclusao }}%
+        <div class="flex items-center gap-2.5 bg-gradient-to-br from-purple-50 via-violet-50/70 to-fuchsia-100/80 dark:from-purple-900/30 dark:via-violet-900/40 dark:to-fuchsia-900/30 px-3 py-2.5 rounded-lg border border-purple-100 dark:border-purple-800/30">
+          <div class="w-8 h-8 bg-white/60 dark:bg-black/20 rounded-lg flex items-center justify-center flex-shrink-0">
+            <Icon icon="chart-line" class-name="w-4 h-4 text-purple-700 dark:text-purple-300" fallback="📈" />
+          </div>
+          <div class="min-w-0">
+            <div class="text-lg font-bold text-purple-900 dark:text-purple-100 leading-tight">{{ estatisticas.percentual_conclusao }}%</div>
+            <div class="text-[11px] font-medium text-purple-700 dark:text-purple-300 leading-tight truncate">Progresso</div>
           </div>
         </div>
 
-        <div class="bg-gradient-to-br from-orange-50 via-amber-50/70 to-yellow-100/80 dark:from-orange-900/30 dark:via-amber-900/40 dark:to-yellow-900/30 p-4 rounded-lg border border-orange-100 dark:border-orange-800/30">
-          <div class="text-xs sm:text-sm font-medium text-orange-700 dark:text-orange-300">Tempo</div>
-          <div class="text-2xl sm:text-3xl font-bold text-orange-900 dark:text-orange-100 mt-2">
-            {{ estatisticas.tempo_total_minutos }}min
+        <div class="flex items-center gap-2.5 bg-gradient-to-br from-orange-50 via-amber-50/70 to-yellow-100/80 dark:from-orange-900/30 dark:via-amber-900/40 dark:to-yellow-900/30 px-3 py-2.5 rounded-lg border border-orange-100 dark:border-orange-800/30">
+          <div class="w-8 h-8 bg-white/60 dark:bg-black/20 rounded-lg flex items-center justify-center flex-shrink-0">
+            <Icon icon="clock" class-name="w-4 h-4 text-orange-700 dark:text-orange-300" fallback="🕐" />
+          </div>
+          <div class="min-w-0">
+            <div class="text-lg font-bold text-orange-900 dark:text-orange-100 leading-tight">{{ estatisticas.tempo_total_minutos }}min</div>
+            <div class="text-[11px] font-medium text-orange-700 dark:text-orange-300 leading-tight truncate">Tempo</div>
           </div>
         </div>
       </div>
@@ -313,18 +319,18 @@ const calcularProgressoCategoria = (categoriaId: string): number => {
       <!-- Categorias e Vídeos -->
       <div v-if="categorias && categorias.length > 0" class="space-y-4">
         <!-- Campo de Pesquisa -->
-        <div class="bg-card border border-border rounded-lg p-4">
+        <div class="bg-card border border-border rounded-lg p-2.5">
           <div class="relative">
-            <Icon 
-              icon="search" 
-              class-name="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+            <Icon
+              icon="search"
+              class-name="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
               fallback="🔍"
             />
             <input
               v-model="termoPesquisa"
               type="text"
               placeholder="Pesquisar aulas por nome..."
-              class="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+              class="w-full pl-8 pr-3 py-1.5 text-sm bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
             />
           </div>
         </div>
@@ -384,104 +390,117 @@ const calcularProgressoCategoria = (categoriaId: string): number => {
           <p class="text-muted-foreground">Nenhuma aula encontrada com "{{ termoPesquisa }}"</p>
         </div>
 
-        <!-- Controles de expandir/colapsar todos -->
-        <div class="flex items-center justify-between px-2">
-          <h3 class="text-lg font-semibold dark:text-white">Categorias</h3>
-          <div class="flex gap-2">
-            <button
-              @click="expandirTodas"
-              class="text-xs px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
-            >
-              Expandir Todas
-            </button>
-            <button
-              @click="colapsarTodas"
-              class="text-xs px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            >
-              Colapsar Todas
-            </button>
-          </div>
+        <!-- Nível 1: lista de módulos (categorias) — clique entra no módulo -->
+        <div v-if="!categoriaSelecionada" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          <button
+            v-for="categoria in categorias"
+            :key="categoria.id"
+            v-show="(videosCategoria[categoria.id] || []).length > 0"
+            type="button"
+            @click="abrirCategoria(categoria.id)"
+            class="group text-left bg-card border border-border rounded-lg p-3 hover:border-primary/60 hover:shadow-md transition-all"
+          >
+            <div class="flex items-center justify-between mb-1.5">
+              <span v-if="categoria.icone" class="text-2xl leading-none">{{ categoria.icone }}</span>
+              <Icon v-else icon="folder" class-name="w-6 h-6 text-primary" fallback="📁" />
+              <span
+                v-if="isCategoriaCompleta(categoria.id)"
+                class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold leading-none bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full"
+              >
+                <Icon icon="check-circle" class-name="w-2.5 h-2.5" fallback="✓" />
+              </span>
+            </div>
+            <h2 class="text-sm font-bold dark:text-white truncate">{{ categoria.nome }}</h2>
+            <p v-if="categoria.descricao" class="text-[11px] text-muted-foreground truncate mt-0.5">
+              {{ categoria.descricao }}
+            </p>
+
+            <div class="flex items-center gap-1.5 mt-2.5">
+              <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                <div
+                  class="h-1.5 rounded-full transition-all"
+                  :class="isCategoriaCompleta(categoria.id) ? 'bg-green-500' : 'bg-blue-500'"
+                  :style="{ width: `${calcularProgressoCategoria(categoria.id)}%` }"
+                ></div>
+              </div>
+              <span class="text-[11px] font-semibold text-muted-foreground whitespace-nowrap">
+                {{ calcularProgressoCategoria(categoria.id) }}%
+              </span>
+            </div>
+
+            <div class="flex items-center justify-between mt-1.5">
+              <p class="text-[11px] text-muted-foreground">
+                {{ (videosCategoria[categoria.id] || []).length }} vídeo(s)
+              </p>
+              <span class="flex items-center gap-0.5 text-[11px] font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                Ver aulas
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </span>
+            </div>
+          </button>
         </div>
 
-        <!-- Acordeão de categorias -->
-        <div v-for="categoria in categorias" :key="categoria.id" class="bg-card border border-border rounded-lg overflow-hidden">
-          <!-- Header da categoria (clicável) -->
-          <button
-            @click="toggleCategoria(categoria.id)"
-            class="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
-          >
-            <div class="flex items-center gap-3 flex-1">
-              <div v-if="categoria.icone" class="text-2xl sm:text-3xl">{{ categoria.icone }}</div>
-              <div class="text-left flex-1">
-                <div class="flex items-center gap-2 mb-1">
-                  <h2 class="text-lg sm:text-xl font-bold dark:text-white">{{ categoria.nome }}</h2>
-                  <!-- Badge de conclusão -->
-                  <span
-                    v-if="isCategoriaCompleta(categoria.id)"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full"
-                  >
-                    <Icon icon="check-circle" class-name="w-3 h-3" fallback="✓" />
-                    Completo
-                  </span>
-                </div>
-                <p v-if="categoria.descricao" class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                  {{ categoria.descricao }}
-                </p>
-                <div class="flex items-center gap-3 mt-1">
-                  <p class="text-xs text-muted-foreground">
-                    {{ (videosCategoria[categoria.id] || []).length }} vídeo(s)
-                  </p>
-                  <!-- Barra de progresso da categoria -->
-                  <div class="flex items-center gap-2 flex-1 max-w-[200px]">
-                    <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                      <div 
-                        class="h-1.5 rounded-full transition-all"
-                        :class="isCategoriaCompleta(categoria.id) ? 'bg-green-500' : 'bg-blue-500'"
-                        :style="{ width: `${calcularProgressoCategoria(categoria.id)}%` }"
-                      ></div>
-                    </div>
-                    <span class="text-xs font-semibold text-muted-foreground">
-                      {{ calcularProgressoCategoria(categoria.id) }}%
-                    </span>
-                  </div>
-                </div>
-              </div>
+        <!-- Nível 2: aulas do módulo selecionado — com botão de voltar -->
+        <div v-else class="space-y-3">
+          <div class="flex items-center gap-2.5">
+            <button
+              type="button"
+              @click="voltarCategorias"
+              class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border border-border rounded-md hover:bg-muted transition-colors flex-shrink-0"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+              Voltar
+            </button>
+            <div class="min-w-0 flex-1">
+              <h2 class="text-sm font-bold dark:text-white truncate flex items-center gap-1.5">
+                <span v-if="categoriaAtual?.icone">{{ categoriaAtual.icone }}</span>
+                {{ categoriaAtual?.nome }}
+              </h2>
+              <p class="text-[11px] text-muted-foreground">
+                {{ videosDaCategoriaAtual.length }} vídeo(s) · {{ progressoCategoriaAtual }}% concluído
+              </p>
             </div>
-            
-            <!-- Ícone de expandir/colapsar -->
-            <Icon 
-              :icon="isCategoriaExpandida(categoria.id) ? 'chevron-down' : 'chevron-right'" 
-              class-name="w-5 h-5 text-muted-foreground transition-transform"
-              :fallback="isCategoriaExpandida(categoria.id) ? '▼' : '▶'"
-            />
-          </button>
+          </div>
 
-          <!-- Conteúdo expansível -->
-          <div v-show="isCategoriaExpandida(categoria.id)" class="p-4 pt-0 border-t border-border">
-            <!-- Lista de vídeos da categoria -->
-            <div v-if="(videosCategoria[categoria.id] || []).length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div
-                v-for="video in videosCategoria[categoria.id] || []"
-                :key="video.id"
-                class="bg-gradient-to-br from-white via-slate-50/80 to-gray-100/90 dark:from-slate-900/90 dark:via-gray-900/95 dark:to-black/90 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                @click="abrirVideo(video)"
-              >
-              <!-- Thumbnail -->
-              <div class="relative aspect-video bg-gray-200 dark:bg-gray-800">
+          <div v-if="videosDaCategoriaAtual.length > 0" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            <div
+              v-for="video in videosDaCategoriaAtual"
+              :key="video.id"
+              class="group cursor-pointer"
+              @click="abrirVideo(video)"
+            >
+              <!-- Pôster -->
+              <div class="relative aspect-video rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-800 ring-1 ring-black/5 dark:ring-white/10 transition-transform duration-200 group-hover:scale-105 group-hover:shadow-lg group-hover:z-10">
                 <img
                   v-if="video.thumbnail"
                   :src="video.thumbnail"
                   :alt="video.titulo"
                   class="w-full h-full object-cover"
                 />
-                <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                  <Icon icon="play" class-name="text-white text-4xl" fallback="▶️" />
+                <div v-else class="w-full h-full flex items-center justify-center">
+                  <Icon icon="video" class-name="w-6 h-6 text-muted-foreground" fallback="🎥" />
+                </div>
+
+                <!-- Overlay de play no hover -->
+                <div class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                  <Icon icon="play" class-name="text-white text-2xl opacity-0 group-hover:opacity-100 transition-opacity" fallback="▶️" />
+                </div>
+
+                <!-- Selo de concluído (SVG próprio — sem depender de fonte/ícone externo, nunca deforma) -->
+                <div v-if="video.concluido" class="absolute top-1 left-1 w-5 h-5 rounded-full bg-green-500 ring-2 ring-white dark:ring-gray-900 flex items-center justify-center shadow">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="w-2.5 h-2.5">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
                 </div>
 
                 <!-- Badge de nível -->
-                <div class="absolute top-2 right-2">
+                <div v-if="video.nivel" class="absolute top-1 right-1">
                   <span
-                    class="px-2 py-1 text-xs font-semibold rounded"
+                    class="px-1.5 py-0.5 text-[9px] font-semibold leading-none rounded"
                     :class="{
                       'bg-green-500 text-white': video.nivel === 'iniciante',
                       'bg-yellow-500 text-white': video.nivel === 'intermediario',
@@ -493,65 +512,48 @@ const calcularProgressoCategoria = (categoriaId: string): number => {
                 </div>
 
                 <!-- Barra de progresso -->
-                <div v-if="video.progresso && video.progresso > 0" class="absolute bottom-0 left-0 right-0 h-1 bg-gray-300 dark:bg-gray-700">
+                <div v-if="video.progresso && video.progresso > 0" class="absolute bottom-0 left-0 right-0 h-1 bg-black/30">
                   <div
-                    class="h-full bg-blue-500 transition-all"
+                    class="h-full bg-primary transition-all"
                     :style="{ width: `${video.progresso}%` }"
                   ></div>
                 </div>
               </div>
 
-              <!-- Info -->
-              <div class="p-4">
-                <h3 class="font-semibold text-gray-900 dark:text-white mb-1 line-clamp-2">
-                  {{ video.titulo }}
-                </h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
-                  {{ video.descricao }}
-                </p>
-
-                <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                  <span>{{ formatarDuracao(video.duracao) }}</span>
-                  <div class="flex items-center gap-2">
-                    <span v-if="video.concluido" class="text-green-600 dark:text-green-400 font-semibold flex items-center gap-1">
-                      <Icon icon="check-circle" class-name="w-4 h-4" fallback="✓" />
-                      Concluído
-                    </span>
-                    <span v-else-if="video.progresso && video.progresso > 0" class="text-blue-600 dark:text-blue-400 font-semibold">
-                      {{ Math.round(video.progresso) }}%
-                    </span>
-                    <!-- Botão de reverter conclusão -->
-                    <button
-                      v-if="video.concluido"
-                      @click.stop="reverterConclusaoVideo(video)"
-                      class="ml-1 p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors"
-                      title="Reverter conclusão"
-                    >
-                      <Icon icon="rotate-left" class-name="w-5 h-5 text-gray-500 hover:text-orange-500" fallback="↺" />
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Tags -->
-                <div v-if="video.tags && video.tags.length > 0" class="flex flex-wrap gap-1 mt-3">
-                  <span
-                    v-for="tag in video.tags.slice(0, 3)"
-                    :key="tag"
-                    class="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded"
-                  >
-                    #{{ tag }}
-                  </span>
-                </div>
+              <!-- Título e meta -->
+              <p class="text-xs font-semibold text-foreground mt-1.5 line-clamp-2">{{ video.titulo }}</p>
+              <p v-if="video.descricao" class="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">{{ video.descricao }}</p>
+              <div class="flex items-center gap-1 text-[11px] text-muted-foreground mt-0.5">
+                <span>{{ formatarDuracao(video.duracao) }}</span>
+                <span v-if="video.concluido" class="text-green-600 dark:text-green-400 font-medium">· Concluído</span>
+                <span v-else-if="video.progresso && video.progresso > 0" class="text-blue-600 dark:text-blue-400 font-medium">
+                  · {{ Math.round(video.progresso) }}%
+                </span>
+                <button
+                  v-if="video.concluido"
+                  @click.stop="reverterConclusaoVideo(video)"
+                  class="ml-auto p-1 hover:bg-muted rounded-full transition-colors"
+                  title="Reverter conclusão"
+                >
+                  <Icon icon="rotate-left" class-name="w-3.5 h-3.5 text-muted-foreground hover:text-orange-500" fallback="↺" />
+                </button>
               </div>
             </div>
-            </div>
-            
-            <!-- Mensagem quando categoria não tem vídeos -->
-            <div v-else class="text-center py-8 text-muted-foreground">
-              <Icon icon="video" class-name="w-12 h-12 mx-auto mb-2 opacity-50" fallback="🎥" />
-              <p class="text-sm">Nenhum vídeo nesta categoria ainda</p>
-            </div>
           </div>
+
+          <div v-else class="text-center py-8 text-muted-foreground bg-card border border-border rounded-lg">
+            <Icon icon="video" class-name="w-10 h-10 mx-auto mb-2 opacity-50" fallback="🎥" />
+            <p class="text-sm">Nenhum vídeo neste módulo ainda</p>
+          </div>
+        </div>
+
+        <!-- Nenhuma categoria com vídeo ainda -->
+        <div
+          v-if="!categoriaSelecionada && categorias.every(c => (videosCategoria[c.id] || []).length === 0)"
+          class="text-center py-8 text-muted-foreground bg-card border border-border rounded-lg"
+        >
+          <Icon icon="video" class-name="w-12 h-12 mx-auto mb-2 opacity-50" fallback="🎥" />
+          <p class="text-sm">Nenhum vídeo cadastrado ainda</p>
         </div>
       </div>
 

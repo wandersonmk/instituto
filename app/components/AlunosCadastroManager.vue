@@ -846,60 +846,27 @@ function fecharModal() {
   limparFormulario()
 }
 
-// Navegação de páginas do modal de cadastro
-function proximaPaginaModal() {
-  if (paginaAtualModal.value < 2) {
-    paginaAtualModal.value++
-    console.log('🔵 Mudando para página:', paginaAtualModal.value)
-    // Scroll para o topo do modal
-    nextTick(() => {
-      const modalContent = document.getElementById('modal-aluno-content')
-      console.log('🔍 Modal content:', modalContent)
-      if (modalContent) {
-        modalContent.scrollTo({ top: 0, behavior: 'smooth' })
-      }
-    })
-  }
+// Navegação por abas do modal de cadastro/edição (o aluno pode clicar
+// direto na aba, não precisa mais passar página por página)
+function irParaAbaModal(aba: number) {
+  paginaAtualModal.value = aba
+  nextTick(() => {
+    const modalContent = document.getElementById('modal-aluno-content')
+    if (modalContent) {
+      modalContent.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  })
 }
 
-function paginaAnteriorModal() {
-  if (paginaAtualModal.value > 1) {
-    paginaAtualModal.value--
-    // Scroll para o topo do modal
-    nextTick(() => {
-      const modalContent = document.getElementById('modal-aluno-content')
-      if (modalContent) {
-        modalContent.scrollTo({ top: 0, behavior: 'smooth' })
-      }
-    })
-  }
-}
-
-// Navegação de páginas do modal de visualização
-function proximaPaginaVisualizacao() {
-  if (paginaAtualVisualizacao.value < 2) {
-    paginaAtualVisualizacao.value++
-    // Scroll para o topo do modal
-    nextTick(() => {
-      const modalContent = document.getElementById('modal-visualizacao-content')
-      if (modalContent) {
-        modalContent.scrollTo({ top: 0, behavior: 'smooth' })
-      }
-    })
-  }
-}
-
-function paginaAnteriorVisualizacao() {
-  if (paginaAtualVisualizacao.value > 1) {
-    paginaAtualVisualizacao.value--
-    // Scroll para o topo do modal
-    nextTick(() => {
-      const modalContent = document.getElementById('modal-visualizacao-content')
-      if (modalContent) {
-        modalContent.scrollTo({ top: 0, behavior: 'smooth' })
-      }
-    })
-  }
+// Navegação por abas do modal de visualização
+function irParaAbaVisualizacao(aba: number) {
+  paginaAtualVisualizacao.value = aba
+  nextTick(() => {
+    const modalContent = document.getElementById('modal-visualizacao-content')
+    if (modalContent) {
+      modalContent.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  })
 }
 
 // Confirmar exclusão de aluno
@@ -1032,8 +999,8 @@ async function exportarParaExcel() {
       return
     }
     
-    // Criar CSV
-    const headers = Object.keys(dadosExportacao[0])
+    // Criar CSV (o guard de "length === 0" acima já garante que existe item aqui)
+    const headers = Object.keys(dadosExportacao[0]!)
     const csvContent = [
       headers.join(';'), // Cabeçalhos
       ...dadosExportacao.map(row => 
@@ -1107,7 +1074,7 @@ async function abrirModalMulta(aluno: any, event?: Event) {
   novaMulta.value = aluno.multaFalta || '0'
   novaMultaFormatada.value = aluno.multaFalta ? formatarMoeda(parseFloat(aluno.multaFalta)) : '0,00'
   // Preenche com data de hoje por padrão
-  dataFalta.value = new Date().toISOString().split('T')[0]
+  dataFalta.value = new Date().toISOString().split('T')[0]! // toISOString sempre tem 'T', índice 0 sempre existe
   motivoFalta.value = ''
   observacoesFalta.value = ''
   cursoIdFalta.value = ''
@@ -1279,10 +1246,12 @@ async function buscarCursosDoAluno(alunoId: string) {
     if (data && data.length > 0) {
       cursosDoAluno.value = data
         .filter(item => item.cursos) // Garantir que o curso existe
-        .map(item => ({
-          id: item.cursos.id,
-          nome: item.cursos.nome
-        }))
+        .map(item => {
+          // O Supabase tipa "cursos" como array por não enxergar a FK
+          // (não temos Database gerado no client), mas é sempre 1 registro.
+          const curso = item.cursos as unknown as { id: string; nome: string }
+          return { id: curso.id, nome: curso.nome }
+        })
       
       // Pre-selecionar o primeiro curso se houver
       if (cursosDoAluno.value.length > 0) {
@@ -1304,7 +1273,7 @@ async function buscarCursosDoAluno(alunoId: string) {
 async function abrirModalFalta(aluno: any, event?: Event) {
   if (event) event.stopPropagation()
   alunoRegistrandoFalta.value = aluno
-  dataFalta.value = new Date().toISOString().split('T')[0] // Data de hoje
+  dataFalta.value = new Date().toISOString().split('T')[0]! // Data de hoje
   motivoFalta.value = ''
   observacoesFalta.value = ''
   cursoIdFalta.value = '' // Resetar seleção
@@ -1486,214 +1455,200 @@ async function registrarPagamento() {
 <template>
   <div class="bg-card text-card-foreground rounded-lg border border-border shadow-sm">
     <!-- Header -->
-    <div class="flex items-center justify-between p-6 border-b border-border">
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-          <Icon icon="user-graduate" class-name="w-5 h-5 text-white" fallback="" />
+    <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 border-b border-border">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+          <Icon icon="user-graduate" class-name="w-4 h-4 text-white" fallback="" />
         </div>
         <div>
-          <h2 class="text-xl font-semibold text-foreground">Gerenciamento de Alunos</h2>
-          <p class="text-sm text-muted-foreground mt-1">
-            Total: <span class="font-bold text-foreground">{{ alunos.length }}</span> alunos cadastrados
+          <h2 class="text-base font-semibold text-foreground leading-tight">Gerenciamento de Alunos</h2>
+          <p class="text-xs text-muted-foreground leading-tight">
+            <span class="font-semibold text-foreground">{{ alunos.length }}</span> alunos cadastrados
           </p>
         </div>
       </div>
-      
-      <div class="flex items-center space-x-3">
+
+      <div class="flex items-center gap-2">
         <button
           @click="exportarParaExcel"
-          class="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg transition-colors"
-          title="Exportar alunos para Excel"
+          class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-green-600 text-white hover:bg-green-700 rounded-md transition-colors"
+          title="Exportar a lista atual para Excel (CSV)"
         >
-          <Icon icon="file-excel" class-name="w-4 h-4" fallback="📊" />
+          <Icon icon="file-excel" class-name="w-3.5 h-3.5" fallback="📊" />
           <span>Exportar Excel</span>
         </button>
-        
+
         <button
           @click="abrirModalNovo"
-          class="flex items-center space-x-2 px-4 py-2 btn-gradient text-gray-800 hover:opacity-90 rounded-lg transition-all shadow-lg hover:shadow-xl"
+          class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium btn-gradient text-gray-800 hover:opacity-90 rounded-md transition-all shadow-sm"
+          title="Cadastrar um novo aluno"
         >
-          <Icon icon="plus" class-name="w-4 h-4" fallback="" />
+          <Icon icon="plus" class-name="w-3.5 h-3.5" fallback="" />
           <span>Novo Aluno</span>
         </button>
       </div>
     </div>
 
     <!-- Filtros -->
-    <div class="px-6 pb-4 border-b border-border">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label for="filtroNome" class="block text-sm font-medium text-foreground mb-2">
-            Filtrar por Nome
-          </label>
-          <AppInput
-            id="filtroNome"
-            v-model="filtroNome"
-            type="text"
-            placeholder="Digite o nome do aluno..."
-          />
-        </div>
-        
-        <div>
-          <label for="filtroTelefone" class="block text-sm font-medium text-foreground mb-2">
-            Filtrar por Telefone
-          </label>
-          <AppInput
-            id="filtroTelefone"
-            v-model="filtroTelefone"
-            type="text"
-            placeholder="Digite o telefone..."
-          />
-        </div>
+    <div class="flex flex-wrap items-center gap-2 px-5 py-2.5 border-b border-border bg-muted/20">
+      <div class="flex-1 min-w-[160px]">
+        <label for="filtroNome" class="sr-only">Filtrar por nome</label>
+        <AppInput
+          id="filtroNome"
+          v-model="filtroNome"
+          type="text"
+          placeholder="🔎 Buscar por nome..."
+        />
       </div>
-      
-      <div v-if="filtroNome || filtroTelefone" class="mt-3 flex items-center justify-between">
-        <p class="text-sm text-muted-foreground">
-          Mostrando <span class="font-semibold text-foreground">{{ alunosFiltrados.length }}</span> de {{ alunos.length }} alunos
-        </p>
-        <button
-          @click="filtroNome = ''; filtroTelefone = ''"
-          class="text-sm text-primary hover:text-primary/80 font-medium"
-        >
-          Limpar filtros
-        </button>
+
+      <div class="flex-1 min-w-[160px]">
+        <label for="filtroTelefone" class="sr-only">Filtrar por telefone</label>
+        <AppInput
+          id="filtroTelefone"
+          v-model="filtroTelefone"
+          type="text"
+          placeholder="📞 Buscar por telefone..."
+        />
       </div>
+
+      <span v-if="filtroNome || filtroTelefone" class="text-xs text-muted-foreground whitespace-nowrap">
+        {{ alunosFiltrados.length }} de {{ alunos.length }}
+      </span>
+      <button
+        v-if="filtroNome || filtroTelefone"
+        @click="filtroNome = ''; filtroTelefone = ''"
+        class="text-xs text-primary hover:text-primary/80 font-medium whitespace-nowrap"
+      >
+        Limpar
+      </button>
     </div>
 
     <!-- Lista de Alunos -->
-    <div class="p-6">
+    <div class="p-2.5">
       <!-- Loading -->
-      <div v-if="carregandoAlunos" class="text-center py-12">
-        <div class="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-        <p class="text-muted-foreground">Carregando alunos...</p>
+      <div v-if="carregandoAlunos" class="text-center py-10">
+        <div class="animate-spin h-9 w-9 border-4 border-primary border-t-transparent rounded-full mx-auto mb-3"></div>
+        <p class="text-sm text-muted-foreground">Carregando alunos...</p>
       </div>
 
       <!-- Lista vazia -->
-      <div v-else-if="alunos.length === 0" class="text-center py-12">
-        <Icon icon="user-graduate" class-name="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" fallback="" />
-        <h3 class="text-lg font-medium text-foreground mb-2">Nenhum aluno cadastrado</h3>
-        <p class="text-muted-foreground mb-4">Comece adicionando seu primeiro aluno</p>
+      <div v-else-if="alunos.length === 0" class="text-center py-10">
+        <Icon icon="user-graduate" class-name="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" fallback="" />
+        <h3 class="text-sm font-medium text-foreground mb-1">Nenhum aluno cadastrado</h3>
+        <p class="text-xs text-muted-foreground mb-3">Comece adicionando seu primeiro aluno</p>
         <button
           @click="abrirModalNovo"
-          class="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors font-medium"
+          class="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors text-sm font-medium"
         >
           Adicionar Primeiro Aluno
         </button>
       </div>
 
-      <div v-else-if="alunosFiltrados.length === 0" class="text-center py-12">
-        <Icon icon="user-graduate" class-name="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" fallback="" />
-        <h3 class="text-lg font-medium text-foreground mb-2">Nenhum aluno encontrado</h3>
-        <p class="text-muted-foreground mb-4">Tente ajustar os filtros de busca</p>
+      <div v-else-if="alunosFiltrados.length === 0" class="text-center py-10">
+        <Icon icon="user-graduate" class-name="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" fallback="" />
+        <h3 class="text-sm font-medium text-foreground mb-1">Nenhum aluno encontrado</h3>
+        <p class="text-xs text-muted-foreground mb-3">Tente ajustar os filtros de busca</p>
         <button
           @click="filtroNome = ''; filtroTelefone = ''"
-          class="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors font-medium"
+          class="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors text-sm font-medium"
         >
           Limpar Filtros
         </button>
       </div>
 
-      <div v-else class="grid grid-cols-1 gap-4">
+      <!-- Cards compactos -->
+      <div v-else class="flex flex-col gap-1">
         <div
           v-for="aluno in alunosFiltrados"
           :key="aluno.id"
-          class="border border-border rounded-lg p-4 hover:bg-muted/30 cursor-pointer transition-all"
+          class="flex items-center gap-3 px-2.5 py-2 rounded-md hover:bg-muted/40 cursor-pointer transition-colors"
           :class="{ 'opacity-60': !aluno.ativo }"
           @click="visualizarAluno(aluno)"
         >
-          <div class="flex items-center justify-between">
-            <!-- Informações do Aluno -->
-            <div class="flex items-center space-x-4 flex-1">
-              <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                <Icon icon="user-graduate" class-name="w-5 h-5 text-primary" fallback="" />
-              </div>
-              
-              <div class="flex-1">
-                <div class="flex items-center space-x-2 mb-1">
-                  <h3 class="text-base font-semibold text-foreground">{{ aluno.nome }}</h3>
-                  <span
-                    v-if="!aluno.ativo"
-                    class="px-2 py-0.5 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs rounded-full font-medium"
-                  >
-                    Bloqueado
-                  </span>
-                  <span
-                    v-else
-                    class="px-2 py-0.5 bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 text-xs rounded-full font-medium"
-                  >
-                    Ativo
-                  </span>
-                  <span
-                    v-if="aluno.acessoVideos"
-                    class="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 text-xs rounded-full font-medium flex items-center space-x-1"
-                    title="Tem acesso à área de vídeos"
-                  >
-                    <Icon icon="video" class-name="w-3 h-3" fallback="🎥" />
-                    <span>Vídeos</span>
-                  </span>
-                </div>
-                
-                <div class="flex items-center space-x-4 text-sm text-muted-foreground">
-                  <div class="flex items-center space-x-2">
-                    <Icon icon="phone" class-name="w-4 h-4" fallback="" />
-                    <span>{{ aluno.telefone || 'Sem telefone' }}</span>
-                  </div>
-                  
-                  <div 
-                    v-if="parseFloat(aluno.debitoFaltas) > 0"
-                    class="flex items-center space-x-2 text-red-600 dark:text-red-400 font-semibold"
-                  >
-                    <Icon icon="dollar-sign" class-name="w-4 h-4" fallback="💰" />
-                    <span>Débito: R$ {{ parseFloat(aluno.debitoFaltas).toFixed(2).replace('.', ',') }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <!-- Avatar -->
+          <div class="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+            <Icon icon="user-graduate" class-name="w-4 h-4 text-primary" fallback="" />
+          </div>
 
-            <!-- Botões rápidos -->
-            <div class="flex items-center space-x-2 ml-4" @click.stop>
-              <button
+          <!-- Nome, badges e telefone -->
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-sm font-semibold text-foreground truncate">{{ aluno.nome }}</span>
+              <span
+                class="px-1.5 py-0.5 rounded text-[10px] font-semibold leading-none whitespace-nowrap"
+                :class="aluno.ativo
+                  ? 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400'
+                  : 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400'"
+              >
+                {{ aluno.ativo ? 'Ativo' : 'Bloqueado' }}
+              </span>
+              <span
+                v-if="aluno.acessoVideos"
+                class="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold leading-none whitespace-nowrap bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400"
+                title="Tem acesso à área de vídeos"
+              >
+                <Icon icon="video" class-name="w-2.5 h-2.5" fallback="🎥" />
+                Vídeos
+              </span>
+              <span
                 v-if="parseFloat(aluno.debitoFaltas) > 0"
-                @click="abrirModalPagamento(aluno, $event)"
-                class="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
-                title="Marcar como Pago"
+                class="px-1.5 py-0.5 rounded text-[10px] font-bold leading-none whitespace-nowrap bg-red-50 dark:bg-red-900/15 text-red-600 dark:text-red-400"
+                title="Débito de multas por falta"
               >
-                <span class="text-lg">✅</span>
-              </button>
-              
-              <button
-                @click="abrirModalMulta(aluno, $event)"
-                class="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                title="Registrar Falta"
-              >
-                <Icon icon="calendar-times" class-name="w-5 h-5" fallback="📅" />
-              </button>
-              
-              <button
-                @click="editarAluno(aluno, $event)"
-                class="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                title="Editar"
-              >
-                <Icon icon="edit" class-name="w-5 h-5" fallback="" />
-              </button>
-              
-              <button
-                @click="toggleBloqueio(aluno, $event)"
-                class="p-2 hover:bg-muted rounded-lg transition-colors"
-                :class="aluno.ativo ? 'text-yellow-600' : 'text-green-600'"
-                :title="aluno.ativo ? 'Bloquear' : 'Desbloquear'"
-              >
-                <span class="text-lg">{{ aluno.ativo ? '🚫' : '✅' }}</span>
-              </button>
-              
-              <button
-                @click="confirmarExclusao(aluno, $event)"
-                class="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                title="Excluir"
-              >
-                <Icon icon="trash-alt" class-name="w-5 h-5" fallback="" />
-              </button>
+                💰 R$ {{ parseFloat(aluno.debitoFaltas).toFixed(2).replace('.', ',') }}
+              </span>
             </div>
+            <p class="flex items-center gap-1 text-xs text-muted-foreground truncate mt-0.5">
+              <Icon icon="phone" class-name="w-3 h-3 flex-shrink-0" fallback="" />
+              {{ aluno.telefone || 'Sem telefone' }}
+            </p>
+          </div>
+
+          <!-- Ações -->
+          <div class="flex items-center gap-0.5 flex-shrink-0" @click.stop>
+            <button
+              v-if="parseFloat(aluno.debitoFaltas) > 0"
+              @click="abrirModalPagamento(aluno, $event)"
+              class="p-1.5 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-md transition-colors"
+              title="Marcar débito como pago"
+            >
+              <span class="block text-sm leading-none">✅</span>
+            </button>
+
+            <button
+              @click="abrirModalMulta(aluno, $event)"
+              class="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+              title="Registrar falta"
+            >
+              <Icon icon="calendar-times" class-name="w-4 h-4" fallback="📅" />
+            </button>
+
+            <button
+              @click="editarAluno(aluno, $event)"
+              class="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors"
+              title="Editar aluno"
+            >
+              <Icon icon="edit" class-name="w-4 h-4" fallback="" />
+            </button>
+
+            <button
+              @click="toggleBloqueio(aluno, $event)"
+              class="p-1.5 rounded-md hover:bg-muted transition-colors"
+              :class="aluno.ativo ? 'text-amber-600' : 'text-green-600'"
+              :title="aluno.ativo ? 'Bloquear aluno' : 'Desbloquear aluno'"
+            >
+              <span class="block text-sm leading-none">{{ aluno.ativo ? '🚫' : '✅' }}</span>
+            </button>
+
+            <span class="w-px h-4 bg-border mx-0.5"></span>
+
+            <button
+              @click="confirmarExclusao(aluno, $event)"
+              class="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+              title="Excluir aluno"
+            >
+              <Icon icon="trash-alt" class-name="w-4 h-4" fallback="" />
+            </button>
           </div>
         </div>
       </div>
@@ -1706,33 +1661,56 @@ async function registrarPagamento() {
     class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
   >
     <div id="modal-aluno-content" class="bg-card border border-border rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" @click.stop>
-      <!-- Header do Modal -->
-      <div class="flex items-center justify-between p-6 border-b border-border bg-card sticky top-0 z-10">
-        <div class="flex items-center space-x-3">
-          <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-            <Icon icon="user-graduate" class-name="w-5 h-5 text-primary" fallback="" />
-          </div>
-          <div>
-            <h3 class="text-lg font-semibold text-foreground">
+      <!-- Header + abas do Modal (fixos no topo ao rolar) -->
+      <div class="sticky top-0 z-10 bg-card">
+        <div class="flex items-center justify-between p-4 border-b border-border">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Icon icon="user-graduate" class-name="w-4 h-4 text-primary" fallback="" />
+            </div>
+            <h3 class="text-sm font-semibold text-foreground">
               {{ modoEdicao ? 'Editar Aluno' : 'Novo Aluno' }}
             </h3>
-            <p class="text-sm text-muted-foreground">
-              Página {{ paginaAtualModal }} de 2 - {{ paginaAtualModal === 1 ? 'Dados Pessoais' : 'Dados do Curso' }}
-            </p>
           </div>
+          <button
+            @click="fecharModal"
+            class="p-1.5 hover:bg-muted rounded-lg transition-colors"
+          >
+            <Icon icon="times" class-name="w-4 h-4" fallback="" />
+          </button>
         </div>
-        <button
-          @click="fecharModal"
-          class="p-2 hover:bg-muted rounded-lg transition-colors"
-        >
-          <Icon icon="times" class-name="w-5 h-5" fallback="" />
-        </button>
+
+        <!-- Abas -->
+        <div class="flex border-b border-border">
+          <button
+            type="button"
+            @click="irParaAbaModal(1)"
+            class="flex-1 px-3 py-2 text-xs font-medium border-b-2 transition-colors"
+            :class="paginaAtualModal === 1
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'"
+          >
+            <Icon icon="user" class-name="w-3 h-3 inline mr-1" fallback="" />
+            Informações do Aluno
+          </button>
+          <button
+            type="button"
+            @click="irParaAbaModal(2)"
+            class="flex-1 px-3 py-2 text-xs font-medium border-b-2 transition-colors"
+            :class="paginaAtualModal === 2
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'"
+          >
+            <Icon icon="book" class-name="w-3 h-3 inline mr-1" fallback="" />
+            Informações do Curso
+          </button>
+        </div>
       </div>
 
       <!-- Formulário -->
       <form @submit.prevent="salvarAluno" class="p-6 space-y-8">
-        
-        <!-- Página 1: Dados Pessoais -->
+
+        <!-- Aba 1: Informações do Aluno (Dados Pessoais + Endereço) -->
         <div v-if="paginaAtualModal === 1" class="space-y-6">
         <!-- Seção: Dados Pessoais -->
         <div class="space-y-4">
@@ -1912,7 +1890,7 @@ async function registrarPagamento() {
         </div>
         </div>
 
-        <!-- Página 2: Dados do Curso -->
+        <!-- Aba 2: Informações do Curso -->
         <div v-if="paginaAtualModal === 2" class="space-y-6 pb-8">
           
           <!-- Lista de Cursos Adicionados (Topo) -->
@@ -2238,45 +2216,22 @@ async function registrarPagamento() {
             </div>
           </div>
 
-        <!-- Botões -->
+        <!-- Botões: sempre visíveis — as abas já cuidam de navegar entre as seções -->
         <div class="flex justify-between pt-4 border-t border-border">
-          <div class="flex space-x-3">
-            <button
-              type="button"
-              @click="fecharModal"
-              class="px-6 py-2 border border-border text-foreground hover:bg-muted rounded-lg transition-colors font-medium"
-            >
-              Cancelar
-            </button>
-            <button
-              v-if="paginaAtualModal === 2"
-              type="button"
-              @click="paginaAnteriorModal"
-              class="px-6 py-2 border border-border text-foreground hover:bg-muted rounded-lg transition-colors font-medium flex items-center space-x-2"
-            >
-              <Icon icon="chevron-left" class-name="w-4 h-4" fallback="" />
-              <span>Anterior</span>
-            </button>
-          </div>
-          
-          <div class="flex space-x-3">
-            <button
-              v-if="paginaAtualModal === 1"
-              type="button"
-              @click="proximaPaginaModal"
-              class="px-6 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors font-medium flex items-center space-x-2"
-            >
-              <span>Próximo</span>
-              <Icon icon="chevron-right" class-name="w-4 h-4" fallback="" />
-            </button>
-            <button
-              v-if="paginaAtualModal === 2"
-              type="submit"
-              class="px-6 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors font-medium"
-            >
-              {{ modoEdicao ? 'Atualizar' : 'Salvar' }}
-            </button>
-          </div>
+          <button
+            type="button"
+            @click="fecharModal"
+            class="px-6 py-2 border border-border text-foreground hover:bg-muted rounded-lg transition-colors font-medium"
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="submit"
+            class="px-6 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors font-medium"
+          >
+            {{ modoEdicao ? 'Atualizar' : 'Salvar' }}
+          </button>
         </div>
       </form>
     </div>
@@ -2288,111 +2243,133 @@ async function registrarPagamento() {
     class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
   >
     <div id="modal-visualizacao-content" class="bg-card border border-border rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" @click.stop>
-      <!-- Header do Modal -->
-      <div class="flex items-center justify-between p-6 border-b border-border sticky top-0 bg-card z-10">
-        <div class="flex items-center space-x-3">
-          <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-            <Icon icon="user-graduate" class-name="w-6 h-6 text-primary" fallback="" />
+      <!-- Header + abas do Modal (fixos no topo ao rolar) -->
+      <div class="sticky top-0 z-10 bg-card">
+        <div class="flex items-center justify-between p-4 border-b border-border">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+              <Icon icon="user-graduate" class-name="w-4 h-4 text-primary" fallback="" />
+            </div>
+            <div>
+              <h3 class="text-sm font-semibold text-foreground leading-tight">Informações do Aluno</h3>
+              <span
+                class="inline-block mt-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold leading-none"
+                :class="alunoVisualizacao.ativo
+                  ? 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400'
+                  : 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400'"
+              >
+                {{ alunoVisualizacao.ativo ? 'Ativo' : 'Bloqueado' }}
+              </span>
+            </div>
           </div>
-          <div>
-            <h3 class="text-lg font-semibold text-foreground">Informações do Aluno</h3>
-            <p class="text-sm text-muted-foreground">
-              Página {{ paginaAtualVisualizacao }} de 2 - {{ paginaAtualVisualizacao === 1 ? 'Dados Pessoais' : 'Dados do Curso' }}
-            </p>
-          </div>
+          <button
+            @click="fecharModalVisualizacao"
+            class="p-1.5 hover:bg-muted rounded-lg transition-colors"
+          >
+            <Icon icon="times" class-name="w-4 h-4" fallback="" />
+          </button>
         </div>
-        <button
-          @click="fecharModalVisualizacao"
-          class="p-2 hover:bg-muted rounded-lg transition-colors"
-        >
-          <Icon icon="times" class-name="w-5 h-5" fallback="" />
-        </button>
+
+        <!-- Abas -->
+        <div class="flex border-b border-border">
+          <button
+            type="button"
+            @click="irParaAbaVisualizacao(1)"
+            class="flex-1 px-3 py-2 text-xs font-medium border-b-2 transition-colors"
+            :class="paginaAtualVisualizacao === 1
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'"
+          >
+            <Icon icon="user" class-name="w-3 h-3 inline mr-1" fallback="" />
+            Informações do Aluno
+          </button>
+          <button
+            type="button"
+            @click="irParaAbaVisualizacao(2)"
+            class="flex-1 px-3 py-2 text-xs font-medium border-b-2 transition-colors"
+            :class="paginaAtualVisualizacao === 2
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'"
+          >
+            <Icon icon="book" class-name="w-3 h-3 inline mr-1" fallback="" />
+            Informações do Curso
+          </button>
+        </div>
       </div>
 
       <!-- Conteúdo do Modal -->
-      <div class="p-6 space-y-6">
-        <!-- Status -->
-        <div class="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/20">
-          <div class="flex items-center space-x-2">
-            <Icon icon="info-circle" class-name="w-5 h-5 text-muted-foreground" fallback="" />
-            <span class="text-sm font-medium text-foreground">Status do Aluno</span>
-          </div>
-          <span
-            class="px-3 py-1 rounded-full text-sm font-medium"
-            :class="alunoVisualizacao.ativo 
-              ? 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400' 
-              : 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400'"
-          >
-            {{ alunoVisualizacao.ativo ? 'Ativo' : 'Bloqueado' }}
-          </span>
-        </div>
-
-        <!-- Página 1: Dados Pessoais e Endereço -->
-        <div v-if="paginaAtualVisualizacao === 1" class="space-y-6">
+      <div class="p-4 space-y-4">
+        <!-- Aba 1: Informações do Aluno (Dados Pessoais + Endereço) -->
+        <div v-if="paginaAtualVisualizacao === 1" class="space-y-4">
         <!-- Dados Pessoais -->
         <div>
-          <h4 class="text-sm font-semibold text-foreground mb-3 flex items-center space-x-2">
-            <Icon icon="user" class-name="w-4 h-4" fallback="" />
+          <h4 class="text-xs font-semibold text-foreground mb-2 flex items-center gap-1.5">
+            <Icon icon="user" class-name="w-3.5 h-3.5" fallback="" />
             <span>Dados Pessoais</span>
           </h4>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="p-3 rounded-lg bg-muted/20">
-              <label class="text-xs font-medium text-muted-foreground uppercase">Nome Completo</label>
-              <p class="text-sm text-foreground font-medium mt-1">{{ alunoVisualizacao.nome }}</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div class="p-2 rounded-md bg-muted/20">
+              <label class="text-[10px] font-medium text-muted-foreground uppercase">Nome Completo</label>
+              <p class="text-xs text-foreground font-medium mt-0.5">{{ alunoVisualizacao.nome }}</p>
             </div>
-            
-            <div class="p-3 rounded-lg bg-muted/20">
-              <label class="text-xs font-medium text-muted-foreground uppercase">Telefone</label>
-              <p class="text-sm text-foreground font-medium mt-1">{{ alunoVisualizacao.telefone || 'Não informado' }}</p>
+
+            <div class="p-2 rounded-md bg-muted/20">
+              <label class="text-[10px] font-medium text-muted-foreground uppercase">Email</label>
+              <p class="text-xs text-foreground font-medium mt-0.5 truncate">{{ alunoVisualizacao.email || 'Não informado' }}</p>
+            </div>
+
+            <div class="p-2 rounded-md bg-muted/20">
+              <label class="text-[10px] font-medium text-muted-foreground uppercase">Telefone</label>
+              <p class="text-xs text-foreground font-medium mt-0.5">{{ alunoVisualizacao.telefone || 'Não informado' }}</p>
             </div>
           </div>
         </div>
 
         <!-- Endereço -->
         <div>
-          <h4 class="text-sm font-semibold text-foreground mb-3 flex items-center space-x-2">
-            <Icon icon="map-marker-alt" class-name="w-4 h-4" fallback="" />
+          <h4 class="text-xs font-semibold text-foreground mb-2 flex items-center gap-1.5">
+            <Icon icon="map-marker-alt" class-name="w-3.5 h-3.5" fallback="" />
             <span>Endereço</span>
           </h4>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="p-3 rounded-lg bg-muted/20">
-              <label class="text-xs font-medium text-muted-foreground uppercase">CEP</label>
-              <p class="text-sm text-foreground font-medium mt-1">{{ alunoVisualizacao.cep }}</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div class="p-2 rounded-md bg-muted/20">
+              <label class="text-[10px] font-medium text-muted-foreground uppercase">CEP</label>
+              <p class="text-xs text-foreground font-medium mt-0.5">{{ alunoVisualizacao.cep }}</p>
             </div>
-            
-            <div class="p-3 rounded-lg bg-muted/20">
-              <label class="text-xs font-medium text-muted-foreground uppercase">Estado</label>
-              <p class="text-sm text-foreground font-medium mt-1">{{ alunoVisualizacao.estado }}</p>
+
+            <div class="p-2 rounded-md bg-muted/20">
+              <label class="text-[10px] font-medium text-muted-foreground uppercase">Estado</label>
+              <p class="text-xs text-foreground font-medium mt-0.5">{{ alunoVisualizacao.estado }}</p>
             </div>
-            
-            <div class="p-3 rounded-lg bg-muted/20 md:col-span-2">
-              <label class="text-xs font-medium text-muted-foreground uppercase">Endereço Completo</label>
-              <p class="text-sm text-foreground font-medium mt-1">{{ alunoVisualizacao.endereco }}</p>
+
+            <div class="p-2 rounded-md bg-muted/20 md:col-span-2">
+              <label class="text-[10px] font-medium text-muted-foreground uppercase">Endereço Completo</label>
+              <p class="text-xs text-foreground font-medium mt-0.5">{{ alunoVisualizacao.endereco }}</p>
             </div>
-            
-            <div class="p-3 rounded-lg bg-muted/20">
-              <label class="text-xs font-medium text-muted-foreground uppercase">Bairro</label>
-              <p class="text-sm text-foreground font-medium mt-1">{{ alunoVisualizacao.bairro }}</p>
+
+            <div class="p-2 rounded-md bg-muted/20">
+              <label class="text-[10px] font-medium text-muted-foreground uppercase">Bairro</label>
+              <p class="text-xs text-foreground font-medium mt-0.5">{{ alunoVisualizacao.bairro }}</p>
             </div>
-            
-            <div class="p-3 rounded-lg bg-muted/20">
-              <label class="text-xs font-medium text-muted-foreground uppercase">Cidade</label>
-              <p class="text-sm text-foreground font-medium mt-1">{{ alunoVisualizacao.cidade }}</p>
+
+            <div class="p-2 rounded-md bg-muted/20">
+              <label class="text-[10px] font-medium text-muted-foreground uppercase">Cidade</label>
+              <p class="text-xs text-foreground font-medium mt-0.5">{{ alunoVisualizacao.cidade }}</p>
             </div>
           </div>
         </div>
         </div>
 
-        <!-- Página 2: Cursos do Aluno -->
-        <div v-if="paginaAtualVisualizacao === 2" class="space-y-4">
+        <!-- Aba 2: Informações do Curso -->
+        <div v-if="paginaAtualVisualizacao === 2" class="space-y-3">
           <div>
-            <h4 class="text-sm font-semibold text-foreground mb-3 flex items-center space-x-2">
-              <span class="text-lg">📚</span>
+            <h4 class="text-xs font-semibold text-foreground mb-2 flex items-center gap-1.5">
+              <span class="text-sm leading-none">📚</span>
               <span>Cursos Matriculados ({{ cursosVisualizacao.length }})</span>
             </h4>
-            
+
             <!-- Lista de Cursos -->
-            <div v-if="cursosVisualizacao.length > 0" class="space-y-3">
+            <div v-if="cursosVisualizacao.length > 0" class="space-y-2">
               <div
                 v-for="curso in cursosVisualizacao"
                 :key="curso.id"
@@ -2401,74 +2378,77 @@ async function registrarPagamento() {
                 <!-- Cabeçalho do Curso (sempre visível) -->
                 <button
                   @click="toggleCursoExpansao(curso.id)"
-                  class="w-full p-4 flex items-center justify-between bg-muted/20 hover:bg-muted/40 transition-colors"
+                  class="w-full p-2.5 flex items-center justify-between bg-muted/20 hover:bg-muted/40 transition-colors"
                 >
-                  <div class="flex items-center space-x-3 flex-1 text-left">
-                    <span class="text-2xl">📖</span>
-                    <div class="flex-1">
-                      <p class="font-semibold text-foreground">{{ curso.curso_nome }}</p>
-                      <div class="flex items-center space-x-4 mt-1">
-                        <span class="text-xs text-muted-foreground">
+                  <div class="flex items-center gap-2.5 flex-1 text-left min-w-0">
+                    <span class="text-base leading-none flex-shrink-0">📖</span>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-semibold text-foreground truncate">{{ curso.curso_nome }}</p>
+                      <div class="flex items-center gap-2 mt-0.5">
+                        <span class="text-[11px] text-muted-foreground whitespace-nowrap">
                           {{ curso.aulas_concluidas || 0 }}/{{ curso.quantidade_aulas || 0 }} aulas
                         </span>
-                        <span class="text-xs px-2 py-0.5 rounded-full" :class="curso.status === 'ativo' ? 'bg-green-100 dark:bg-green-900/20 text-green-600' : 'bg-gray-100 text-gray-600'">
+                        <span class="text-[10px] px-1.5 py-0.5 rounded-full leading-none" :class="curso.status === 'ativo' ? 'bg-green-100 dark:bg-green-900/20 text-green-600' : 'bg-gray-100 text-gray-600'">
                           {{ curso.status }}
                         </span>
                       </div>
                     </div>
                   </div>
-                  <span class="text-xl transition-transform" :class="{ 'rotate-180': cursosExpandidos.has(curso.id) }">
-                    ▼
-                  </span>
+                  <Icon
+                    icon="chevron-down"
+                    class-name="w-3.5 h-3.5 text-muted-foreground transition-transform flex-shrink-0"
+                    :class="{ 'rotate-180': cursosExpandidos.has(curso.id) }"
+                    fallback="▾"
+                  />
                 </button>
 
                 <!-- Detalhes Expandidos -->
                 <div
                   v-if="cursosExpandidos.has(curso.id)"
-                  class="p-4 bg-background border-t border-border space-y-3"
+                  class="p-2.5 bg-background border-t border-border space-y-2"
                 >
                   <!-- Progresso -->
-                  <div class="flex items-center justify-between">
-                    <span class="text-xs font-medium text-muted-foreground">Progresso</span>
-                    <div class="flex items-center space-x-2">
-                      <div class="w-32 bg-muted rounded-full h-2">
-                        <div 
-                          class="h-2 rounded-full transition-all bg-primary"
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="text-[10px] font-medium text-muted-foreground whitespace-nowrap">Progresso</span>
+                    <div class="flex items-center gap-1.5 flex-1 max-w-[160px]">
+                      <div class="flex-1 bg-muted rounded-full h-1.5">
+                        <div
+                          class="h-1.5 rounded-full transition-all bg-primary"
                           :style="{ width: `${Math.min(100, ((curso.aulas_concluidas || 0) / (curso.quantidade_aulas || 1)) * 100)}%` }"
                         ></div>
                       </div>
-                      <span class="text-xs font-medium text-muted-foreground">
+                      <span class="text-[10px] font-semibold text-muted-foreground whitespace-nowrap">
                         {{ Math.round(((curso.aulas_concluidas || 0) / (curso.quantidade_aulas || 1)) * 100) }}%
                       </span>
                     </div>
                   </div>
 
                   <!-- Dias da Semana -->
-                  <div class="grid grid-cols-2 gap-3">
+                  <div class="grid grid-cols-2 gap-2">
                     <div>
-                      <label class="text-xs font-medium text-muted-foreground uppercase">Dias da Semana</label>
-                      <p class="text-sm text-foreground font-medium mt-1">
+                      <label class="text-[10px] font-medium text-muted-foreground uppercase">Dias da Semana</label>
+                      <p class="text-xs text-foreground font-medium mt-0.5">
                         {{ formatarDias(curso.dias_semana) }}
                       </p>
                     </div>
 
                     <div>
-                      <label class="text-xs font-medium text-muted-foreground uppercase">Local</label>
-                      <p class="text-sm text-foreground font-medium mt-1">
+                      <label class="text-[10px] font-medium text-muted-foreground uppercase">Local</label>
+                      <p class="text-xs text-foreground font-medium mt-0.5 truncate">
                         📍 {{ curso.local_aulas || 'Não informado' }}
                       </p>
                     </div>
 
                     <div>
-                      <label class="text-xs font-medium text-muted-foreground uppercase">Horário</label>
-                      <p class="text-sm text-foreground font-medium mt-1">
+                      <label class="text-[10px] font-medium text-muted-foreground uppercase">Horário</label>
+                      <p class="text-xs text-foreground font-medium mt-0.5">
                         ⏰ {{ curso.hora_entrada?.substring(0, 5) || '00:00' }} - {{ curso.hora_saida?.substring(0, 5) || '00:00' }}
                       </p>
                     </div>
 
                     <div>
-                      <label class="text-xs font-medium text-muted-foreground uppercase">Carga Horária</label>
-                      <p class="text-sm text-foreground font-medium mt-1">
+                      <label class="text-[10px] font-medium text-muted-foreground uppercase">Carga Horária</label>
+                      <p class="text-xs text-foreground font-medium mt-0.5">
                         {{ curso.carga_horaria || 0 }}h
                       </p>
                     </div>
@@ -2478,35 +2458,35 @@ async function registrarPagamento() {
             </div>
 
             <!-- Mensagem se não houver cursos -->
-            <div v-else class="p-8 text-center bg-muted/20 rounded-lg">
-              <span class="text-4xl mb-3 block">📚</span>
-              <p class="text-muted-foreground">Nenhum curso matriculado</p>
+            <div v-else class="p-6 text-center bg-muted/20 rounded-lg">
+              <span class="text-2xl mb-2 block">📚</span>
+              <p class="text-xs text-muted-foreground">Nenhum curso matriculado</p>
             </div>
           </div>
-          
+
           <!-- Recursos Adicionais -->
           <div>
-            <h4 class="text-sm font-semibold text-foreground mb-3 flex items-center space-x-2">
-              <Icon icon="video" class-name="w-4 h-4" fallback="" />
+            <h4 class="text-xs font-semibold text-foreground mb-2 flex items-center gap-1.5">
+              <Icon icon="video" class-name="w-3.5 h-3.5" fallback="" />
               <span>Recursos Adicionais</span>
             </h4>
-            <div class="p-4 rounded-lg border border-border" :class="alunoVisualizacao.acessoVideos ? 'bg-purple-50 dark:bg-purple-900/10 border-purple-200 dark:border-purple-800/30' : 'bg-muted/20'">
-              <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-full flex items-center justify-center" :class="alunoVisualizacao.acessoVideos ? 'bg-purple-100 dark:bg-purple-900/30' : 'bg-muted'">
-                  <Icon icon="video" class-name="w-5 h-5" :class-name="alunoVisualizacao.acessoVideos ? 'text-purple-600 dark:text-purple-400' : 'text-muted-foreground'" fallback="🎥" />
+            <div class="p-2.5 rounded-lg border border-border" :class="alunoVisualizacao.acessoVideos ? 'bg-purple-50 dark:bg-purple-900/10 border-purple-200 dark:border-purple-800/30' : 'bg-muted/20'">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" :class="alunoVisualizacao.acessoVideos ? 'bg-purple-100 dark:bg-purple-900/30' : 'bg-muted'">
+                  <Icon icon="video" :class-name="`w-4 h-4 ${alunoVisualizacao.acessoVideos ? 'text-purple-600 dark:text-purple-400' : 'text-muted-foreground'}`" fallback="🎥" />
                 </div>
-                <div class="flex-1">
-                  <p class="text-sm font-medium" :class="alunoVisualizacao.acessoVideos ? 'text-purple-900 dark:text-purple-100' : 'text-foreground'">
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs font-medium truncate" :class="alunoVisualizacao.acessoVideos ? 'text-purple-900 dark:text-purple-100' : 'text-foreground'">
                     Acesso à Área de Vídeos
                   </p>
-                  <p class="text-xs" :class="alunoVisualizacao.acessoVideos ? 'text-purple-700 dark:text-purple-300' : 'text-muted-foreground'">
+                  <p class="text-[11px] truncate" :class="alunoVisualizacao.acessoVideos ? 'text-purple-700 dark:text-purple-300' : 'text-muted-foreground'">
                     {{ alunoVisualizacao.acessoVideos ? 'Aluno tem permissão para acessar vídeos' : 'Aluno não tem acesso a vídeos' }}
                   </p>
                 </div>
-                <span 
-                  class="px-3 py-1 rounded-full text-xs font-medium"
-                  :class="alunoVisualizacao.acessoVideos 
-                    ? 'bg-purple-600 dark:bg-purple-500 text-white' 
+                <span
+                  class="px-2 py-0.5 rounded-full text-[10px] font-semibold leading-none flex-shrink-0"
+                  :class="alunoVisualizacao.acessoVideos
+                    ? 'bg-purple-600 dark:bg-purple-500 text-white'
                     : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'"
                 >
                   {{ alunoVisualizacao.acessoVideos ? 'Ativo' : 'Inativo' }}
@@ -2517,57 +2497,39 @@ async function registrarPagamento() {
         </div>
       </div>
 
-      <!-- Footer com ações e navegação -->
-      <div class="flex items-center justify-between p-6 border-t border-border bg-muted/10">
-        <div class="flex items-center space-x-2">
-          <button
-            @click="fecharModalVisualizacao"
-            class="px-6 py-2 border border-border text-foreground hover:bg-muted rounded-lg transition-colors font-medium"
-          >
-            Fechar
-          </button>
-          <button
-            v-if="paginaAtualVisualizacao === 2"
-            @click="paginaAnteriorVisualizacao"
-            class="px-4 py-2 border border-border text-foreground hover:bg-muted rounded-lg transition-colors font-medium flex items-center space-x-2"
-          >
-            <Icon icon="chevron-left" class-name="w-4 h-4" fallback="" />
-            <span>Anterior</span>
-          </button>
-          <button
-            v-if="paginaAtualVisualizacao === 1"
-            @click="proximaPaginaVisualizacao"
-            class="px-4 py-2 border border-border text-foreground hover:bg-muted rounded-lg transition-colors font-medium flex items-center space-x-2"
-          >
-            <span>Próximo</span>
-            <Icon icon="chevron-right" class-name="w-4 h-4" fallback="" />
-          </button>
-        </div>
-        <div class="flex items-center space-x-2">
+      <!-- Footer com ações — as abas já cuidam de navegar entre as seções -->
+      <div class="flex items-center justify-between p-3 border-t border-border bg-muted/10">
+        <button
+          @click="fecharModalVisualizacao"
+          class="px-4 py-1.5 text-sm border border-border text-foreground hover:bg-muted rounded-md transition-colors font-medium"
+        >
+          Fechar
+        </button>
+        <div class="flex items-center gap-1.5">
           <button
             @click="editarAluno(alunoVisualizacao)"
-            class="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors font-medium flex items-center space-x-2"
+            class="px-3 py-1.5 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded-md transition-colors font-medium flex items-center gap-1.5"
           >
-            <Icon icon="edit" class-name="w-4 h-4" fallback="" />
+            <Icon icon="edit" class-name="w-3.5 h-3.5" fallback="" />
             <span>Editar</span>
           </button>
-          
+
           <button
             @click="toggleBloqueio(alunoVisualizacao)"
-            class="px-4 py-2 rounded-lg transition-colors font-medium flex items-center space-x-2"
-            :class="alunoVisualizacao.ativo 
-              ? 'bg-yellow-600 text-white hover:bg-yellow-700' 
+            class="px-3 py-1.5 text-sm rounded-md transition-colors font-medium flex items-center gap-1.5"
+            :class="alunoVisualizacao.ativo
+              ? 'bg-yellow-600 text-white hover:bg-yellow-700'
               : 'bg-green-600 text-white hover:bg-green-700'"
           >
-            <span>{{ alunoVisualizacao.ativo ? '🚫' : '✅' }}</span>
+            <span class="text-xs">{{ alunoVisualizacao.ativo ? '🚫' : '✅' }}</span>
             <span>{{ alunoVisualizacao.ativo ? 'Bloquear' : 'Desbloquear' }}</span>
           </button>
-          
+
           <button
             @click="confirmarExclusao(alunoVisualizacao)"
-            class="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors font-medium flex items-center space-x-2"
+            class="px-3 py-1.5 text-sm bg-red-600 text-white hover:bg-red-700 rounded-md transition-colors font-medium flex items-center gap-1.5"
           >
-            <Icon icon="trash-alt" class-name="w-4 h-4" fallback="" />
+            <Icon icon="trash-alt" class-name="w-3.5 h-3.5" fallback="" />
             <span>Excluir</span>
           </button>
         </div>

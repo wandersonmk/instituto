@@ -33,6 +33,7 @@ onMounted(async () => {
     toast = await useToastSafe()
     await carregarCategorias()
     await carregarVideos()
+    await buscarCursosDisponiveis()
   } catch (error) {
     console.error('Erro ao inicializar AulasVideosManager:', error)
   }
@@ -72,8 +73,15 @@ const urlYoutube = ref('')
 const duracao = ref('')
 const ordem = ref('')
 const categoriaId = ref('')
+const cursoId = ref('')
 const ativo = ref(true)
 const thumbnail = ref('')
+
+// Cursos disponíveis, pra vincular o vídeo a um curso específico — só quem
+// está matriculado naquele curso enxerga o vídeo (aluno com "acesso a
+// vídeos" mas sem vínculo com nenhum curso desse vídeo específico, não vê).
+// Deixar sem curso mantém o vídeo visível pra todo mundo, como já era antes.
+const { cursosAtivos, fetchCursos: buscarCursosDisponiveis } = useCursos()
 
 // Lista de vídeos (carregada do banco)
 const videos = ref<any[]>([])
@@ -172,6 +180,7 @@ function limparFormulario() {
   duracao.value = ''
   ordem.value = ''
   categoriaId.value = ''
+  cursoId.value = ''
   ativo.value = true
   thumbnail.value = ''
   modoEdicao.value = false
@@ -196,6 +205,7 @@ function editarVideo(video: any, event?: Event) {
   duracao.value = video.duracao
   ordem.value = video.ordem.toString()
   categoriaId.value = video.categoria_id
+  cursoId.value = video.curso_id || ''
   ativo.value = video.ativo
   thumbnail.value = video.thumbnail
   
@@ -237,6 +247,10 @@ async function salvarVideo() {
     thumbnail: thumbFinal,
     duracao: duracaoSegundos,
     categoria_id: categoriaId.value,
+    // Vazio = visível pra todo aluno com acesso a vídeos (comportamento de
+    // antes). Preenchido = só quem está matriculado nesse curso vê. Usa null
+    // (não undefined) pra editar e conseguir DESvincular um curso já salvo.
+    curso_id: cursoId.value || null,
     ordem: ordem.value ? parseInt(ordem.value) : undefined,
     ativo: ativo.value,
     tags: [] // TODO: adicionar campo de tags no formulário
@@ -498,43 +512,43 @@ function colapsarTodas() {
 </script>
 
 <template>
-  <div class="p-6">
+  <div class="p-4">
     <!-- Header -->
-    <div class="flex items-center justify-end gap-3 mb-6">
+    <div class="flex items-center justify-end gap-2 mb-3">
       <button
         @click="abrirModalCategorias"
-        class="px-4 py-2 bg-card border border-border text-foreground hover:bg-muted rounded-lg transition-colors flex items-center space-x-2"
+        class="px-3 py-1.5 text-sm bg-card border border-border text-foreground hover:bg-muted rounded-md transition-colors flex items-center gap-1.5"
       >
-        <Icon icon="filter" class-name="w-4 h-4" fallback="📁" />
+        <Icon icon="filter" class-name="w-3.5 h-3.5" fallback="📁" />
         <span>Gerenciar Categorias</span>
       </button>
-      
+
       <button
         @click="abrirModalNovo"
-        class="px-4 py-2 golden-gradient text-primary-foreground rounded-lg transition-colors flex items-center space-x-2"
+        class="px-3 py-1.5 text-sm font-medium golden-gradient text-primary-foreground rounded-md transition-colors flex items-center gap-1.5"
       >
-        <Icon icon="plus" class-name="w-4 h-4" fallback="➕" />
+        <Icon icon="plus" class-name="w-3.5 h-3.5" fallback="➕" />
         <span>Nova Aula em Vídeo</span>
       </button>
     </div>
 
     <!-- Filtros -->
-    <div class="bg-card border border-border rounded-lg p-4 mb-6">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-card border border-border rounded-lg p-3 mb-3">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
         <div>
-          <label class="block text-sm font-medium text-foreground mb-2">Buscar por título</label>
+          <label class="block text-[11px] font-medium text-muted-foreground mb-1">Buscar por título</label>
           <AppInput
             v-model="filtroTitulo"
             type="text"
             placeholder="Digite o título..."
           />
         </div>
-        
+
         <div>
-          <label class="block text-sm font-medium text-foreground mb-2">Categoria</label>
+          <label class="block text-[11px] font-medium text-muted-foreground mb-1">Categoria</label>
           <select
             v-model="filtroCategoria"
-            class="w-full rounded-md !bg-input hover:!bg-input focus:!bg-input text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary border border-input px-3 py-2"
+            class="w-full rounded-md !bg-input hover:!bg-input focus:!bg-input text-foreground text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary border border-input px-2.5 py-1.5"
           >
             <option value="">Todas as categorias</option>
             <option v-for="cat in categorias" :key="cat.id" :value="cat.id">
@@ -546,7 +560,7 @@ function colapsarTodas() {
         <div class="flex items-end">
           <button
             @click="limparFiltros"
-            class="w-full px-4 py-2 border border-border text-foreground hover:bg-muted rounded-lg transition-colors"
+            class="w-full px-3 py-1.5 text-sm border border-border text-foreground hover:bg-muted rounded-md transition-colors"
           >
             Limpar Filtros
           </button>
@@ -556,20 +570,20 @@ function colapsarTodas() {
 
     <!-- Lista de Vídeos por Categoria (Accordion) -->
     <div class="bg-card border border-border rounded-lg overflow-hidden">
-      <div class="p-4 border-b border-border bg-muted/30 flex items-center justify-between">
-        <h3 class="font-semibold text-foreground">
+      <div class="px-3 py-2 border-b border-border bg-muted/30 flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-foreground">
           {{ videosFiltrados.length }} {{ videosFiltrados.length === 1 ? 'vídeo encontrado' : 'vídeos encontrados' }}
         </h3>
-        <div v-if="!filtroTitulo" class="flex items-center space-x-2">
+        <div v-if="!filtroTitulo" class="flex items-center gap-1.5">
           <button
             @click="expandirTodas"
-            class="px-3 py-1 text-xs border border-border text-foreground hover:bg-muted rounded transition-colors"
+            class="px-2 py-1 text-[11px] border border-border text-foreground hover:bg-muted rounded-md transition-colors"
           >
             Expandir Todos
           </button>
           <button
             @click="colapsarTodas"
-            class="px-3 py-1 text-xs border border-border text-foreground hover:bg-muted rounded transition-colors"
+            class="px-2 py-1 text-[11px] border border-border text-foreground hover:bg-muted rounded-md transition-colors"
           >
             Colapsar Todos
           </button>
@@ -577,8 +591,8 @@ function colapsarTodas() {
       </div>
 
       <div v-if="videosFiltrados.length === 0" class="p-8 text-center">
-        <Icon icon="video" class-name="w-16 h-16 mx-auto text-muted-foreground mb-4" fallback="🎥" />
-        <p class="text-muted-foreground">Nenhum vídeo encontrado</p>
+        <Icon icon="video" class-name="w-12 h-12 mx-auto text-muted-foreground mb-3" fallback="🎥" />
+        <p class="text-sm text-muted-foreground">Nenhum vídeo encontrado</p>
       </div>
 
       <!-- Lista Plana (quando há filtro de título) -->
@@ -586,100 +600,84 @@ function colapsarTodas() {
         <div
           v-for="video in videosFiltrados"
           :key="video.id"
-          class="p-4 hover:bg-muted/30 cursor-pointer transition-all"
+          class="flex items-start gap-3 p-3 hover:bg-muted/30 cursor-pointer transition-colors"
           @click="visualizarVideo(video)"
         >
-          <div class="flex items-start space-x-4">
-            <!-- Thumbnail -->
-            <div class="flex-shrink-0 w-40 h-24 bg-muted rounded-lg overflow-hidden">
-              <img 
-                v-if="video.thumbnail" 
-                :src="video.thumbnail" 
-                :alt="video.titulo"
-                class="w-full h-full object-cover"
-              />
-              <div v-else class="w-full h-full flex items-center justify-center">
-                <Icon icon="video" class-name="w-8 h-8 text-muted-foreground" fallback="🎥" />
+          <!-- Thumbnail -->
+          <div class="flex-shrink-0 w-24 h-14 bg-muted rounded-md overflow-hidden">
+            <img
+              v-if="video.thumbnail"
+              :src="video.thumbnail"
+              :alt="video.titulo"
+              class="w-full h-full object-cover"
+            />
+            <div v-else class="w-full h-full flex items-center justify-center">
+              <Icon icon="video" class-name="w-5 h-5 text-muted-foreground" fallback="🎥" />
+            </div>
+          </div>
+
+          <!-- Informações -->
+          <div class="flex-1 min-w-0 flex items-start justify-between gap-2">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5 flex-wrap mb-0.5">
+                <h3 class="text-sm font-semibold text-foreground truncate">{{ video.titulo }}</h3>
+                <span
+                  class="px-1.5 py-0.5 text-[10px] rounded font-semibold leading-none whitespace-nowrap"
+                  :class="video.ativo
+                    ? 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400'
+                    : 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400'"
+                >
+                  {{ video.ativo ? 'Ativo' : 'Inativo' }}
+                </span>
+                <span class="px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 text-[10px] rounded font-semibold leading-none whitespace-nowrap">
+                  {{ video.categoria }}
+                </span>
+              </div>
+
+              <p class="text-xs text-muted-foreground line-clamp-1 mb-1">{{ video.descricao }}</p>
+
+              <div class="flex items-center gap-3 text-[11px] text-muted-foreground">
+                <span class="flex items-center gap-1"><Icon icon="clock" class-name="w-3 h-3" fallback="⏱️" />{{ video.duracao }}</span>
+                <span class="flex items-center gap-1"><Icon icon="eye" class-name="w-3 h-3" fallback="👁️" />{{ video.visualizacoes }}</span>
+                <span class="flex items-center gap-1"><Icon icon="users" class-name="w-3 h-3" fallback="👥" />{{ video.alunos_com_acesso }}</span>
+                <span class="flex items-center gap-1"><Icon icon="sort" class-name="w-3 h-3" fallback="📊" />#{{ video.ordem }}</span>
               </div>
             </div>
 
-            <!-- Informações -->
-            <div class="flex-1 min-w-0">
-              <div class="flex items-start justify-between">
-                <div class="flex-1">
-                  <div class="flex items-center space-x-2 mb-1">
-                    <h3 class="text-base font-semibold text-foreground truncate">{{ video.titulo }}</h3>
-                    <span
-                      class="px-2 py-0.5 text-xs rounded-full font-medium flex-shrink-0"
-                      :class="video.ativo 
-                        ? 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400' 
-                        : 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400'"
-                    >
-                      {{ video.ativo ? 'Ativo' : 'Inativo' }}
-                    </span>
-                    <span class="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 text-xs rounded-full font-medium">
-                      {{ video.categoria }}
-                    </span>
-                  </div>
-                  
-                  <p class="text-sm text-muted-foreground line-clamp-2 mb-2">{{ video.descricao }}</p>
-                  
-                  <div class="flex items-center space-x-4 text-sm text-muted-foreground">
-                    <div class="flex items-center space-x-1">
-                      <Icon icon="clock" class-name="w-4 h-4" fallback="⏱️" />
-                      <span>{{ video.duracao }}</span>
-                    </div>
-                    <div class="flex items-center space-x-1">
-                      <Icon icon="eye" class-name="w-4 h-4" fallback="👁️" />
-                      <span>{{ video.visualizacoes }} visualizações</span>
-                    </div>
-                    <div class="flex items-center space-x-1">
-                      <Icon icon="users" class-name="w-4 h-4" fallback="👥" />
-                      <span>{{ video.alunos_com_acesso }} alunos</span>
-                    </div>
-                    <div class="flex items-center space-x-1">
-                      <Icon icon="sort" class-name="w-4 h-4" fallback="📊" />
-                      <span>Ordem: {{ video.ordem }}</span>
-                    </div>
-                  </div>
-                </div>
+            <!-- Botões de ação -->
+            <div class="flex items-center gap-0.5 flex-shrink-0" @click.stop>
+              <button
+                @click="gerenciarPermissoes(video, $event)"
+                class="p-1.5 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-md transition-colors"
+                title="Gerenciar Permissões"
+              >
+                <Icon icon="user-lock" class-name="w-4 h-4" fallback="🔐" />
+              </button>
 
-                <!-- Botões de ação -->
-                <div class="flex items-center space-x-2 ml-4" @click.stop>
-                  <button
-                    @click="gerenciarPermissoes(video, $event)"
-                    class="p-2 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
-                    title="Gerenciar Permissões"
-                  >
-                    <Icon icon="user-lock" class-name="w-5 h-5" fallback="🔐" />
-                  </button>
-                  
-                  <button
-                    @click="editarVideo(video, $event)"
-                    class="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                    title="Editar"
-                  >
-                    <Icon icon="edit" class-name="w-5 h-5" fallback="✏️" />
-                  </button>
-                  
-                  <button
-                    @click="toggleAtivo(video, $event)"
-                    class="p-2 hover:bg-muted rounded-lg transition-colors"
-                    :class="video.ativo ? 'text-yellow-600' : 'text-green-600'"
-                    :title="video.ativo ? 'Desativar' : 'Ativar'"
-                  >
-                    <Icon :icon="video.ativo ? 'eye-slash' : 'eye'" class-name="w-5 h-5" :fallback="video.ativo ? '👁️' : '🚫'" />
-                  </button>
-                  
-                  <button
-                    @click="confirmarExclusao(video, $event)"
-                    class="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                    title="Excluir"
-                  >
-                    <Icon icon="trash-alt" class-name="w-5 h-5" fallback="🗑️" />
-                  </button>
-                </div>
-              </div>
+              <button
+                @click="editarVideo(video, $event)"
+                class="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors"
+                title="Editar"
+              >
+                <Icon icon="edit" class-name="w-4 h-4" fallback="✏️" />
+              </button>
+
+              <button
+                @click="toggleAtivo(video, $event)"
+                class="p-1.5 rounded-md hover:bg-muted transition-colors"
+                :class="video.ativo ? 'text-yellow-600' : 'text-green-600'"
+                :title="video.ativo ? 'Desativar' : 'Ativar'"
+              >
+                <Icon :icon="video.ativo ? 'eye-slash' : 'eye'" class-name="w-4 h-4" :fallback="video.ativo ? '👁️' : '🚫'" />
+              </button>
+
+              <button
+                @click="confirmarExclusao(video, $event)"
+                class="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                title="Excluir"
+              >
+                <Icon icon="trash-alt" class-name="w-4 h-4" fallback="🗑️" />
+              </button>
             </div>
           </div>
         </div>
@@ -695,27 +693,27 @@ function colapsarTodas() {
           <!-- Header da Categoria -->
           <button
             @click="toggleCategoria(categoria.id)"
-            class="w-full px-4 py-3 flex items-center justify-between hover:bg-muted/50 transition-colors"
+            class="w-full px-3 py-2 flex items-center justify-between hover:bg-muted/50 transition-colors"
             :class="isCategoriaExpandida(categoria.id) ? 'bg-muted/30' : ''"
           >
-            <div class="flex items-center space-x-3">
+            <div class="flex items-center gap-2.5">
               <!-- Ícone de expansão -->
-              <Icon 
-                :icon="isCategoriaExpandida(categoria.id) ? 'chevron-down' : 'chevron-right'" 
-                class-name="w-5 h-5 text-muted-foreground transition-transform" 
-                fallback="▶" 
+              <Icon
+                :icon="isCategoriaExpandida(categoria.id) ? 'chevron-down' : 'chevron-right'"
+                class-name="w-4 h-4 text-muted-foreground transition-transform"
+                fallback="▶"
               />
-              
+
               <!-- Cor da categoria -->
               <div
-                class="w-3 h-3 rounded-full"
+                class="w-2.5 h-2.5 rounded-full flex-shrink-0"
                 :style="{ backgroundColor: coresDisponiveis.find(c => c.valor === categoria.cor)?.hex || '#9333ea' }"
               ></div>
-              
+
               <!-- Nome e contador -->
-              <div class="flex items-center space-x-2">
-                <h4 class="font-semibold text-foreground text-left">{{ categoria.nome }}</h4>
-                <span class="px-2 py-0.5 bg-muted text-muted-foreground text-xs rounded-full">
+              <div class="flex items-center gap-2">
+                <h4 class="text-sm font-semibold text-foreground text-left">{{ categoria.nome }}</h4>
+                <span class="px-1.5 py-0.5 bg-muted text-muted-foreground text-[10px] rounded-full leading-none">
                   {{ videosPorCategoria[categoria.id]?.length || 0 }}
                 </span>
               </div>
@@ -727,105 +725,89 @@ function colapsarTodas() {
             v-show="isCategoriaExpandida(categoria.id)"
             class="bg-background/50"
           >
-            <div v-if="videosPorCategoria[categoria.id]?.length === 0" class="p-6 text-center">
-              <p class="text-sm text-muted-foreground">Nenhum vídeo nesta categoria</p>
+            <div v-if="videosPorCategoria[categoria.id]?.length === 0" class="p-4 text-center">
+              <p class="text-xs text-muted-foreground">Nenhum vídeo nesta categoria</p>
             </div>
-            
+
             <div v-else class="divide-y divide-border/50">
               <div
                 v-for="video in videosPorCategoria[categoria.id]"
                 :key="video.id"
-                class="p-4 hover:bg-muted/30 cursor-pointer transition-all"
+                class="flex items-start gap-3 p-3 hover:bg-muted/30 cursor-pointer transition-colors"
                 @click="visualizarVideo(video)"
               >
-                <div class="flex items-start space-x-4">
-                  <!-- Thumbnail -->
-                  <div class="flex-shrink-0 w-40 h-24 bg-muted rounded-lg overflow-hidden">
-                    <img 
-                      v-if="video.thumbnail" 
-                      :src="video.thumbnail" 
-                      :alt="video.titulo"
-                      class="w-full h-full object-cover"
-                    />
-                    <div v-else class="w-full h-full flex items-center justify-center">
-                      <Icon icon="video" class-name="w-8 h-8 text-muted-foreground" fallback="🎥" />
+                <!-- Thumbnail -->
+                <div class="flex-shrink-0 w-24 h-14 bg-muted rounded-md overflow-hidden">
+                  <img
+                    v-if="video.thumbnail"
+                    :src="video.thumbnail"
+                    :alt="video.titulo"
+                    class="w-full h-full object-cover"
+                  />
+                  <div v-else class="w-full h-full flex items-center justify-center">
+                    <Icon icon="video" class-name="w-5 h-5 text-muted-foreground" fallback="🎥" />
+                  </div>
+                </div>
+
+                <!-- Informações -->
+                <div class="flex-1 min-w-0 flex items-start justify-between gap-2">
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-1.5 flex-wrap mb-0.5">
+                      <h3 class="text-sm font-semibold text-foreground truncate">{{ video.titulo }}</h3>
+                      <span
+                        class="px-1.5 py-0.5 text-[10px] rounded font-semibold leading-none whitespace-nowrap"
+                        :class="video.ativo
+                          ? 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400'
+                          : 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400'"
+                      >
+                        {{ video.ativo ? 'Ativo' : 'Inativo' }}
+                      </span>
+                    </div>
+
+                    <p class="text-xs text-muted-foreground line-clamp-1 mb-1">{{ video.descricao }}</p>
+
+                    <div class="flex items-center gap-3 text-[11px] text-muted-foreground">
+                      <span class="flex items-center gap-1"><Icon icon="clock" class-name="w-3 h-3" fallback="⏱️" />{{ video.duracao }}</span>
+                      <span class="flex items-center gap-1"><Icon icon="eye" class-name="w-3 h-3" fallback="👁️" />{{ video.visualizacoes }}</span>
+                      <span class="flex items-center gap-1"><Icon icon="users" class-name="w-3 h-3" fallback="👥" />{{ video.alunos_com_acesso }}</span>
+                      <span class="flex items-center gap-1"><Icon icon="sort" class-name="w-3 h-3" fallback="📊" />#{{ video.ordem }}</span>
                     </div>
                   </div>
 
-                  <!-- Informações -->
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-start justify-between">
-                      <div class="flex-1">
-                        <div class="flex items-center space-x-2 mb-1">
-                          <h3 class="text-base font-semibold text-foreground truncate">{{ video.titulo }}</h3>
-                          <span
-                            class="px-2 py-0.5 text-xs rounded-full font-medium flex-shrink-0"
-                            :class="video.ativo 
-                              ? 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400' 
-                              : 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400'"
-                          >
-                            {{ video.ativo ? 'Ativo' : 'Inativo' }}
-                          </span>
-                        </div>
-                        
-                        <p class="text-sm text-muted-foreground line-clamp-2 mb-2">{{ video.descricao }}</p>
-                        
-                        <div class="flex items-center space-x-4 text-sm text-muted-foreground">
-                          <div class="flex items-center space-x-1">
-                            <Icon icon="clock" class-name="w-4 h-4" fallback="⏱️" />
-                            <span>{{ video.duracao }}</span>
-                          </div>
-                          <div class="flex items-center space-x-1">
-                            <Icon icon="eye" class-name="w-4 h-4" fallback="👁️" />
-                            <span>{{ video.visualizacoes }} visualizações</span>
-                          </div>
-                          <div class="flex items-center space-x-1">
-                            <Icon icon="users" class-name="w-4 h-4" fallback="👥" />
-                            <span>{{ video.alunos_com_acesso }} alunos</span>
-                          </div>
-                          <div class="flex items-center space-x-1">
-                            <Icon icon="sort" class-name="w-4 h-4" fallback="📊" />
-                            <span>Ordem: {{ video.ordem }}</span>
-                          </div>
-                        </div>
-                      </div>
+                  <!-- Botões de ação -->
+                  <div class="flex items-center gap-0.5 flex-shrink-0" @click.stop>
+                    <button
+                      @click="gerenciarPermissoes(video, $event)"
+                      class="p-1.5 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-md transition-colors"
+                      title="Gerenciar Permissões"
+                    >
+                      <Icon icon="user-lock" class-name="w-4 h-4" fallback="🔐" />
+                    </button>
 
-                      <!-- Botões de ação -->
-                      <div class="flex items-center space-x-2 ml-4" @click.stop>
-                        <button
-                          @click="gerenciarPermissoes(video, $event)"
-                          class="p-2 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
-                          title="Gerenciar Permissões"
-                        >
-                          <Icon icon="user-lock" class-name="w-5 h-5" fallback="🔐" />
-                        </button>
-                        
-                        <button
-                          @click="editarVideo(video, $event)"
-                          class="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                          title="Editar"
-                        >
-                          <Icon icon="edit" class-name="w-5 h-5" fallback="✏️" />
-                        </button>
-                        
-                        <button
-                          @click="toggleAtivo(video, $event)"
-                          class="p-2 hover:bg-muted rounded-lg transition-colors"
-                          :class="video.ativo ? 'text-yellow-600' : 'text-green-600'"
-                          :title="video.ativo ? 'Desativar' : 'Ativar'"
-                        >
-                          <Icon :icon="video.ativo ? 'eye-slash' : 'eye'" class-name="w-5 h-5" :fallback="video.ativo ? '👁️' : '🚫'" />
-                        </button>
-                        
-                        <button
-                          @click="confirmarExclusao(video, $event)"
-                          class="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                          title="Excluir"
-                        >
-                          <Icon icon="trash-alt" class-name="w-5 h-5" fallback="🗑️" />
-                        </button>
-                      </div>
-                    </div>
+                    <button
+                      @click="editarVideo(video, $event)"
+                      class="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors"
+                      title="Editar"
+                    >
+                      <Icon icon="edit" class-name="w-4 h-4" fallback="✏️" />
+                    </button>
+
+                    <button
+                      @click="toggleAtivo(video, $event)"
+                      class="p-1.5 rounded-md hover:bg-muted transition-colors"
+                      :class="video.ativo ? 'text-yellow-600' : 'text-green-600'"
+                      :title="video.ativo ? 'Desativar' : 'Ativar'"
+                    >
+                      <Icon :icon="video.ativo ? 'eye-slash' : 'eye'" class-name="w-4 h-4" :fallback="video.ativo ? '👁️' : '🚫'" />
+                    </button>
+
+                    <button
+                      @click="confirmarExclusao(video, $event)"
+                      class="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                      title="Excluir"
+                    >
+                      <Icon icon="trash-alt" class-name="w-4 h-4" fallback="🗑️" />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -957,6 +939,26 @@ function colapsarTodas() {
                 {{ cat.nome }}
               </option>
             </select>
+          </div>
+
+          <!-- Curso (opcional) -->
+          <div>
+            <label for="cursoId" class="block text-sm font-medium text-foreground mb-2">
+              Curso
+            </label>
+            <select
+              id="cursoId"
+              v-model="cursoId"
+              class="w-full rounded-md !bg-input hover:!bg-input focus:!bg-input text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary border border-input px-3 py-2"
+            >
+              <option value="">Visível para todos com acesso a vídeos</option>
+              <option v-for="curso in cursosAtivos" :key="curso.id" :value="curso.id">
+                {{ curso.nome }}
+              </option>
+            </select>
+            <p class="text-xs text-muted-foreground mt-1">
+              Se escolher um curso, só quem está matriculado nele vê este vídeo.
+            </p>
           </div>
         </div>
 

@@ -48,6 +48,18 @@
             </NuxtLink>
           </li>
 
+          <!-- Professores -->
+          <li>
+            <NuxtLink
+              to="/professores"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-sm transition-colors hover:bg-muted group relative"
+              :class="$route.path === '/professores' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
+            >
+              <Icon icon="chalkboard-teacher" class-name="w-5 h-5 mr-3" fallback="👩‍🏫" />
+              <span>Professores</span>
+            </NuxtLink>
+          </li>
+
           <!-- Cursos -->
           <li>
             <NuxtLink 
@@ -74,13 +86,19 @@
 
           <!-- Indicações Recebidas -->
           <li>
-            <NuxtLink 
+            <NuxtLink
               to="/indicacoes"
               class="flex items-center w-full px-3 py-2 rounded-lg text-sm transition-colors hover:bg-muted group relative"
               :class="$route.path === '/indicacoes' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
             >
               <Icon icon="handshake" class-name="w-5 h-5 mr-3" fallback="🤝" />
               <span>Indicações Recebidas</span>
+              <span
+                v-if="indicacoesNovas > 0"
+                class="ml-auto flex-shrink-0 px-1 py-0.5 min-w-[1.05rem] text-center text-[9px] leading-tight font-bold rounded-full bg-emerald-600 text-white"
+              >
+                {{ indicacoesNovas > 99 ? '99+' : indicacoesNovas }}
+              </span>
             </NuxtLink>
           </li>
 
@@ -93,6 +111,43 @@
             >
               <Icon icon="calendar-times" class-name="w-5 h-5 mr-3" fallback="📅" />
               <span>Relatório de Faltas</span>
+              <span
+                v-if="faltasPendentes > 0"
+                class="ml-auto flex-shrink-0 px-1 py-0.5 min-w-[1.05rem] text-center text-[9px] leading-tight font-bold rounded-full bg-amber-500 text-white"
+                title="Faltas justificadas aguardando sua análise"
+              >
+                {{ faltasPendentes > 99 ? '99+' : faltasPendentes }}
+              </span>
+            </NuxtLink>
+          </li>
+
+          <!-- Relatório de Aulas -->
+          <li>
+            <NuxtLink
+              to="/relatorio-aulas"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-sm transition-colors hover:bg-muted group relative"
+              :class="$route.path === '/relatorio-aulas' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
+            >
+              <Icon icon="clipboard-list" class-name="w-5 h-5 mr-3" fallback="📋" />
+              <span>Relatório de Aulas</span>
+            </NuxtLink>
+          </li>
+
+          <!-- Avaliações -->
+          <li>
+            <NuxtLink
+              to="/avaliacoes"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-sm transition-colors hover:bg-muted group relative"
+              :class="$route.path === '/avaliacoes' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
+            >
+              <Icon icon="star" class-name="w-5 h-5 mr-3" fallback="⭐" />
+              <span>Avaliações</span>
+              <span
+                v-if="avaliacoesNovas > 0"
+                class="ml-auto flex-shrink-0 px-1 py-0.5 min-w-[1.05rem] text-center text-[9px] leading-tight font-bold rounded-full bg-emerald-600 text-white"
+              >
+                {{ avaliacoesNovas > 99 ? '99+' : avaliacoesNovas }}
+              </span>
             </NuxtLink>
           </li>
 
@@ -213,6 +268,18 @@
             </NuxtLink>
           </li>
 
+          <!-- Professores -->
+          <li>
+            <NuxtLink
+              to="/professores"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-sm transition-colors hover:bg-muted group relative"
+              :class="$route.path === '/professores' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
+            >
+              <Icon icon="chalkboard-teacher" class-name="w-5 h-5 mr-3" fallback="👩‍🏫" />
+              <span>Professores</span>
+            </NuxtLink>
+          </li>
+
           <!-- Cursos -->
           <li>
             <NuxtLink 
@@ -241,7 +308,7 @@
 
           <!-- Indicações Recebidas -->
           <li>
-            <NuxtLink 
+            <NuxtLink
               to="/indicacoes"
               @click="$emit('close-mobile')"
               class="flex items-center w-full px-3 py-2 rounded-lg text-sm transition-colors hover:bg-muted group relative"
@@ -249,6 +316,12 @@
             >
               <Icon icon="handshake" class-name="w-5 h-5 mr-3" fallback="🤝" />
               <span>Indicações Recebidas</span>
+              <span
+                v-if="indicacoesNovas > 0"
+                class="ml-auto flex-shrink-0 px-1 py-0.5 min-w-[1.05rem] text-center text-[9px] leading-tight font-bold rounded-full bg-emerald-600 text-white"
+              >
+                {{ indicacoesNovas > 99 ? '99+' : indicacoesNovas }}
+              </span>
             </NuxtLink>
           </li>
 
@@ -262,6 +335,43 @@
             >
               <Icon icon="calendar-times" class-name="w-5 h-5 mr-3" fallback="📅" />
               <span>Relatório de Faltas</span>
+              <span
+                v-if="faltasPendentes > 0"
+                class="ml-auto flex-shrink-0 px-1 py-0.5 min-w-[1.05rem] text-center text-[9px] leading-tight font-bold rounded-full bg-amber-500 text-white"
+                title="Faltas justificadas aguardando sua análise"
+              >
+                {{ faltasPendentes > 99 ? '99+' : faltasPendentes }}
+              </span>
+            </NuxtLink>
+          </li>
+
+          <!-- Relatório de Aulas -->
+          <li>
+            <NuxtLink
+              to="/relatorio-aulas"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-sm transition-colors hover:bg-muted group relative"
+              :class="$route.path === '/relatorio-aulas' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
+            >
+              <Icon icon="clipboard-list" class-name="w-5 h-5 mr-3" fallback="📋" />
+              <span>Relatório de Aulas</span>
+            </NuxtLink>
+          </li>
+
+          <!-- Avaliações -->
+          <li>
+            <NuxtLink
+              to="/avaliacoes"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-sm transition-colors hover:bg-muted group relative"
+              :class="$route.path === '/avaliacoes' ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:text-foreground'"
+            >
+              <Icon icon="star" class-name="w-5 h-5 mr-3" fallback="⭐" />
+              <span>Avaliações</span>
+              <span
+                v-if="avaliacoesNovas > 0"
+                class="ml-auto flex-shrink-0 px-1 py-0.5 min-w-[1.05rem] text-center text-[9px] leading-tight font-bold rounded-full bg-emerald-600 text-white"
+              >
+                {{ avaliacoesNovas > 99 ? '99+' : avaliacoesNovas }}
+              </span>
             </NuxtLink>
           </li>
 
@@ -354,6 +464,11 @@ const userEmail = ref<string | null>(null)
 const userName = ref<string | null>(null)
 const isLoggedIn = ref(false)
 
+// Badges de "coisa nova" no menu (avaliações não vistas, indicações
+// pendentes) — o sidebar monta uma vez e sobrevive à troca de página, então
+// é o lugar certo pra manter o canal de tempo real aberto.
+const { avaliacoesNovas, indicacoesNovas, faltasPendentes, recarregarTudo, assinarTempoReal, encerrarTempoReal } = useNotificacoesAdmin()
+
 // Verificar autenticação usando o composable useAuth
 const { isAuthenticated, user } = process.client ? useAuth() : { isAuthenticated: ref(false), user: ref(null) }
 
@@ -387,6 +502,22 @@ if (process.client) {
       }
     })
   }
+
+  // Assina o tempo real assim que loga (cobre os 3 jeitos de isLoggedIn virar
+  // true acima: checagem síncrona, checkUserSession() ou o watch de cima) e
+  // encerra ao deslogar — não fica com canal aberto sem usuário.
+  watch(isLoggedIn, (logado) => {
+    if (logado) {
+      recarregarTudo()
+      assinarTempoReal()
+    } else {
+      encerrarTempoReal()
+    }
+  }, { immediate: true })
+
+  onUnmounted(() => {
+    encerrarTempoReal()
+  })
 }
 
 // Atualizar dados quando página ficar visível - SIMPLES

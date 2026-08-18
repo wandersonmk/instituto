@@ -1,46 +1,44 @@
 <template>
   <div class="bg-card text-card-foreground rounded-lg border border-border shadow-sm">
-    <!-- Header com ícone e descrição -->
-    <div class="flex items-center justify-between p-6 border-b border-border">
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
-          <Icon icon="cog" class-name="w-5 h-5 text-white" fallback="" />
-        </div>
-        <div>
-          <h2 class="text-lg font-semibold text-foreground">Configurações do Sistema</h2>
-          <p class="text-sm text-muted-foreground">Gerencie as configurações e dados do sistema</p>
-        </div>
+    <!-- Header -->
+    <div class="flex items-center gap-3 px-5 py-3.5 border-b border-border">
+      <div class="w-9 h-9 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center flex-shrink-0">
+        <Icon icon="cog" class-name="w-4 h-4 text-white" fallback="" />
+      </div>
+      <div>
+        <h2 class="text-base font-semibold text-foreground leading-tight">Configurações do Sistema</h2>
+        <p class="text-xs text-muted-foreground leading-tight">Gerencie as configurações e dados do sistema</p>
       </div>
     </div>
 
-    <!-- Conteúdo das configurações -->
-    <div class="p-6 space-y-6">
-      
+    <!-- Conteúdo -->
+    <div class="p-4 space-y-4">
+
       <!-- Seção: Gerenciamento de Dados -->
-      <div class="space-y-4">
-        <div class="flex items-center space-x-2 mb-4">
-          <Icon icon="database" class-name="w-5 h-5 text-muted-foreground" fallback="" />
-          <h3 class="text-lg font-medium text-foreground">Gerenciamento de Dados</h3>
+      <div class="space-y-2">
+        <div class="flex items-center gap-2">
+          <Icon icon="database" class-name="w-4 h-4 text-muted-foreground" fallback="" />
+          <h3 class="text-sm font-semibold text-foreground">Gerenciamento de Dados</h3>
         </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+
           <!-- Limpar Lista de Alunos -->
-          <div class="bg-muted/30 border border-border rounded-lg p-4">
-            <div class="flex items-start space-x-3">
-              <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center mt-1">
-                <Icon icon="users" class-name="w-4 h-4 text-blue-600 dark:text-blue-400" fallback="" />
+          <div class="bg-muted/30 border border-border rounded-lg p-3">
+            <div class="flex items-start gap-2.5">
+              <div class="w-7 h-7 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Icon icon="users" class-name="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" fallback="" />
               </div>
-              <div class="flex-1">
-                <h4 class="font-medium text-foreground mb-1">Limpar Lista de Alunos</h4>
-                <p class="text-sm text-muted-foreground mb-3">
+              <div class="flex-1 min-w-0">
+                <h4 class="text-sm font-medium text-foreground mb-0.5">Limpar Lista de Alunos</h4>
+                <p class="text-xs text-muted-foreground mb-2">
                   Remove todos os alunos cadastrados no sistema. Esta ação não pode ser desfeita.
                 </p>
                 <button
                   @click="confirmarLimpezaAlunos"
-                  class="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
+                  class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors text-xs font-medium"
                 >
-                  <Icon icon="trash-alt" class-name="w-4 h-4" fallback="" />
+                  <Icon icon="trash-alt" class-name="w-3.5 h-3.5" fallback="" />
                   <span>Limpar Alunos</span>
                 </button>
               </div>
@@ -48,21 +46,21 @@
           </div>
 
           <!-- Limpar Relatórios -->
-          <div class="bg-muted/30 border border-border rounded-lg p-4">
-            <div class="flex items-start space-x-3">
-              <div class="w-8 h-8 bg-red-100 dark:bg-red-900/20 rounded-lg flex items-center justify-center mt-1">
-                <Icon icon="file-alt" class-name="w-4 h-4 text-red-600 dark:text-red-400" fallback="" />
+          <div class="bg-muted/30 border border-border rounded-lg p-3">
+            <div class="flex items-start gap-2.5">
+              <div class="w-7 h-7 bg-red-100 dark:bg-red-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Icon icon="file-alt" class-name="w-3.5 h-3.5 text-red-600 dark:text-red-400" fallback="" />
               </div>
-              <div class="flex-1">
-                <h4 class="font-medium text-foreground mb-1">Limpar Todos os Relatórios</h4>
-                <p class="text-sm text-muted-foreground mb-3">
+              <div class="flex-1 min-w-0">
+                <h4 class="text-sm font-medium text-foreground mb-0.5">Limpar Todos os Relatórios</h4>
+                <p class="text-xs text-muted-foreground mb-2">
                   Remove todos os relatórios do sistema. Esta ação não pode ser desfeita.
                 </p>
                 <button
                   @click="confirmarLimpezaRelatorios"
-                  class="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm font-medium"
+                  class="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors text-xs font-medium"
                 >
-                  <Icon icon="trash-alt" class-name="w-4 h-4" fallback="" />
+                  <Icon icon="trash-alt" class-name="w-3.5 h-3.5" fallback="" />
                   <span>Limpar Relatórios</span>
                 </button>
               </div>
@@ -73,18 +71,16 @@
       </div>
 
       <!-- Aviso importante -->
-      <div class="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-        <div class="flex items-start space-x-3">
-          <Icon icon="exclamation-triangle" class-name="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5" fallback="" />
-          <div>
-            <h4 class="font-medium text-yellow-800 dark:text-yellow-200 mb-1">
-              Atenção - Ações Irreversíveis
-            </h4>
-            <p class="text-sm text-yellow-700 dark:text-yellow-300">
-              As ações de limpeza são permanentes e não podem ser desfeitas. 
-              Certifique-se de fazer um backup dos dados importantes antes de prosseguir.
-            </p>
-          </div>
+      <div class="flex items-start gap-2.5 bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+        <Icon icon="exclamation-triangle" class-name="w-4 h-4 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" fallback="" />
+        <div>
+          <h4 class="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-0.5">
+            Atenção - Ações Irreversíveis
+          </h4>
+          <p class="text-xs text-yellow-700 dark:text-yellow-300">
+            As ações de limpeza são permanentes e não podem ser desfeitas.
+            Certifique-se de fazer um backup dos dados importantes antes de prosseguir.
+          </p>
         </div>
       </div>
 
@@ -92,29 +88,29 @@
   </div>
 
   <!-- Modal de Confirmação para Alunos -->
-  <div v-if="mostrarModalAlunos" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-card border border-border rounded-lg p-6 max-w-md w-full mx-4">
-      <div class="flex items-center space-x-3 mb-4">
-        <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
-          <Icon icon="users" class-name="w-5 h-5 text-blue-600 dark:text-blue-400" fallback="" />
+  <div v-if="mostrarModalAlunos" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-card border border-border rounded-lg p-5 max-w-md w-full">
+      <div class="flex items-center gap-2.5 mb-3">
+        <div class="w-9 h-9 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
+          <Icon icon="users" class-name="w-4 h-4 text-blue-600 dark:text-blue-400" fallback="" />
         </div>
-        <h3 class="text-lg font-semibold text-foreground">Confirmar Limpeza de Alunos</h3>
+        <h3 class="text-base font-semibold text-foreground">Confirmar Limpeza de Alunos</h3>
       </div>
-      
-      <p class="text-muted-foreground mb-6">
+
+      <p class="text-sm text-muted-foreground mb-4">
         Tem certeza que deseja remover todos os alunos do sistema? Esta ação não pode ser desfeita.
       </p>
-      
-      <div class="flex space-x-3">
+
+      <div class="flex gap-2">
         <button
           @click="mostrarModalAlunos = false"
-          class="flex-1 px-4 py-2 border border-border text-foreground hover:bg-muted rounded-lg transition-colors"
+          class="flex-1 px-4 py-2 text-sm border border-border text-foreground hover:bg-muted rounded-md transition-colors"
         >
           Cancelar
         </button>
         <button
           @click="limparAlunos"
-          class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+          class="flex-1 px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
         >
           Confirmar
         </button>
@@ -123,29 +119,29 @@
   </div>
 
   <!-- Modal de Confirmação para Relatórios -->
-  <div v-if="mostrarModalRelatorios" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-card border border-border rounded-lg p-6 max-w-md w-full mx-4">
-      <div class="flex items-center space-x-3 mb-4">
-        <div class="w-10 h-10 bg-red-100 dark:bg-red-900/20 rounded-lg flex items-center justify-center">
-          <Icon icon="file-alt" class-name="w-5 h-5 text-red-600 dark:text-red-400" fallback="" />
+  <div v-if="mostrarModalRelatorios" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-card border border-border rounded-lg p-5 max-w-md w-full">
+      <div class="flex items-center gap-2.5 mb-3">
+        <div class="w-9 h-9 bg-red-100 dark:bg-red-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
+          <Icon icon="file-alt" class-name="w-4 h-4 text-red-600 dark:text-red-400" fallback="" />
         </div>
-        <h3 class="text-lg font-semibold text-foreground">Confirmar Limpeza de Relatórios</h3>
+        <h3 class="text-base font-semibold text-foreground">Confirmar Limpeza de Relatórios</h3>
       </div>
-      
-      <p class="text-muted-foreground mb-6">
+
+      <p class="text-sm text-muted-foreground mb-4">
         Tem certeza que deseja remover todos os relatórios do sistema? Esta ação não pode ser desfeita.
       </p>
-      
-      <div class="flex space-x-3">
+
+      <div class="flex gap-2">
         <button
           @click="mostrarModalRelatorios = false"
-          class="flex-1 px-4 py-2 border border-border text-foreground hover:bg-muted rounded-lg transition-colors"
+          class="flex-1 px-4 py-2 text-sm border border-border text-foreground hover:bg-muted rounded-md transition-colors"
         >
           Cancelar
         </button>
         <button
           @click="limparRelatorios"
-          class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+          class="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
         >
           Confirmar
         </button>

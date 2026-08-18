@@ -48,10 +48,15 @@ export const useAlunosCursos = () => {
   async function adicionarCurso(dados: {
     aluno_id: string
     curso_id: string
-    dias_semana?: string[]
+    dias_semana?: number[]
     local_aulas?: string
     hora_entrada?: string
     hora_saida?: string
+    // Aceitos por compatibilidade com o chamador (AlunosCadastroManager),
+    // mas ignorados aqui de propósito: todo curso novo sempre nasce
+    // status 'ativo' e 0 aulas concluídas, veja o insert abaixo.
+    status?: string
+    aulas_concluidas?: number
   }) {
     // Buscar empresa_id do aluno para evitar recursão
     const { data: alunoData } = await supabase
@@ -81,7 +86,7 @@ export const useAlunosCursos = () => {
 
   // Atualizar curso do aluno
   async function atualizarCurso(matriculaId: string, dados: {
-    dias_semana?: string[]
+    dias_semana?: number[]
     local_aulas?: string
     hora_entrada?: string
     hora_saida?: string
@@ -116,8 +121,9 @@ export const useAlunosCursos = () => {
     }
   }
 
-  // A presença agora nasce do check-in e só é concluída no check-out:
-  // ver useAulas() (fazerCheckin / fazerCheckout), que passa pelas funções do banco.
+  // A presença agora é a chamada feita pelo professor: o aluno só faz check-in
+  // (useAulas().fazerCheckin) e quem marca presente/falta e finaliza a aula é o
+  // professor, através das funções do banco.
 
   // Buscar view completa (aluno + curso + progresso)
   async function buscarViewCompleta(alunoId?: string) {

@@ -6,6 +6,7 @@ definePageMeta({
 
 const supabase = useSupabaseClient()
 const { user } = useAuth()
+const { marcarIndicacoesVistas } = useNotificacoesAdmin()
 
 // Estado
 const isLoading = ref(true)
@@ -86,6 +87,11 @@ function getStatusLabel(status: string) {
 
 onMounted(() => {
   buscarIndicacoes()
+  // Admin abriu a página = já viu as indicações — some o badge do menu,
+  // igual a notificação de falta no painel do aluno (informativa, não
+  // depende de resolver nada; o status 'pendente' de cada uma continua
+  // visível normalmente aqui na página).
+  marcarIndicacoesVistas()
 })
 </script>
 
@@ -97,100 +103,102 @@ onMounted(() => {
       description="Buscando indicações recebidas..."
     />
     
-    <div v-else class="space-y-6">
+    <div v-else class="space-y-3">
       <!-- Stats -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div class="bg-card border border-border rounded-lg p-4">
-          <p class="text-sm text-muted-foreground">Total</p>
-          <p class="text-2xl font-bold text-foreground">{{ indicacoes.length }}</p>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div class="bg-card border border-border rounded-lg px-3 py-2.5">
+          <p class="text-[11px] text-muted-foreground leading-tight">Total</p>
+          <p class="text-lg font-bold text-foreground leading-tight">{{ indicacoes.length }}</p>
         </div>
-        <div class="bg-card border border-border rounded-lg p-4">
-          <p class="text-sm text-muted-foreground">Pendentes</p>
-          <p class="text-2xl font-bold text-yellow-600">
+        <div class="bg-card border border-border rounded-lg px-3 py-2.5">
+          <p class="text-[11px] text-muted-foreground leading-tight">Pendentes</p>
+          <p class="text-lg font-bold text-yellow-600 leading-tight">
             {{ indicacoes.filter(i => i.status === 'pendente').length }}
           </p>
         </div>
-        <div class="bg-card border border-border rounded-lg p-4">
-          <p class="text-sm text-muted-foreground">Contatados</p>
-          <p class="text-2xl font-bold text-blue-600">
+        <div class="bg-card border border-border rounded-lg px-3 py-2.5">
+          <p class="text-[11px] text-muted-foreground leading-tight">Contatados</p>
+          <p class="text-lg font-bold text-blue-600 leading-tight">
             {{ indicacoes.filter(i => i.status === 'contatado').length }}
           </p>
         </div>
-        <div class="bg-card border border-border rounded-lg p-4">
-          <p class="text-sm text-muted-foreground">Matriculados</p>
-          <p class="text-2xl font-bold text-green-600">
+        <div class="bg-card border border-border rounded-lg px-3 py-2.5">
+          <p class="text-[11px] text-muted-foreground leading-tight">Matriculados</p>
+          <p class="text-lg font-bold text-green-600 leading-tight">
             {{ indicacoes.filter(i => i.status === 'matriculado').length }}
           </p>
         </div>
       </div>
-      
+
       <!-- Lista -->
-      <div v-if="indicacoes.length === 0" class="bg-card border border-border rounded-lg p-12 text-center">
-        <Icon icon="users" class-name="w-16 h-16 text-muted-foreground mx-auto mb-4" fallback="👥" />
-        <h3 class="text-lg font-semibold text-foreground mb-2">Nenhuma indicação ainda</h3>
-        <p class="text-muted-foreground">
+      <div v-if="indicacoes.length === 0" class="bg-card border border-border rounded-lg p-10 text-center">
+        <Icon icon="users" class-name="w-12 h-12 text-muted-foreground mx-auto mb-3" fallback="👥" />
+        <h3 class="text-sm font-semibold text-foreground mb-1">Nenhuma indicação ainda</h3>
+        <p class="text-xs text-muted-foreground">
           As indicações feitas pelos alunos aparecerão aqui
         </p>
       </div>
-      
+
       <div v-else class="bg-card border border-border rounded-lg overflow-hidden">
-        <table class="w-full">
-          <thead class="bg-muted/50 border-b border-border">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
-                Aluno que Indicou
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
-                Nome Indicado
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
-                Telefone
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
-                Data
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
-                Status
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
-                Ações
-              </th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-border">
-            <tr v-for="indicacao in indicacoes" :key="indicacao.id" class="hover:bg-muted/30">
-              <td class="px-6 py-4 text-sm text-foreground">
-                {{ indicacao.aluno.nome_completo }}
-              </td>
-              <td class="px-6 py-4 text-sm text-foreground">
-                {{ indicacao.nome_indicado }}
-              </td>
-              <td class="px-6 py-4 text-sm text-foreground">
-                {{ formatarTelefone(indicacao.telefone_indicado) }}
-              </td>
-              <td class="px-6 py-4 text-sm text-muted-foreground">
-                {{ new Date(indicacao.data_indicacao).toLocaleDateString('pt-BR') }}
-              </td>
-              <td class="px-6 py-4">
-                <span :class="getStatusColor(indicacao.status)" class="px-2 py-1 rounded-full text-xs font-medium">
-                  {{ getStatusLabel(indicacao.status) }}
-                </span>
-              </td>
-              <td class="px-6 py-4">
-                <select
-                  :value="indicacao.status"
-                  @change="atualizarStatus(indicacao.id, ($event.target as HTMLSelectElement).value)"
-                  class="text-sm border border-border rounded px-2 py-1 bg-background text-foreground"
-                >
-                  <option value="pendente">Pendente</option>
-                  <option value="contatado">Contatado</option>
-                  <option value="matriculado">Matriculado</option>
-                  <option value="recusado">Recusado</option>
-                </select>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-muted/50 border-b border-border">
+              <tr>
+                <th class="px-3 py-2 text-left text-[11px] font-medium text-muted-foreground uppercase">
+                  Aluno que Indicou
+                </th>
+                <th class="px-3 py-2 text-left text-[11px] font-medium text-muted-foreground uppercase">
+                  Nome Indicado
+                </th>
+                <th class="px-3 py-2 text-left text-[11px] font-medium text-muted-foreground uppercase">
+                  Telefone
+                </th>
+                <th class="px-3 py-2 text-left text-[11px] font-medium text-muted-foreground uppercase">
+                  Data
+                </th>
+                <th class="px-3 py-2 text-left text-[11px] font-medium text-muted-foreground uppercase">
+                  Status
+                </th>
+                <th class="px-3 py-2 text-left text-[11px] font-medium text-muted-foreground uppercase">
+                  Ações
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-border">
+              <tr v-for="indicacao in indicacoes" :key="indicacao.id" class="hover:bg-muted/30">
+                <td class="px-3 py-2 text-foreground">
+                  {{ indicacao.aluno.nome_completo }}
+                </td>
+                <td class="px-3 py-2 text-foreground">
+                  {{ indicacao.nome_indicado }}
+                </td>
+                <td class="px-3 py-2 text-foreground">
+                  {{ formatarTelefone(indicacao.telefone_indicado) }}
+                </td>
+                <td class="px-3 py-2 text-muted-foreground">
+                  {{ new Date(indicacao.data_indicacao).toLocaleDateString('pt-BR') }}
+                </td>
+                <td class="px-3 py-2">
+                  <span :class="getStatusColor(indicacao.status)" class="px-1.5 py-0.5 rounded text-[11px] font-semibold leading-none whitespace-nowrap">
+                    {{ getStatusLabel(indicacao.status) }}
+                  </span>
+                </td>
+                <td class="px-3 py-2">
+                  <select
+                    :value="indicacao.status"
+                    @change="atualizarStatus(indicacao.id, ($event.target as HTMLSelectElement).value)"
+                    class="text-xs border border-border rounded-md px-2 py-1 bg-background text-foreground"
+                  >
+                    <option value="pendente">Pendente</option>
+                    <option value="contatado">Contatado</option>
+                    <option value="matriculado">Matriculado</option>
+                    <option value="recusado">Recusado</option>
+                  </select>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>

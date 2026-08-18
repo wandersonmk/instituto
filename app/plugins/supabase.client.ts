@@ -1,4 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
+// Import explícito: se o auto-import falhar aqui, o plugin lança e nunca fornece
+// $supabase, derrubando toda página que usa useSupabaseClient() no setup.
+import { getAuthStorageKey, LEGACY_AUTH_STORAGE_KEY } from '~/utils/authStorageKey'
 
 export default defineNuxtPlugin(() => {
   console.log('[Supabase Plugin] Executando plugin no cliente...')

@@ -149,82 +149,82 @@ onMounted(() => {
       description="Buscando suas indicações..."
     />
     
-    <div v-else class="space-y-6">
+    <div v-else class="space-y-3">
       <!-- Header -->
-      <div class="flex items-center justify-between">
+      <div class="flex items-center justify-between gap-2">
         <div>
-          <h2 class="text-2xl font-bold text-foreground">Minhas Indicações</h2>
-          <p class="text-muted-foreground mt-1">
+          <h2 class="text-lg font-bold text-foreground">Minhas Indicações</h2>
+          <p class="text-xs text-muted-foreground mt-0.5">
             Indique amigos e acompanhe o status das suas indicações
           </p>
         </div>
-        
+
         <button
           @click="mostrarModal = true"
-          class="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
+          class="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors font-medium whitespace-nowrap"
         >
-          <Icon icon="plus" class-name="w-5 h-5" fallback="" />
+          <Icon icon="plus" class-name="w-3.5 h-3.5" fallback="" />
           <span>Nova Indicação</span>
         </button>
       </div>
-      
+
       <!-- Lista de indicações -->
-      <div v-if="indicacoes.length === 0" class="text-center py-12 bg-card border border-border rounded-lg">
-        <Icon icon="handshake" class-name="w-16 h-16 mx-auto mb-4 text-muted-foreground" fallback="🤝" />
-        <h3 class="text-lg font-medium text-foreground mb-2">Nenhuma indicação cadastrada</h3>
-        <p class="text-muted-foreground mb-4">Comece indicando seus amigos para estudar conosco!</p>
+      <div v-if="indicacoes.length === 0" class="text-center py-10 bg-card border border-border rounded-lg">
+        <Icon icon="handshake" class-name="w-12 h-12 mx-auto mb-3 text-muted-foreground" fallback="🤝" />
+        <h3 class="text-sm font-medium text-foreground mb-1">Nenhuma indicação cadastrada</h3>
+        <p class="text-xs text-muted-foreground mb-3">Comece indicando seus amigos para estudar conosco!</p>
         <button
           @click="mostrarModal = true"
-          class="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+          class="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
         >
           Fazer Primeira Indicação
         </button>
       </div>
-      
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
         <div
           v-for="indicacao in indicacoes"
           :key="indicacao.id"
-          class="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow"
+          class="bg-card border border-border rounded-lg p-3"
         >
-          <div class="flex items-start justify-between mb-3">
-            <div>
-              <h3 class="font-semibold text-foreground">{{ indicacao.nome_indicado }}</h3>
-              <p class="text-sm text-muted-foreground">{{ indicacao.telefone_indicado }}</p>
+          <div class="flex items-start justify-between gap-2 mb-1.5">
+            <div class="min-w-0">
+              <h3 class="text-sm font-semibold text-foreground truncate">{{ indicacao.nome_indicado }}</h3>
+              <p class="text-xs text-muted-foreground">{{ indicacao.telefone_indicado }}</p>
             </div>
             <span
               :class="getStatusColor(indicacao.status)"
-              class="px-2 py-1 text-xs font-medium rounded-full"
+              class="px-1.5 py-0.5 text-[10px] font-semibold leading-none whitespace-nowrap rounded-full"
             >
               {{ getStatusLabel(indicacao.status) }}
             </span>
           </div>
-          
-          <div class="text-xs text-muted-foreground">
+
+          <div class="text-[11px] text-muted-foreground">
             <p>Indicado em: {{ new Date(indicacao.data_indicacao).toLocaleDateString('pt-BR') }}</p>
-            <p v-if="indicacao.observacoes" class="mt-2 italic">{{ indicacao.observacoes }}</p>
+            <p v-if="indicacao.observacoes" class="mt-1 italic">{{ indicacao.observacoes }}</p>
           </div>
         </div>
       </div>
     </div>
-    
+
     <!-- Modal Nova Indicação -->
     <div
       v-if="mostrarModal"
       class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       @click.self="mostrarModal = false"
     >
-      <div class="bg-card border border-border rounded-lg max-w-md w-full p-6">
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="text-xl font-bold text-foreground">Nova Indicação</h3>
-          <button @click="mostrarModal = false" class="p-2 hover:bg-muted rounded-lg">
-            <Icon icon="times" class-name="w-5 h-5" fallback="✕" />
+      <div class="bg-card border border-border rounded-lg max-w-md w-full p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-base font-semibold text-foreground">Nova Indicação</h3>
+          <button @click="mostrarModal = false" class="p-1.5 hover:bg-muted rounded-md">
+            <Icon icon="times" class-name="w-4 h-4" fallback="✕" />
           </button>
         </div>
-        
-        <form @submit.prevent="adicionarIndicacao" class="space-y-4">
+
+        <form @submit.prevent="adicionarIndicacao" class="space-y-3">
           <div>
-            <label class="block text-sm font-medium text-foreground mb-2">
+            <label class="block text-xs font-medium text-foreground mb-1">
               Nome Completo <span class="text-red-500">*</span>
             </label>
             <AppInput
@@ -234,9 +234,9 @@ onMounted(() => {
               required
             />
           </div>
-          
+
           <div>
-            <label class="block text-sm font-medium text-foreground mb-2">
+            <label class="block text-xs font-medium text-foreground mb-1">
               Telefone <span class="text-red-500">*</span>
             </label>
             <AppInput
@@ -248,18 +248,18 @@ onMounted(() => {
               required
             />
           </div>
-          
-          <div class="flex space-x-3 pt-4">
+
+          <div class="flex gap-2 pt-2">
             <button
               type="button"
               @click="mostrarModal = false"
-              class="flex-1 px-4 py-2 border border-border text-foreground rounded-lg hover:bg-muted transition-colors"
+              class="flex-1 px-4 py-2 text-sm border border-border text-foreground rounded-md hover:bg-muted transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              class="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
+              class="flex-1 px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors font-medium"
             >
               Cadastrar
             </button>

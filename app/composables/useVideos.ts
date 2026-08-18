@@ -83,6 +83,30 @@ export const useVideos = () => {
   }
 
   /**
+   * IDs dos cursos em que o aluno logado está matriculado (ativo). Usado
+   * pra filtrar vídeos vinculados a um curso específico — vídeo sem curso_id
+   * continua liberado pra qualquer aluno com acesso a vídeos, como sempre foi.
+   */
+  const buscarCursosDoAlunoIds = async (alunoId: string): Promise<string[]> => {
+    const { data, error } = await supabase
+      .from('alunos_cursos')
+      .select('curso_id')
+      .eq('aluno_id', alunoId)
+      .eq('status', 'ativo')
+
+    if (error) {
+      console.error('Erro ao buscar cursos do aluno:', error)
+      return []
+    }
+
+    return (data || []).map(m => m.curso_id).filter(Boolean) as string[]
+  }
+
+  /** Vídeo geral (sem curso_id) ou vinculado a um curso em que o aluno está matriculado. */
+  const podeVerVideo = (video: { curso_id: string | null }, cursosDoAluno: string[]) =>
+    !video.curso_id || cursosDoAluno.includes(video.curso_id)
+
+  /**
    * Buscar vídeos de uma categoria específica
    */
   const buscarVideosPorCategoria = async (categoriaId: string) => {
@@ -111,8 +135,11 @@ export const useVideos = () => {
           return videosData
         }
 
-        const videosIds = videosData?.map(v => v.id) || []
-        
+        const cursosDoAluno = await buscarCursosDoAlunoIds(alunoId)
+        const videosPermitidos = (videosData || []).filter(v => podeVerVideo(v, cursosDoAluno))
+
+        const videosIds = videosPermitidos.map(v => v.id)
+
         const { data: progressoData, error: progressoError } = await supabase
           .from('videos_visualizacoes')
           .select('*')
@@ -122,7 +149,7 @@ export const useVideos = () => {
         if (progressoError) throw progressoError
 
         // Enriquecer vídeos com progresso
-        const videosEnriquecidos = videosData?.map(video => {
+        const videosEnriquecidos = videosPermitidos.map(video => {
           const progresso = progressoData?.find(p => p.video_id === video.id)
           return {
             ...video,
@@ -131,7 +158,7 @@ export const useVideos = () => {
             tempo_assistido: progresso?.tempo_assistido || 0,
             ultima_posicao: progresso?.ultima_posicao || 0
           }
-        }) || []
+        })
 
         videos.value = videosEnriquecidos
         return videosEnriquecidos

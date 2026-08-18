@@ -72,7 +72,7 @@ export const useVideosAdmin = () => {
     thumbnail?: string
     duracao: number
     categoria_id: string
-    curso_id?: string
+    curso_id?: string | null
     ordem?: number
     nivel?: 'iniciante' | 'intermediario' | 'avancado'
     tags?: string[]

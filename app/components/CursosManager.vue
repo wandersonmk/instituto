@@ -1,34 +1,26 @@
 <template>
-  <div class="space-y-6">
-    <!-- Header com botão de adicionar -->
-    <div class="flex items-center justify-between">
-      <div>
-        <h2 class="text-2xl font-bold text-foreground">Gerenciar Cursos</h2>
-        <p class="text-sm text-muted-foreground mt-1">Cadastre e gerencie os cursos oferecidos</p>
-      </div>
-      <button
-        @click="abrirModalNovo"
-        class="btn-gradient flex items-center space-x-2 px-4 py-2 text-gray-800 rounded-lg transition-colors shadow-lg"
-      >
-        <Icon icon="plus" class-name="w-5 h-5" fallback="" />
-        <span>Novo Curso</span>
-      </button>
-    </div>
-
-    <!-- Filtro por nome -->
-    <div class="flex items-center gap-3 bg-card border border-border rounded-lg p-4">
+  <div class="space-y-3">
+    <!-- Filtro por nome + botão de novo curso, tudo numa linha só -->
+    <div class="flex items-center gap-3 bg-card border border-border rounded-lg p-3">
       <div class="flex-1 relative">
-        <Icon icon="search" class-name="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" fallback="🔍" />
+        <Icon icon="search" class-name="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" fallback="🔍" />
         <input
           v-model="filtroNome"
           type="text"
           placeholder="Filtrar por nome do curso..."
-          class="w-full pl-10 pr-4 py-2 bg-background border border-input rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
+          class="w-full pl-9 pr-3 py-2 text-sm bg-background border border-input rounded-md text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
         />
       </div>
-      <span class="text-sm text-muted-foreground whitespace-nowrap font-medium">
+      <span class="text-xs text-muted-foreground whitespace-nowrap font-medium">
         {{ cursosFiltrados.length }} {{ cursosFiltrados.length === 1 ? 'curso' : 'cursos' }}
       </span>
+      <button
+        @click="abrirModalNovo"
+        class="btn-gradient flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-800 rounded-md transition-colors shadow-sm whitespace-nowrap"
+      >
+        <Icon icon="plus" class-name="w-4 h-4" fallback="" />
+        <span>Novo Curso</span>
+      </button>
     </div>
 
     <!-- Loading state -->
@@ -55,76 +47,116 @@
         </div>
       </div>
 
-      <!-- Grid de cursos -->
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!--
+        Cards expansíveis, em colunas independentes (CSS columns, não grid).
+        Com grid, expandir um card estica a LINHA inteira e deixa um vão vazio
+        nos cards vizinhos (mesma altura de linha, conteúdo menor). Em colunas,
+        cada card flui na sua própria coluna sem depender da altura dos outros.
+      -->
+      <div v-else class="columns-1 md:columns-2 lg:columns-3 gap-4">
         <div
           v-for="curso in cursosFiltrados"
           :key="curso.id"
-        class="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-all duration-200 relative group"
-      >
-        <!-- Badge de status -->
-        <div class="absolute top-4 right-4">
-          <span
-            :class="curso.ativo ? 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400'"
-            class="px-2 py-1 text-xs font-medium rounded-full"
-          >
-            {{ curso.ativo ? 'Ativo' : 'Inativo' }}
-          </span>
-        </div>
-
-        <!-- Conteúdo do card -->
-        <div class="mb-4">
-          <h3 class="text-lg font-bold text-foreground mb-2 pr-16">{{ curso.nome }}</h3>
-          <p v-if="curso.descricao" class="text-sm text-muted-foreground line-clamp-2">
-            {{ curso.descricao }}
-          </p>
-        </div>
-
-        <!-- Informações do curso -->
-        <div class="space-y-2 mb-4">
-          <div v-if="curso.carga_horaria" class="flex items-center text-sm text-foreground">
-            <Icon icon="clock" class-name="w-4 h-4 mr-2 text-primary" fallback="" />
-            <span>{{ curso.carga_horaria }} horas</span>
-          </div>
-          <div v-if="curso.quantidade_aulas" class="flex items-center text-sm text-foreground">
-            <Icon icon="book" class-name="w-4 h-4 mr-2 text-primary" fallback="" />
-            <span>{{ curso.quantidade_aulas }} aulas</span>
-          </div>
-          <div v-if="curso.valor" class="flex items-center text-sm text-foreground font-medium">
-            <Icon icon="dollar-sign" class-name="w-4 h-4 mr-2 text-green-600" fallback="" />
-            <span>R$ {{ curso.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }}</span>
-          </div>
-          <div v-if="curso.valor_multa_falta" class="flex items-center text-sm text-foreground">
-            <Icon icon="exclamation-triangle" class-name="w-4 h-4 mr-2 text-amber-600" fallback="" />
-            <span>Multa: R$ {{ curso.valor_multa_falta.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }}</span>
-          </div>
-        </div>
-
-        <!-- Ações -->
-        <div class="flex items-center space-x-2 pt-4 border-t border-border">
+          class="mb-4 break-inside-avoid bg-card border border-border rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden"
+          :class="{ 'opacity-60': !curso.ativo }"
+        >
+          <!-- Cabeçalho: clique expande/encolhe este card, os outros não mudam -->
           <button
-            @click="editarCurso(curso)"
-            class="flex-1 flex items-center justify-center space-x-1 px-3 py-2 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors"
+            type="button"
+            @click="alternarExpansao(curso.id)"
+            class="w-full flex items-start gap-3 p-4 text-left hover:bg-muted/30 transition-colors"
           >
-            <Icon icon="edit" class-name="w-4 h-4" fallback="" />
-            <span>Editar</span>
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center flex-shrink-0">
+              <Icon icon="graduation-cap" class-name="w-5 h-5 text-primary-foreground" fallback="🎓" />
+            </div>
+
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2">
+                <h3 class="text-sm font-semibold text-foreground truncate">{{ curso.nome }}</h3>
+                <span
+                  class="px-1.5 py-0.5 rounded text-[10px] font-semibold leading-none whitespace-nowrap flex-shrink-0"
+                  :class="curso.ativo
+                    ? 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400'
+                    : 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400'"
+                >
+                  {{ curso.ativo ? 'Ativo' : 'Inativo' }}
+                </span>
+              </div>
+              <p class="text-xs text-muted-foreground truncate mt-0.5">
+                <template v-if="curso.carga_horaria">{{ curso.carga_horaria }}h</template>
+                <template v-if="curso.carga_horaria && curso.quantidade_aulas"> · </template>
+                <template v-if="curso.quantidade_aulas">{{ curso.quantidade_aulas }} aulas</template>
+                <template v-if="curso.valor"> · R$ {{ curso.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }}</template>
+              </p>
+            </div>
+
+            <svg
+              class="w-4 h-4 text-muted-foreground flex-shrink-0 mt-1 transition-transform duration-200"
+              :class="{ 'rotate-180': cursosExpandidos.has(curso.id) }"
+              fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
           </button>
-          <button
-            @click="toggleAtivoCurso(curso)"
-            class="flex-1 flex items-center justify-center space-x-1 px-3 py-2 text-sm rounded-lg transition-colors"
-            :class="curso.ativo ? 'btn-gradient text-gray-800' : 'bg-green-600 hover:bg-green-700 text-white'"
+
+          <!-- Conteúdo expansível (animação suave via grid-template-rows) -->
+          <div
+            class="grid transition-[grid-template-rows] duration-300 ease-in-out"
+            :style="{ gridTemplateRows: cursosExpandidos.has(curso.id) ? '1fr' : '0fr' }"
           >
-            <Icon :icon="curso.ativo ? 'ban' : 'check-circle'" class-name="w-4 h-4" fallback="" />
-            <span>{{ curso.ativo ? 'Desativar' : 'Ativar' }}</span>
-          </button>
-          <button
-            @click="confirmarExclusao(curso)"
-            class="px-3 py-2 text-sm bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors"
-          >
-            <Icon icon="trash" class-name="w-4 h-4" fallback="" />
-          </button>
+            <div class="overflow-hidden">
+              <div class="px-4 pb-4 border-t border-border/60">
+                <p v-if="curso.descricao" class="text-sm text-muted-foreground mt-3">
+                  {{ curso.descricao }}
+                </p>
+
+                <div class="grid grid-cols-2 gap-2 mt-3">
+                  <div v-if="curso.carga_horaria" class="flex items-center gap-1.5 text-xs text-foreground bg-muted/40 rounded-md px-2 py-1.5">
+                    <Icon icon="clock" class-name="w-3.5 h-3.5 text-primary flex-shrink-0" fallback="🕐" />
+                    <span>{{ curso.carga_horaria }} horas</span>
+                  </div>
+                  <div v-if="curso.quantidade_aulas" class="flex items-center gap-1.5 text-xs text-foreground bg-muted/40 rounded-md px-2 py-1.5">
+                    <Icon icon="book" class-name="w-3.5 h-3.5 text-primary flex-shrink-0" fallback="📖" />
+                    <span>{{ curso.quantidade_aulas }} aulas</span>
+                  </div>
+                  <div v-if="curso.valor" class="flex items-center gap-1.5 text-xs text-foreground font-medium bg-green-50 dark:bg-green-900/10 rounded-md px-2 py-1.5">
+                    <Icon icon="dollar-sign" class-name="w-3.5 h-3.5 text-green-600 flex-shrink-0" fallback="💰" />
+                    <span>R$ {{ curso.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }}</span>
+                  </div>
+                  <div v-if="curso.valor_multa_falta" class="flex items-center gap-1.5 text-xs text-foreground bg-amber-50 dark:bg-amber-900/10 rounded-md px-2 py-1.5">
+                    <Icon icon="exclamation-triangle" class-name="w-3.5 h-3.5 text-amber-600 flex-shrink-0" fallback="⚠️" />
+                    <span>Multa R$ {{ curso.valor_multa_falta.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }}</span>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2 pt-3 mt-3 border-t border-border/60">
+                  <button
+                    @click.stop="editarCurso(curso)"
+                    class="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-600 text-white hover:bg-blue-700 rounded-md transition-colors"
+                  >
+                    <Icon icon="edit" class-name="w-3.5 h-3.5" fallback="" />
+                    <span>Editar</span>
+                  </button>
+                  <button
+                    @click.stop="toggleAtivoCurso(curso)"
+                    class="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors"
+                    :class="curso.ativo ? 'btn-gradient text-gray-800' : 'bg-green-600 hover:bg-green-700 text-white'"
+                  >
+                    <Icon :icon="curso.ativo ? 'ban' : 'check-circle'" class-name="w-3.5 h-3.5" fallback="" />
+                    <span>{{ curso.ativo ? 'Desativar' : 'Ativar' }}</span>
+                  </button>
+                  <button
+                    @click.stop="confirmarExclusao(curso)"
+                    class="px-3 py-1.5 text-xs bg-red-600 text-white hover:bg-red-700 rounded-md transition-colors"
+                    title="Excluir curso"
+                  >
+                    <Icon icon="trash" class-name="w-3.5 h-3.5" fallback="" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
       </div>
     </div>
 
@@ -408,6 +440,18 @@ const multaFormatada = ref('')
 
 // Filtro
 const filtroNome = ref('')
+
+// IDs dos cards expandidos — Set porque cada card abre/fecha independente
+// dos outros (não é um acordeão de item único).
+const cursosExpandidos = ref<Set<string>>(new Set())
+
+function alternarExpansao(cursoId: string) {
+  if (cursosExpandidos.value.has(cursoId)) {
+    cursosExpandidos.value.delete(cursoId)
+  } else {
+    cursosExpandidos.value.add(cursoId)
+  }
+}
 
 // Função para formatar moeda brasileira
 function formatarMoeda(valor: string): string {

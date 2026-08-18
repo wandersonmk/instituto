@@ -80,12 +80,18 @@ const pageTitle = computed(() => {
       return 'Cursos'
     case '/aulas-videos':
       return 'Aulas em Vídeo'
+    case '/professores':
+      return 'Professores'
     case '/indicacoes':
       return 'Indicações Recebidas'
     case '/relatorios':
       return 'Relatórios de alunos'
     case '/relatorio-faltas':
       return 'Relatório de Faltas'
+    case '/relatorio-aulas':
+      return 'Relatório de Aulas'
+    case '/avaliacoes':
+      return 'Avaliações dos Alunos'
     case '/configuracoes':
       return 'Configurações'
     case '/ajuda':
@@ -113,12 +119,18 @@ const pageDescription = computed(() => {
       return 'Gerencie todos os cursos disponíveis'
     case '/aulas-videos':
       return 'Gerencie as videoaulas disponíveis para os alunos'
+    case '/professores':
+      return 'Gerencie os professores e os cursos que cada um leciona'
     case '/indicacoes':
       return 'Visualize todas as indicações recebidas'
     case '/relatorios':
       return 'Gerencie todos os relatórios de chamados'
     case '/relatorio-faltas':
       return 'Visualização completa de todas as faltas registradas'
+    case '/relatorio-aulas':
+      return 'Acompanhe as aulas realizadas e a chamada de cada turma'
+    case '/avaliacoes':
+      return 'O que os alunos responderam ao final de cada aula'
     case '/configuracoes':
       return 'Configure e gerencie as configurações do sistema'
     case '/ajuda':

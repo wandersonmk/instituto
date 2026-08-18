@@ -30,11 +30,10 @@ if (isClient) {
 
 const ABAS = [
   { valor: 'lembretes', label: 'Lembretes de Aula', icon: 'bell', fallback: '🔔' },
-  { valor: 'integracoes', label: 'Integrações', icon: 'plug', fallback: '🔌' },
-  { valor: 'sistema', label: 'Sistema', icon: 'cog', fallback: '⚙️' }
+  { valor: 'integracoes', label: 'Integrações', icon: 'plug', fallback: '🔌' }
 ] as const
 
-const abaAtiva = ref<'lembretes' | 'integracoes' | 'sistema'>('lembretes')
+const abaAtiva = ref<'lembretes' | 'integracoes'>('lembretes')
 </script>
 
 <template>
@@ -65,8 +64,7 @@ const abaAtiva = ref<'lembretes' | 'integracoes' | 'sistema'>('lembretes')
       </div>
 
       <LembretesAulaManager v-if="abaAtiva === 'lembretes'" />
-      <IntegracaoAgzapManager v-else-if="abaAtiva === 'integracoes'" />
-      <ConfiguracoesManager v-else />
+      <IntegracaoAgzapManager v-else />
     </div>
   </div>
 </template>

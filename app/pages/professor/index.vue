@@ -100,7 +100,12 @@ function toggleCursoHoje(cursoId: string) {
 
 // ---------------------------------------------------------------- iniciar aula
 
-function abrirModalIniciar(curso: any) {
+async function abrirModalIniciar(curso: any) {
+  if (todosProgramadosNoCurso(curso.id).length === 0) {
+    const toast = await useToastSafe()
+    toast?.error('Matricule pelo menos um aluno neste curso antes de iniciar a aula')
+    return
+  }
   cursoParaIniciar.value = curso
   temaAula.value = ''
   mostrarModalIniciar.value = true
@@ -240,6 +245,38 @@ function programadosHoje(cursoId: string) {
   return programacao.value
     .filter(m => m.curso_id === cursoId && m.diasSemana.includes(diaHoje))
     .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+}
+
+/** Todo mundo matriculado no curso, independente do dia — só usado pra achar a próxima aula. */
+function todosProgramadosNoCurso(cursoId: string) {
+  return programacao.value.filter(m => m.curso_id === cursoId)
+}
+
+/**
+ * Quando não tem ninguém programado HOJE (0 alunos hoje), o card ficava sem
+ * nenhuma pista de horário — curso não tem horário fixo próprio (é por aluno),
+ * mas dá pra achar a próxima ocorrência olhando o dia mais próximo entre todo
+ * mundo matriculado. Sem matrícula nenhuma, não tem o que mostrar (null).
+ */
+function proximaAula(cursoId: string): { diaLabel: string; horario: string | null } | null {
+  const diaHoje = new Date().getDay()
+  let melhorDistancia = Infinity
+  let melhorDia = -1
+  let melhorHorario: string | null = null
+
+  for (const aluno of todosProgramadosNoCurso(cursoId)) {
+    for (const dia of aluno.diasSemana) {
+      const distancia = (dia - diaHoje + 7) % 7 || 7 // já sabemos que hoje não tem ninguém, então 0 vira 7 (próxima semana)
+      if (distancia < melhorDistancia) {
+        melhorDistancia = distancia
+        melhorDia = dia
+        melhorHorario = aluno.horaEntrada
+      }
+    }
+  }
+
+  if (melhorDia === -1) return null
+  return { diaLabel: DIAS_SEMANA.find(d => d.valor === melhorDia)?.label || '', horario: melhorHorario }
 }
 
 // ------------------------------------------------------------------ finalizar
@@ -553,14 +590,24 @@ onMounted(carregar)
                   </div>
                 </div>
               </div>
+              <div v-else-if="proximaAula(curso.id)" class="text-center py-2">
+                <p class="text-xs text-muted-foreground">Nenhum aluno programado para hoje neste curso.</p>
+                <p class="text-xs text-foreground font-medium mt-1 flex items-center justify-center gap-1">
+                  <Icon icon="clock" class-name="w-3 h-3 text-muted-foreground" fallback="🕒" />
+                  Próxima aula: {{ proximaAula(curso.id)?.diaLabel
+                  }}<template v-if="proximaAula(curso.id)?.horario"> às {{ formatarHorario(proximaAula(curso.id)?.horario ?? null) }}</template>
+                </p>
+              </div>
               <p v-else class="text-xs text-muted-foreground text-center py-2">
-                Nenhum aluno com aula programada para hoje neste curso.
+                Nenhum aluno matriculado neste curso ainda.
               </p>
             </div>
 
             <button
               @click="abrirModalIniciar(curso)"
-              class="w-full py-3 rounded-xl font-semibold text-sm text-primary-foreground bg-primary hover:bg-primary/90 shadow-sm shadow-primary/30 ring-1 ring-inset ring-white/10 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+              :disabled="todosProgramadosNoCurso(curso.id).length === 0"
+              :title="todosProgramadosNoCurso(curso.id).length === 0 ? 'Matricule pelo menos um aluno neste curso para poder iniciar a aula' : ''"
+              class="w-full py-3 rounded-xl font-semibold text-sm text-primary-foreground bg-primary hover:bg-primary/90 shadow-sm shadow-primary/30 ring-1 ring-inset ring-white/10 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-primary disabled:shadow-none disabled:active:scale-100"
             >
               <Icon icon="play" class-name="w-4 h-4" fallback="▶" />
               Iniciar Aula

@@ -98,7 +98,10 @@ onMounted(() => {
 // aberta — recarrega a lista sozinha, sem precisar de F5.
 let canalIndicacoes: ReturnType<typeof supabase.channel> | null = null
 
-onMounted(() => {
+onMounted(async () => {
+  // Sem isso o canal confirma "assinado" mas o servidor não sabe quem está
+  // logado e a RLS não deixa passar nenhum evento — ver app/utils/realtime.ts.
+  await autenticarRealtime(supabase)
   canalIndicacoes = supabase
     .channel('indicacoes-pagina')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'indicacoes' }, () => buscarIndicacoes())

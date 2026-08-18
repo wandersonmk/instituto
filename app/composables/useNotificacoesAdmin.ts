@@ -97,15 +97,23 @@ export const useNotificacoesAdmin = () => {
   let canal: ReturnType<ReturnType<typeof useSupabaseClient>['channel']> | null = null
 
   /**
-   * A conexão de tempo real é um WebSocket próprio (não é a mesma coisa que
-   * as chamadas REST normais) e o token dela pode expirar/cair numa aba
-   * ficando aberta por muito tempo — nesse caso ela para de entregar evento
-   * novo silenciosamente, sem erro visível na tela. `reconectarTempoReal()`
-   * força um canal novo do zero; é chamado de novo sempre que a aba volta a
-   * ficar visível (ver AppSidebar.vue), então uma conexão morta se
-   * autocorrige sem precisar de F5.
+   * A conexão de tempo real é um WebSocket próprio, com o PRÓPRIO token de
+   * autenticação — não é a mesma coisa que as chamadas REST normais nem
+   * compartilha automaticamente a sessão de login de forma confiável. Achado
+   * na prática (testado direto, não é suposição): o supabase-js não estava
+   * propagando o token da sessão pro socket do realtime a tempo do RLS ser
+   * avaliado — o canal confirmava "SUBSCRIBED" normalmente, mas o Realtime
+   * enxergava a conexão como se não tivesse usuário logado, e a política de
+   * RLS (corretamente) não deixava passar nenhum evento. `realtime.setAuth()`
+   * força esse token a ir pro socket antes de assinar, resolvendo de vez.
+   *
+   * Isso também cobre o token expirando numa aba de longa duração: chamando
+   * de novo (reconectarTempoReal(), toda vez que a aba volta a ficar visível
+   * — ver AppSidebar.vue) sempre busca a sessão MAIS RECENTE antes de assinar.
    */
-  function assinarCanal() {
+  async function assinarCanal() {
+    await autenticarRealtime(db())
+
     canal = db()
       .channel('admin-notificacoes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'avaliacoes_aulas' }, () => recarregarAvaliacoes())
@@ -127,7 +135,7 @@ export const useNotificacoesAdmin = () => {
     assinarCanal()
   }
 
-  /** Descarta o canal atual (se existir) e assina um novo do zero. */
+  /** Descarta o canal atual (se existir) e assina um novo do zero, com a sessão mais recente. */
   function reconectarTempoReal() {
     encerrarTempoReal()
     assinarCanal()

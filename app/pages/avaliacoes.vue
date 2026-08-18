@@ -351,8 +351,12 @@ onMounted(async () => {
 // esta assinatura é só da página, pra atualizar a lista em si.
 let canalAvaliacoes: ReturnType<ReturnType<typeof useSupabaseClient>['channel']> | null = null
 
-onMounted(() => {
-  canalAvaliacoes = useSupabaseClient()
+onMounted(async () => {
+  // Sem isso o canal confirma "assinado" mas o servidor não sabe quem está
+  // logado e a RLS não deixa passar nenhum evento — ver app/utils/realtime.ts.
+  const supabase = useSupabaseClient()
+  await autenticarRealtime(supabase)
+  canalAvaliacoes = supabase
     .channel('avaliacoes-pagina')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'avaliacoes_aulas' }, () => carregar())
     .subscribe()

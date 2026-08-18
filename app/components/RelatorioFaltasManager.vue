@@ -533,7 +533,10 @@ onMounted(() => {
 // relatório sozinho enquanto a página está aberta, sem precisar de F5.
 let canalRelatorio: ReturnType<typeof supabase.channel> | null = null
 
-onMounted(() => {
+onMounted(async () => {
+  // Sem isso o canal confirma "assinado" mas o servidor não sabe quem está
+  // logado e a RLS não deixa passar nenhum evento — ver app/utils/realtime.ts.
+  await autenticarRealtime(supabase)
   canalRelatorio = supabase
     .channel('relatorio-faltas-pagina')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'faltas' }, () => buscarDados())

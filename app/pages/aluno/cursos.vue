@@ -67,8 +67,12 @@ async function recarregarCursosApósMudanca(alunoId: string) {
   cursos.value = [...(await buscarCursosDoAluno(alunoId))]
 }
 
-function assinarAtualizacoesEmTempoReal(alunoId: string) {
+async function assinarAtualizacoesEmTempoReal(alunoId: string) {
   if (canalRealtime) return // já assinado nesta sessão da página
+
+  // Sem isso o canal confirma "assinado" mas o servidor não sabe quem está
+  // logado e a RLS não deixa passar nenhum evento — ver app/utils/realtime.ts.
+  await autenticarRealtime(supabase)
 
   canalRealtime = supabase
     .channel(`aluno-cursos-${alunoId}`)

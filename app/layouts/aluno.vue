@@ -16,7 +16,7 @@
             <Icon icon="graduation-cap" class-name="w-4 h-4 sm:w-6 sm:h-6 text-white" fallback="🎓" />
           </div>
           <div class="min-w-0 flex-1">
-            <h1 class="text-sm sm:text-lg font-bold text-foreground dark:text-gray-100 truncate">Área do Aluno</h1>
+            <h1 class="text-sm sm:text-lg font-bold text-foreground dark:text-gray-100 truncate">Portal do Aluno — Instituto Fios de Ouro</h1>
             <p class="text-xs text-muted-foreground dark:text-gray-300 truncate hidden sm:block">{{ userNome }}</p>
           </div>
         </div>

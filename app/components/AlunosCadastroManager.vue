@@ -19,6 +19,14 @@ const cursosExpandidos = ref<Set<string>>(new Set()) // IDs dos cursos expandido
 
 // Controle do modal de confirmação de exclusão
 const alunoParaExcluir = ref<any>(null)
+// true quando o DELETE falhou por chave estrangeira (aluno tem matrícula/falta/
+// presença/pagamento vinculado) — o modal troca de "confirmar exclusão" para
+// "oferecer bloquear no lugar" em vez de só mostrar um erro genérico.
+const temHistoricoImpeditivo = ref(false)
+// true quando o admin, mesmo avisado do histórico, pede pra excluir tudo
+// mesmo assim — mostra a confirmação final (irreversível) antes de executar.
+const confirmandoExclusaoDefinitiva = ref(false)
+const excluindoDefinitivamente = ref(false)
 
 // Controle do modal de edição de multa
 const mostrarModalMulta = ref(false)
@@ -245,12 +253,18 @@ function selecionarCurso() {
   }
 }
 
+// Alunos bloqueados ficam fora da lista por padrão (senão "Bloquear" não tira
+// ninguém do caminho do dia a dia) — este toggle reexibe eles quando precisar.
+const mostrarBloqueados = ref(false)
+const totalBloqueados = computed(() => alunos.value.filter(a => !a.ativo).length)
+
 // Computed para filtrar alunos
 const alunosFiltrados = computed(() => {
   return alunos.value.filter(aluno => {
     const nomeMatch = aluno.nome.toLowerCase().includes(filtroNome.value.toLowerCase())
     const telefoneMatch = aluno.telefone.toLowerCase().includes(filtroTelefone.value.toLowerCase())
-    return nomeMatch && telefoneMatch
+    const statusMatch = mostrarBloqueados.value || aluno.ativo
+    return nomeMatch && telefoneMatch && statusMatch
   })
 })
 
@@ -872,44 +886,131 @@ function irParaAbaVisualizacao(aba: number) {
 // Confirmar exclusão de aluno
 function confirmarExclusao(aluno: any, event?: Event) {
   if (event) event.stopPropagation()
+  temHistoricoImpeditivo.value = false
+  confirmandoExclusaoDefinitiva.value = false
   alunoParaExcluir.value = aluno
 }
 
 // Cancelar exclusão
 function cancelarExclusao() {
   alunoParaExcluir.value = null
+  temHistoricoImpeditivo.value = false
+  confirmandoExclusaoDefinitiva.value = false
 }
 
 // Excluir aluno
 async function excluirAluno() {
   if (!alunoParaExcluir.value) return
-  
+
   if (!process.client) return
-  
+
   const supabase = useSupabaseClient()
   const toast = await useToastSafe()
-  
+
   try {
     const { error } = await supabase
       .from('alunos')
       .delete()
       .eq('id', alunoParaExcluir.value.id)
-    
+
     if (error) {
       console.error('Erro ao excluir aluno:', error)
-      toast?.error('Erro ao excluir aluno')
+      // 23503 = violação de chave estrangeira: o aluno tem matrícula, falta,
+      // presença ou pagamento vinculado, e essas tabelas bloqueiam a exclusão
+      // de propósito (nunca apagar histórico financeiro/acadêmico sem querer).
+      // Nesse caso, troca a pergunta por "bloquear no lugar" em vez de um erro genérico.
+      if ((error as any).code === '23503') {
+        temHistoricoImpeditivo.value = true
+      } else {
+        toast?.error('Erro ao excluir aluno')
+      }
       return
     }
-    
+
     toast?.success('Aluno excluído com sucesso!')
-    
+
     // Recarregar lista de alunos
     await buscarAlunos()
-    alunoParaExcluir.value = null
+    cancelarExclusao()
     fecharModalVisualizacao()
   } catch (error) {
     console.error('Erro inesperado ao excluir aluno:', error)
     toast?.error('Erro inesperado ao excluir aluno')
+  }
+}
+
+// Alternativa oferecida quando a exclusão é barrada por histórico vinculado:
+// bloqueia (reversível, some da lista por padrão) em vez de apagar de vez.
+async function bloquearAoInvesDeExcluir() {
+  if (!alunoParaExcluir.value) return
+
+  const supabase = useSupabaseClient()
+  const toast = await useToastSafe()
+
+  try {
+    const { error } = await supabase
+      .from('alunos')
+      .update({ ativo: false })
+      .eq('id', alunoParaExcluir.value.id)
+
+    if (error) {
+      console.error('Erro ao bloquear aluno:', error)
+      toast?.error('Erro ao bloquear aluno')
+      return
+    }
+
+    alunoParaExcluir.value.ativo = false
+    toast?.success('Aluno bloqueado — some da lista, mas o histórico continua intacto.')
+    cancelarExclusao()
+  } catch (error) {
+    console.error('Erro inesperado ao bloquear aluno:', error)
+    toast?.error('Erro inesperado ao bloquear aluno')
+  }
+}
+
+// Pede a confirmação final antes de excluir de vez (mostra o aviso de irreversível)
+function pedirExclusaoDefinitiva() {
+  confirmandoExclusaoDefinitiva.value = true
+}
+
+// Volta pro aviso "tem histórico" sem executar nada
+function voltarParaAvisoHistorico() {
+  confirmandoExclusaoDefinitiva.value = false
+}
+
+/**
+ * Exclusão de verdade, mesmo com histórico vinculado — só chega aqui depois
+ * do aviso de irreversível. Passa pela rota do servidor porque, além de
+ * apagar matrícula/faltas/presenças/pagamentos, também remove o login do
+ * aluno (se ele tiver um), o que exige a service_role do lado do servidor.
+ */
+async function excluirDefinitivamente() {
+  if (!alunoParaExcluir.value) return
+
+  excluindoDefinitivamente.value = true
+  const toast = await useToastSafe()
+
+  try {
+    const supabase = useSupabaseClient()
+    const { data: sessao } = await supabase.auth.getSession()
+    const token = sessao?.session?.access_token
+    if (!token) throw new Error('Sessão expirada — faça login novamente')
+
+    await $fetch('/api/alunos/excluir-definitivo', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: { alunoId: alunoParaExcluir.value.id }
+    })
+
+    toast?.success('Aluno e todo o histórico foram excluídos definitivamente.')
+    await buscarAlunos()
+    cancelarExclusao()
+    fecharModalVisualizacao()
+  } catch (error: any) {
+    console.error('Erro ao excluir aluno definitivamente:', error)
+    toast?.error(error?.data?.statusMessage || error?.message || 'Erro ao excluir aluno definitivamente')
+  } finally {
+    excluindoDefinitivamente.value = false
   }
 }
 
@@ -1510,6 +1611,20 @@ async function registrarPagamento() {
           placeholder="📞 Buscar por telefone..."
         />
       </div>
+
+      <button
+        v-if="totalBloqueados > 0"
+        type="button"
+        @click="mostrarBloqueados = !mostrarBloqueados"
+        class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full border transition-colors whitespace-nowrap"
+        :class="mostrarBloqueados
+          ? 'border-amber-300 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-900/15 text-amber-700 dark:text-amber-300'
+          : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/30'"
+        :title="mostrarBloqueados ? 'Ocultar alunos bloqueados' : 'Mostrar alunos bloqueados'"
+      >
+        <span class="text-sm leading-none">{{ mostrarBloqueados ? '🙈' : '🚫' }}</span>
+        {{ mostrarBloqueados ? 'Ocultar' : 'Mostrar' }} bloqueados ({{ totalBloqueados }})
+      </button>
 
       <span v-if="filtroNome || filtroTelefone" class="text-xs text-muted-foreground whitespace-nowrap">
         {{ alunosFiltrados.length }} de {{ alunos.length }}
@@ -2561,17 +2676,24 @@ async function registrarPagamento() {
       >
         <div class="bg-card rounded-xl shadow-2xl max-w-md w-full border border-border overflow-hidden">
           <!-- Header com gradiente -->
-          <div class="bg-gradient-to-br from-red-500 to-red-600 p-6 text-center relative">
+          <div
+            class="p-6 text-center relative bg-gradient-to-br"
+            :class="confirmandoExclusaoDefinitiva ? 'from-red-600 to-red-700' : (temHistoricoImpeditivo ? 'from-amber-500 to-amber-600' : 'from-red-500 to-red-600')"
+          >
             <div class="flex items-center justify-center w-16 h-16 mx-auto mb-3 bg-white/20 backdrop-blur-sm rounded-full border-2 border-white/30">
-              <Icon icon="exclamation-triangle" class-name="w-8 h-8 text-white" fallback="" />
+              <Icon
+                :icon="confirmandoExclusaoDefinitiva ? 'trash' : (temHistoricoImpeditivo ? 'shield-halved' : 'exclamation-triangle')"
+                class-name="w-8 h-8 text-white"
+                fallback="⚠️"
+              />
             </div>
             <h3 class="text-xl font-bold text-white">
-              Confirmar Exclusão
+              {{ confirmandoExclusaoDefinitiva ? 'Excluir definitivamente' : (temHistoricoImpeditivo ? 'Não é possível excluir' : 'Confirmar Exclusão') }}
             </h3>
           </div>
 
-          <!-- Conteúdo -->
-          <div class="p-6">
+          <!-- Conteúdo: pedido normal de exclusão -->
+          <div v-if="!temHistoricoImpeditivo && !confirmandoExclusaoDefinitiva" class="p-6">
             <p class="text-muted-foreground text-center mb-2">
               Tem certeza que deseja excluir o aluno
             </p>
@@ -2583,7 +2705,7 @@ async function registrarPagamento() {
                 ⚠️ Esta ação não pode ser desfeita
               </p>
             </div>
-            
+
             <!-- Botões -->
             <div class="flex space-x-3">
               <button
@@ -2597,6 +2719,77 @@ async function registrarPagamento() {
                 class="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-red-500/50"
               >
                 Excluir
+              </button>
+            </div>
+          </div>
+
+          <!-- Conteúdo: exclusão bloqueada por histórico vinculado -->
+          <div v-else-if="!confirmandoExclusaoDefinitiva" class="p-6">
+            <p class="text-center mb-4 text-sm text-muted-foreground">
+              <strong class="text-foreground text-base">{{ alunoParaExcluir.nome }}</strong>
+              já tem matrícula, falta, presença ou pagamento registrado. Excluir apagaria esse
+              histórico acadêmico/financeiro, então o sistema bloqueia essa ação de propósito.
+            </p>
+            <div class="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-lg p-3 mb-6">
+              <p class="text-amber-800 dark:text-amber-200 text-sm text-center">
+                💡 Use <strong>Bloquear</strong> para tirar o aluno do fluxo ativo sem perder nada
+                do histórico. Dá para desbloquear depois, se precisar.
+              </p>
+            </div>
+
+            <!-- Botões -->
+            <div class="flex space-x-3">
+              <button
+                @click="cancelarExclusao"
+                class="flex-1 px-4 py-2.5 border-2 border-border rounded-lg text-foreground font-medium hover:bg-muted transition-all duration-200 hover:scale-105"
+              >
+                Cancelar
+              </button>
+              <button
+                @click="bloquearAoInvesDeExcluir"
+                class="flex-1 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-amber-500/50"
+              >
+                Bloquear aluno
+              </button>
+            </div>
+
+            <button
+              type="button"
+              @click="pedirExclusaoDefinitiva"
+              class="w-full mt-3 text-xs text-red-600/70 hover:text-red-600 dark:text-red-400/70 dark:hover:text-red-400 underline underline-offset-2 text-center transition-colors"
+            >
+              Prefiro excluir tudo mesmo assim (não pode ser desfeito)
+            </button>
+          </div>
+
+          <!-- Conteúdo: confirmação final da exclusão definitiva (irreversível) -->
+          <div v-else class="p-6">
+            <p class="text-center mb-4 text-sm text-muted-foreground">
+              Isso vai apagar <strong class="text-foreground">{{ alunoParaExcluir.nome }}</strong> e
+              <strong class="text-foreground">todo</strong> o histórico dele para sempre: matrícula, faltas,
+              multas (mesmo já pagas), presenças, avaliações, indicações e o login de acesso, se ele tiver um.
+            </p>
+            <div class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/30 rounded-lg p-3 mb-6">
+              <p class="text-red-800 dark:text-red-200 text-sm text-center font-semibold">
+                ⚠️ Não tem como desfazer nem recuperar depois de excluído
+              </p>
+            </div>
+
+            <!-- Botões -->
+            <div class="flex space-x-3">
+              <button
+                @click="voltarParaAvisoHistorico"
+                :disabled="excluindoDefinitivamente"
+                class="flex-1 px-4 py-2.5 border-2 border-border rounded-lg text-foreground font-medium hover:bg-muted transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:pointer-events-none"
+              >
+                Voltar
+              </button>
+              <button
+                @click="excluirDefinitivamente"
+                :disabled="excluindoDefinitivamente"
+                class="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-red-500/50 disabled:opacity-50 disabled:pointer-events-none disabled:hover:scale-100"
+              >
+                {{ excluindoDefinitivamente ? 'Excluindo...' : 'Sim, excluir definitivamente' }}
               </button>
             </div>
           </div>

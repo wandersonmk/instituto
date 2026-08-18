@@ -459,7 +459,7 @@ const isLoggedIn = ref(false)
 // Badges de "coisa nova" no menu (avaliações não vistas, indicações
 // pendentes) — o sidebar monta uma vez e sobrevive à troca de página, então
 // é o lugar certo pra manter o canal de tempo real aberto.
-const { avaliacoesNovas, indicacoesNovas, faltasPendentes, recarregarTudo, assinarTempoReal, encerrarTempoReal } = useNotificacoesAdmin()
+const { avaliacoesNovas, indicacoesNovas, faltasPendentes, recarregarTudo, assinarTempoReal, reconectarTempoReal, encerrarTempoReal } = useNotificacoesAdmin()
 
 // Verificar autenticação usando o composable useAuth
 const { isAuthenticated, user } = process.client ? useAuth() : { isAuthenticated: ref(false), user: ref(null) }
@@ -518,15 +518,42 @@ if (process.client) {
   const handleVisibilityChange = async () => {
     if (!document.hidden) {
       checkUserSession()
+      // A aba pode ter ficado minimizada/em segundo plano por muito tempo e
+      // o WebSocket do tempo real ter caído nesse meio tempo sem avisar —
+      // busca os contadores certos agora (correção imediata) e reconecta o
+      // canal do zero (pra voltar a receber evento novo sem precisar de F5).
+      if (isLoggedIn.value) {
+        recarregarTudo()
+        reconectarTempoReal()
+      }
     }
   }
   
   onMounted(() => {
     document.addEventListener('visibilitychange', handleVisibilityChange)
   })
-  
+
   onUnmounted(() => {
     document.removeEventListener('visibilitychange', handleVisibilityChange)
+  })
+}
+
+// Rede de segurança: se a aba ficar em foco o dia inteiro (sem nunca trocar
+// de aba), o visibilitychange acima nunca dispara — mas o token do WebSocket
+// do tempo real ainda pode expirar depois de 1h. Confere os contadores a
+// cada 5 minutos, independente de realtime ter avisado algo ou não, pra
+// nunca ficar mais que isso desatualizado mesmo no pior caso.
+if (process.client) {
+  let intervaloChecagem: ReturnType<typeof setInterval> | null = null
+
+  onMounted(() => {
+    intervaloChecagem = setInterval(() => {
+      if (isLoggedIn.value) recarregarTudo()
+    }, 5 * 60 * 1000)
+  })
+
+  onUnmounted(() => {
+    if (intervaloChecagem) clearInterval(intervaloChecagem)
   })
 }
 

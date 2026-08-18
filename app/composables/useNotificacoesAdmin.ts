@@ -96,15 +96,41 @@ export const useNotificacoesAdmin = () => {
 
   let canal: ReturnType<ReturnType<typeof useSupabaseClient>['channel']> | null = null
 
-  function assinarTempoReal() {
-    if (canal) return // já assinado nesta sessão
-
+  /**
+   * A conexão de tempo real é um WebSocket próprio (não é a mesma coisa que
+   * as chamadas REST normais) e o token dela pode expirar/cair numa aba
+   * ficando aberta por muito tempo — nesse caso ela para de entregar evento
+   * novo silenciosamente, sem erro visível na tela. `reconectarTempoReal()`
+   * força um canal novo do zero; é chamado de novo sempre que a aba volta a
+   * ficar visível (ver AppSidebar.vue), então uma conexão morta se
+   * autocorrige sem precisar de F5.
+   */
+  function assinarCanal() {
     canal = db()
       .channel('admin-notificacoes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'avaliacoes_aulas' }, () => recarregarAvaliacoes())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'indicacoes' }, () => recarregarIndicacoes())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'faltas' }, () => recarregarFaltasPendentes())
-      .subscribe()
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('[notificacoes-admin] canal de tempo real caiu (status:', status, ') — reconectando em 3s')
+          canal = null
+          setTimeout(() => {
+            if (!canal) assinarCanal()
+          }, 3000)
+        }
+      })
+  }
+
+  function assinarTempoReal() {
+    if (canal) return // já assinado nesta sessão
+    assinarCanal()
+  }
+
+  /** Descarta o canal atual (se existir) e assina um novo do zero. */
+  function reconectarTempoReal() {
+    encerrarTempoReal()
+    assinarCanal()
   }
 
   function encerrarTempoReal() {
@@ -123,6 +149,7 @@ export const useNotificacoesAdmin = () => {
     marcarAvaliacoesVistas,
     marcarIndicacoesVistas,
     assinarTempoReal,
+    reconectarTempoReal,
     encerrarTempoReal
   }
 }

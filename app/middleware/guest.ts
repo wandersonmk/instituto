@@ -1,3 +1,5 @@
+import { withTimeout } from '~/utils/withTimeout'
+
 export default defineNuxtRouteMiddleware(async (to, from) => {
   // Apenas executa no cliente para evitar hydration mismatch
   if (process.server) {
@@ -17,8 +19,9 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   try {
     const supabase = useSupabaseClient()
     
-    // Verificar sessão uma única vez
-    const { data: { session } } = await supabase.auth.getSession()
+    // Verificar sessão uma única vez. Com timeout: sem prazo, um lock preso
+    // (aba suspensa por muito tempo) trava essa navegação pra sempre.
+    const { data: { session } } = await withTimeout(supabase.auth.getSession(), 5000, 'getSession guest')
     
     // Se não tem sessão, permite acesso
     if (!session?.user) {

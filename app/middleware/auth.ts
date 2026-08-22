@@ -1,3 +1,5 @@
+import { withTimeout } from '~/utils/withTimeout'
+
 export default defineNuxtRouteMiddleware(async (to, from) => {
   // No servidor, não precisa verificar autenticação detalhada
   if (process.server) {
@@ -22,7 +24,11 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
         const nuxtApp = useNuxtApp()
         if (nuxtApp.$supabase) {
           const supabase = nuxtApp.$supabase as any
-          const { data } = await supabase.auth.getSession()
+          // Com timeout: sem prazo, um lock preso (aba suspensa por muito
+          // tempo) deixa esse await pendurado pra sempre — e como a
+          // navegação da rota espera esse middleware terminar, a página
+          // nunca troca de tela (fica presa na anterior até F5).
+          const { data } = await withTimeout(supabase.auth.getSession(), 5000, 'getSession middleware')
           if (data.session && data.session.user) {
             // A sessão existe, permitir acesso e deixar o plugin atualizar o estado
             return
